@@ -1,5 +1,4 @@
 #include <iostream>
-#include <Eigen/Core>
 
 int main()
 {
