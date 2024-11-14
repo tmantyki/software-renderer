@@ -12,7 +12,7 @@ env["LINKFLAGS"] = [
 env["CPPPATH"] = [
   "/usr/include/eigen3",
 ]
-VariantDir("build", "src")
+VariantDir("build", "src", duplicate=0)
 sources = [
   "build/triangle.cpp",
   ]
