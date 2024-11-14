@@ -2,6 +2,6 @@
 
 int main()
 {
-  std::cout << "Hello, software_rendeder.\n"
+  std::cout << "Hello, this is software renderer.\n";
   return 0;
 }
