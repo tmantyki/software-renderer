@@ -105,10 +105,28 @@ TEST(Plane, ConstructorVector)
   EXPECT_EQ(Eigen::Vector4f(5, 6, 7, 8), pl.GetVector());
 }
 
+TEST(Plane, NormalizedVector)
+{
+  Eigen::Vector4f vector(0, 2, 0, 3);
+  Plane pl(vector);
+  EXPECT_EQ(vector / 2, pl.GetVectorNormalized());
+}
+
+TEST(Plane, DistanceFromOrigin)
+{
+  Plane pl(-10, 0, 0, 2);
+  EXPECT_EQ(0.2f, pl.DistanceFromOrigin());
+}
+
 TEST(Point, PointDistanceFromPlane)
 {
-  Plane pl(0, 1, 0, 0.5);
+  Plane pl(0, 2, 0, 2);
   Point p(2, 13, 66);
-  EXPECT_EQ(13, p.DistanceFromPlane(pl));
-  std::cout << "Distance from origin: " << pl.DistanceFromOrigin() << "\n";
+  EXPECT_EQ(14, p.DistanceFromPlane(pl));
+  pl = {0, -3, 0, 3};
+  p = {2, 13, 66};
+  EXPECT_EQ(-12, p.DistanceFromPlane(pl));
+  pl = {0, -5, 0, -5};
+  p = {2, 13, 66};
+  EXPECT_EQ(-14, p.DistanceFromPlane(pl));
 }

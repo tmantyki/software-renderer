@@ -8,5 +8,5 @@ Point::Point(Eigen::Vector3f vector) : Coordinate(vector[0], vector[1], vector[2
 
 float Point::DistanceFromPlane(const Plane &plane) const
 {
-  return vector_.dot(plane.GetVector());
+  return vector_.dot(plane.GetVectorNormalized());
 }
