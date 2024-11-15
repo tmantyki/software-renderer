@@ -11,7 +11,7 @@ public:
   Plane(Eigen::Vector4f vector_4f);
   Eigen::Vector4f GetVector() const;
   Eigen::Vector4f GetVectorNormalized() const;
-  float DistanceFromOrigin() const;
+  float SignedDistanceFromOrigin() const;
 
 private:
   Eigen::Vector4f vector_;

@@ -5,12 +5,7 @@
 #include "direction.hpp"
 #include "line_segment.hpp"
 #include "plane.hpp"
-
-TEST(Coordinate, ConstructorDefault)
-{
-  Coordinate c;
-  EXPECT_EQ(Eigen::Vector4f(0, 0, 0, 0), c.GetVector());
-}
+#include "vertex.hpp"
 
 TEST(Coordinate, ConstructorFloats)
 {
@@ -37,12 +32,6 @@ TEST(Coordinate, EqualityBetweenDerivedObjects)
   EXPECT_TRUE(b != d);
 }
 
-TEST(Point, ConstructorDefault)
-{
-  Point p;
-  EXPECT_EQ(Eigen::Vector4f(0, 0, 0, 1), p.GetVector());
-}
-
 TEST(Point, ConstructorFloats)
 {
   Point p(1.1, 2.2, 3.3);
@@ -53,12 +42,6 @@ TEST(Point, ConstructorVector)
 {
   Point p(Eigen::Vector3f(0.1, 0.2, 0.3));
   EXPECT_EQ(Eigen::Vector4f(0.1, 0.2, 0.3, 1), p.GetVector());
-}
-
-TEST(Direction, ConstructorDefault)
-{
-  Direction d;
-  EXPECT_EQ(Eigen::Vector4f(0, 0, 0, 0), d.GetVector());
 }
 
 TEST(Direction, ConstructorFloats)
@@ -81,7 +64,7 @@ TEST(LineSegment, ConstructorPoints)
   EXPECT_EQ(b, ls.GetPointB());
 }
 
-TEST(LineSegment, InterpolatePoints)
+TEST(LineSegment, GetInterpolatedPoint)
 {
   float t, x = -12, y = 3, z = 170;
   Point a(0, 0, 0), b(x, y, z);
@@ -91,6 +74,19 @@ TEST(LineSegment, InterpolatePoints)
     Point c(t * Eigen::Vector3f(x, y, z));
     EXPECT_EQ(Point(t * Eigen::Vector3f(x, y, z)), ls.GetInterpolatedPoint(t));
   }
+}
+
+TEST(LineSegment, GetPlaneIntersectionParameter)
+{
+  Plane pl(1, 0, 0, 0);
+  LineSegment ls({-2, 0, -10}, {1, 4.5, -30});
+  EXPECT_FLOAT_EQ(2.0 / 3, ls.GetPlaneIntersectionParameter(pl));
+}
+
+TEST(LineSegment, GetDirection)
+{
+  LineSegment ls({0, 1, 2}, {5, 4, 6});
+  EXPECT_EQ(Direction(5, 3, 4), ls.GetDirection());
 }
 
 TEST(Plane, ConstructorFloats)
@@ -112,21 +108,35 @@ TEST(Plane, NormalizedVector)
   EXPECT_EQ(vector / 2, pl.GetVectorNormalized());
 }
 
-TEST(Plane, DistanceFromOrigin)
+TEST(Plane, SignedDistanceFromOrigin)
 {
   Plane pl(-10, 0, 0, 2);
-  EXPECT_EQ(0.2f, pl.DistanceFromOrigin());
+  EXPECT_FLOAT_EQ(0.2, pl.SignedDistanceFromOrigin());
 }
 
-TEST(Point, PointDistanceFromPlane)
+TEST(Point, PointSignedDistanceFromPlane)
 {
   Plane pl(0, 2, 0, 2);
   Point p(2, 13, 66);
-  EXPECT_EQ(14, p.DistanceFromPlane(pl));
+  EXPECT_FLOAT_EQ(14, p.SignedDistanceFromPlane(pl));
   pl = {0, -3, 0, 3};
   p = {2, 13, 66};
-  EXPECT_EQ(-12, p.DistanceFromPlane(pl));
+  EXPECT_FLOAT_EQ(-12, p.SignedDistanceFromPlane(pl));
   pl = {0, -5, 0, -5};
   p = {2, 13, 66};
-  EXPECT_EQ(-14, p.DistanceFromPlane(pl));
+  EXPECT_FLOAT_EQ(-14, p.SignedDistanceFromPlane(pl));
+}
+
+TEST(Vertex, ConstructorFloats)
+{
+  Vertex v(1.1, 2.2, 3.3);
+  EXPECT_EQ(Eigen::Vector4f(1.1, 2.2, 3.3, 1), v.GetVector());
+  EXPECT_EQ(Eigen::Vector3f(0, 0, 0), v.GetAttributeColor());
+}
+
+TEST(Vertex, ConstructorVector)
+{
+  Vertex v(Eigen::Vector3f(0.1, 0.2, 0.3));
+  EXPECT_EQ(Eigen::Vector4f(0.1, 0.2, 0.3, 1), v.GetVector());
+  EXPECT_EQ(Eigen::Vector3f(0, 0, 0), v.GetAttributeColor());
 }

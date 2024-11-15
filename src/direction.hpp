@@ -6,7 +6,7 @@
 class Direction : public Coordinate
 {
 public:
-  Direction();
+  Direction() = delete;
   Direction(float x, float y, float z);
   Direction(Eigen::Vector3f vector_3f);
 };
