@@ -31,7 +31,7 @@ Eigen::Vector4f Plane::GetVectorNormalized() const
   return vector_normalized_;
 }
 
-float Plane::DistanceFromOrigin() const
+float Plane::SignedDistanceFromOrigin() const
 {
   return Eigen::Vector4f(0, 0, 0, 1).dot(vector_normalized_);
 }

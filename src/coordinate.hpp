@@ -6,7 +6,7 @@
 class Coordinate
 {
 public:
-  Coordinate();
+  Coordinate() = delete;
   Coordinate(float x, float y, float z, float w);
   Coordinate(Eigen::Vector4f vector_4f);
   Eigen::Vector4f GetVector() const;
