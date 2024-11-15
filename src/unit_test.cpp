@@ -6,6 +6,7 @@
 #include "line_segment.hpp"
 #include "plane.hpp"
 #include "vertex.hpp"
+#include "triangle.hpp"
 
 TEST(Coordinate, ConstructorFloats)
 {
@@ -130,7 +131,7 @@ TEST(Point, PointSignedDistanceFromPlane)
 TEST(Point, PointMinusPoint)
 {
   Point p1(8, 7, 6), p2(1, 2, 3);
-  EXPECT_EQ(Direction(7,5,3), p1 - p2);
+  EXPECT_EQ(Direction(7, 5, 3), p1 - p2);
 }
 
 TEST(Vertex, ConstructorFloats)
@@ -145,4 +146,13 @@ TEST(Vertex, ConstructorVector)
   Vertex v(Eigen::Vector3f(0.1, 0.2, 0.3));
   EXPECT_EQ(Eigen::Vector4f(0.1, 0.2, 0.3, 1), v.GetVector());
   EXPECT_EQ(Eigen::Vector3f(0, 0, 0), v.GetAttributeColor());
+}
+
+TEST(Triangle, ConstructorVertices)
+{
+  Vertex v1{1, 1, 1}, v2{2, 3, 4}, v3{7, 6, 5};
+  Triangle t(v1, v2, v3);
+  EXPECT_EQ(t.GetVertex(0), v1);
+  EXPECT_EQ(t.GetVertex(1), v2);
+  EXPECT_EQ(t.GetVertex(2), v3);
 }
