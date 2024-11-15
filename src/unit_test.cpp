@@ -156,3 +156,26 @@ TEST(Triangle, ConstructorVertices)
   EXPECT_EQ(t.GetVertex(1), v2);
   EXPECT_EQ(t.GetVertex(2), v3);
 }
+
+TEST(TriangleArray, DefaultConstructor)
+{
+  TriangleArray ta;
+  EXPECT_EQ(kMaxTriangles, ta.GetArray().size());
+  EXPECT_EQ(0, ta.GetUsed());
+  for (auto t : ta.GetArray())
+    EXPECT_EQ(nullptr, t);
+}
+
+TEST(TriangleArray, AddTriangle)
+{
+  TriangleArray ta;
+  Triangle t({1, 2, 3}, {0, 0, 0}, {-1, 10, 110});
+  EXPECT_EQ(0, ta.GetUsed());
+  for (size_t i = 1; i <= kMaxTriangles; i++)
+  {
+    EXPECT_TRUE(ta.AddTriangle(&t));
+    EXPECT_EQ(i, ta.GetUsed());
+  }
+  EXPECT_FALSE(ta.AddTriangle(&t));
+  EXPECT_EQ(kMaxTriangles, ta.GetUsed());
+}
