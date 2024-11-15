@@ -25,5 +25,5 @@ Point LineSegment::GetPointB() const { return b_; }
 
 Direction LineSegment::GetDirection() const
 {
-  return Direction((GetPointB().GetVector() - GetPointA().GetVector())({0, 1, 2})); //#TODO: refactor
+  return (GetPointB() - GetPointA());
 }
