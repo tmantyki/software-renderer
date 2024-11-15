@@ -127,6 +127,12 @@ TEST(Point, PointSignedDistanceFromPlane)
   EXPECT_FLOAT_EQ(-14, p.SignedDistanceFromPlane(pl));
 }
 
+TEST(Point, PointMinusPoint)
+{
+  Point p1(8, 7, 6), p2(1, 2, 3);
+  EXPECT_EQ(Direction(7,5,3), p1 - p2);
+}
+
 TEST(Vertex, ConstructorFloats)
 {
   Vertex v(1.1, 2.2, 3.3);
