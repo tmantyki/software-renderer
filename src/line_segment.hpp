@@ -1,21 +1,20 @@
 #ifndef LINE_SEGMENT_HPP
 #define LINE_SEGMENT_HPP
 
-#include "point.hpp"
 #include "direction.hpp"
+#include "point.hpp"
 
-class LineSegment
-{
-public:
+class LineSegment {
+ public:
   LineSegment() = delete;
   LineSegment(Point a, Point b);
   Point GetInterpolatedPoint(float t) const;
-  float GetPlaneIntersectionParameter(Plane &plane) const;
+  float GetPlaneIntersectionParameter(Plane& plane) const;
   Point GetPointA() const;
   Point GetPointB() const;
   Direction GetDirection() const;
 
-private:
+ private:
   Point a_, b_;
 };
 

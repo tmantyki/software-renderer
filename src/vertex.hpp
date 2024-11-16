@@ -3,15 +3,14 @@
 
 #include "point.hpp"
 
-class Vertex : public Point
-{
-public:
+class Vertex : public Point {
+ public:
   Vertex() = delete;
   Vertex(float x, float y, float z);
   Vertex(Eigen::Vector3f vector_3f);
   Eigen::Vector3f GetAttributeColor() const;
 
-private:
+ private:
   Eigen::Vector3f attribute_color_;
 };
 
