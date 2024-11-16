@@ -5,6 +5,7 @@ env['CXXFLAGS'] = [
   '-Wextra',
   '-Wpedantic',
   '-Werror',
+  '-O2',
 ]
 env['CPPPATH'] = [
   '/usr/include/eigen3'
