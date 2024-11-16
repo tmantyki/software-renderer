@@ -1,12 +1,38 @@
 #include <gtest/gtest.h>
 
+#include <chrono>
+#include <thread>
+
 #include "coordinate.hpp"
 #include "direction.hpp"
 #include "line_segment.hpp"
 #include "plane.hpp"
 #include "point.hpp"
+#include "timer.hpp"
 #include "triangle.hpp"
 #include "vertex.hpp"
+
+TEST(Timer, BasicOperation) {
+  Timer t("UNIT_TEST");
+  t.Start();
+  std::this_thread::sleep_for(std::chrono::milliseconds(1));
+  t.Pause();
+  EXPECT_LE(1.0, t.GetDuration());
+  EXPECT_GE(2.0, t.GetDuration());
+  std::this_thread::sleep_for(std::chrono::milliseconds(1));
+  EXPECT_LE(1.0, t.GetDuration());
+  EXPECT_GE(2.0, t.GetDuration());
+  t.Continue();
+  std::this_thread::sleep_for(std::chrono::milliseconds(1));
+  t.Stop(false);
+  EXPECT_LE(2.0, t.GetDuration());
+  EXPECT_GE(3.0, t.GetDuration());
+  t.Start();
+  std::this_thread::sleep_for(std::chrono::milliseconds(1));
+  t.Stop(false);
+  EXPECT_LE(1.0, t.GetDuration());
+  EXPECT_GE(2.0, t.GetDuration());
+}
 
 TEST(Coordinate, ConstructorFloats) {
   Coordinate c(1.1, 2.2, 3.3, 4.4);

@@ -18,6 +18,7 @@ env['LIBS'] = [
   'gtest_main',
 ]
 sources = [
+  'build/timer.cpp',
   'build/coordinate.cpp',
   'build/point.cpp',
   'build/direction.cpp',
