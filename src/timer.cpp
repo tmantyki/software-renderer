@@ -18,13 +18,11 @@ void Timer::Pause() {
   auto end = high_resolution_clock::now();
   duration_us_ += duration_cast<microseconds>(end - reference_).count();
   assert(active_);
-  assert(duration_us_);
   active_ = false;
 }
 
 void Timer::Continue() {
   assert(!active_);
-  assert(duration_us_);
   active_ = true;
   reference_ = high_resolution_clock::now();
 }
@@ -33,7 +31,6 @@ void Timer::Stop(bool print_results) {
   auto end = high_resolution_clock::now();
   duration_us_ += duration_cast<microseconds>(end - reference_).count();
   assert(active_);
-  assert(duration_us_);
   active_ = false;
   if (print_results)
     Print();
@@ -41,12 +38,10 @@ void Timer::Stop(bool print_results) {
 
 void Timer::Print() const {
   assert(!active_);
-  assert(duration_us_);
   std::cout << label_ << ": " << GetDuration() << " ms\n";
 }
 
 float Timer::GetDuration() const {
   assert(!active_);
-  assert(duration_us_);
   return duration_us_ / 1000.0;
 }
