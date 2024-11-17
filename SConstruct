@@ -28,6 +28,7 @@ sources = [
   'build/plane.cpp',
   'build/vertex.cpp',
   'build/triangle.cpp',
+  'build/scene.cpp',
 ]
 VariantDir('build', 'src', duplicate=0)
 env.Program('renderer', sources + ['build/main.cpp'])

@@ -11,6 +11,7 @@
 #include "timer.hpp"
 #include "triangle.hpp"
 #include "vertex.hpp"
+#include "scene.hpp"
 
 TEST(Timer, BasicOperation) {
   Timer t("UNIT_TEST");
@@ -162,23 +163,19 @@ TEST(Triangle, ConstructorVertices) {
   EXPECT_EQ(t.GetVertex(2), v3);
 }
 
-TEST(TriangleArray, DefaultConstructor) {
-  TriangleArray ta;
-  EXPECT_EQ(kMaxTriangles, ta.GetArray().size());
-  EXPECT_EQ(0, ta.GetTriangleCount());
-  for (auto t : ta.GetArray())
-    EXPECT_EQ(nullptr, t);
-}
+TEST(Scene, AddTriangle) {
+   Scene s;
+   Vertex v1{1, 1, 1}, v2{2, 3, 4}, v3{7, 6, 5};
+   Triangle t1(v1, v2, v3);
+   Triangle t2(v1, v2, v3);
+   EXPECT_EQ(0, s.GetWorldSpaceTriangleCount());
+   for (Triangle *t1 : s.GetWorldSpaceTriangles())
+      EXPECT_EQ(nullptr, t1);
+   s.AddWorldSpaceTriangle(t1);
+   EXPECT_EQ(1, s.GetWorldSpaceTriangleCount());
+   EXPECT_EQ(&t1, s.GetWorldSpaceTriangles()[0]);
+   s.AddWorldSpaceTriangle(t2);
+   EXPECT_EQ(2, s.GetWorldSpaceTriangleCount());
+   EXPECT_EQ(&t2, s.GetWorldSpaceTriangles()[1]);
 
-TEST(TriangleArray, AddTriangle) {
-  TriangleArray ta;
-  Triangle t({1, 2, 3}, {0, 0, 0}, {-1, 10, 110});
-  EXPECT_EQ(0, ta.GetTriangleCount());
-  for (size_t i = 1; i <= kMaxTriangles; i++) {
-    EXPECT_TRUE(ta.AddTriangle(t));
-    EXPECT_EQ(i, ta.GetTriangleCount());
-  }
-  EXPECT_FALSE(ta.AddTriangle(t));
-  EXPECT_EQ(kMaxTriangles, ta.GetTriangleCount());
-}
 }
