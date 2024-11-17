@@ -6,12 +6,14 @@ env['CXXFLAGS'] = [
   '-Wpedantic',
   '-Werror',
   '-O2',
+  # '-fopenmp',
 ]
 env['CPPPATH'] = [
   '/usr/include/eigen3'
 ]
 env['LINKFLAGS'] = [
-  '-fsanitize=address,undefined',
+  # '-fsanitize=address,undefined',
+  # '-fopenmp',
 ]
 env['LIBS'] = [
   'gtest',
