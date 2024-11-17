@@ -4,6 +4,16 @@
 #include "timer.hpp"
 
 void PerformanceTest() {
+  /* 4 by 1K matrix multiplication */
+  constexpr size_t length = 1000000;
+  Eigen::Matrix<float, 4, 4> A = Eigen::Matrix<float, 4, 4>::Random();
+  Eigen::Matrix<float, Eigen::Dynamic, Eigen::Dynamic> B, C;
+  B = Eigen::Matrix<float, length, 4>::Random();
+  Timer timer_multiplication("4 by 1M matrix multiplication");
+  timer_multiplication.Start();
+  C = B * A;
+  timer_multiplication.Stop(true);
+
   /* Transformation of 1M vectors in four dimensions */
   constexpr size_t vector_count = 1000000;
   Eigen::Matrix<float, 4, 4> M = Eigen::Matrix<float, 4, 4>::Random();
