@@ -8,11 +8,22 @@
 #include "line_segment.hpp"
 #include "plane.hpp"
 #include "point.hpp"
+#include "space.hpp"
 #include "timer.hpp"
 #include "triangle.hpp"
 #include "vertex.hpp"
-#include "scene.hpp"
 
+namespace {
+Triangle CreateRandomTriangle() {
+  Vertex v1(Eigen::Vector3f::Random());
+  Vertex v2(Eigen::Vector3f::Random());
+  Vertex v3(Eigen::Vector3f::Random());
+  Triangle ret(v1, v2, v3);
+  return Triangle(v1, v2, v3);
+}
+}  // namespace
+
+// Replace delays with busy loops
 TEST(Timer, BasicOperation) {
   Timer t("UNIT_TEST");
   t.Start();
@@ -162,20 +173,118 @@ TEST(Triangle, ConstructorVertices) {
   EXPECT_EQ(t.GetVertex(1), v2);
   EXPECT_EQ(t.GetVertex(2), v3);
 }
+// #TODO: test normals for Triangle
 
-TEST(Scene, AddTriangle) {
-   Scene s;
-   Vertex v1{1, 1, 1}, v2{2, 3, 4}, v3{7, 6, 5};
-   Triangle t1(v1, v2, v3);
-   Triangle t2(v1, v2, v3);
-   EXPECT_EQ(0, s.GetWorldSpaceTriangleCount());
-   for (Triangle *t1 : s.GetWorldSpaceTriangles())
-      EXPECT_EQ(nullptr, t1);
-   s.AddWorldSpaceTriangle(t1);
-   EXPECT_EQ(1, s.GetWorldSpaceTriangleCount());
-   EXPECT_EQ(&t1, s.GetWorldSpaceTriangles()[0]);
-   s.AddWorldSpaceTriangle(t2);
-   EXPECT_EQ(2, s.GetWorldSpaceTriangleCount());
-   EXPECT_EQ(&t2, s.GetWorldSpaceTriangles()[1]);
+TEST(Space, AddSingleTriangle) {
+  Space space;
+  Triangle t1 = ::CreateRandomTriangle();
+  EXPECT_EQ(4, space.GetVertices().rows());
+  EXPECT_EQ(0, space.GetVertices().cols());
+  EXPECT_EQ(0, space.GetTriangleCount());
+  EXPECT_EQ(nullptr, space.GetTriangles()[0]);
+  space.EnqueueAddTriangle(t1);
+  EXPECT_EQ(4, space.GetVertices().rows());
+  EXPECT_EQ(0, space.GetVertices().cols());
+  EXPECT_EQ(0, space.GetTriangleCount());
+  EXPECT_EQ(nullptr, space.GetTriangles()[0]);
+  space.UpdateSpace();
+  EXPECT_EQ(4, space.GetVertices().rows());
+  EXPECT_EQ(3, space.GetVertices().cols());
+  EXPECT_EQ(1, space.GetTriangleCount());
+  EXPECT_EQ(&t1, space.GetTriangles()[0]);
+}
 
+TEST(Space, AddMultipleTriangles) {
+  Space space;
+  Triangle t1 = ::CreateRandomTriangle();
+  Triangle t2 = ::CreateRandomTriangle();
+  Triangle t3 = ::CreateRandomTriangle();
+  Triangle t4 = ::CreateRandomTriangle();
+  space.EnqueueAddTriangle(t1);
+  space.EnqueueAddTriangle(t2);
+  space.EnqueueAddTriangle(t3);
+  space.EnqueueAddTriangle(t4);
+  space.UpdateSpace();
+  EXPECT_EQ(4, space.GetVertices().rows());
+  EXPECT_EQ(12, space.GetVertices().cols());
+  EXPECT_EQ(4, space.GetTriangleCount());
+  EXPECT_EQ(&t1, space.GetTriangles()[0]);
+  EXPECT_EQ(&t2, space.GetTriangles()[1]);
+  EXPECT_EQ(&t3, space.GetTriangles()[2]);
+  EXPECT_EQ(&t4, space.GetTriangles()[3]);
+}
+
+TEST(Space, RemoveSingleTriangleFromTop) {
+  Space space;
+  Triangle t[3] = {::CreateRandomTriangle(), ::CreateRandomTriangle(),
+                   ::CreateRandomTriangle()};
+  space.EnqueueAddTriangle(t[0]);
+  space.EnqueueAddTriangle(t[1]);
+  space.EnqueueAddTriangle(t[2]);
+  space.UpdateSpace();
+  space.EnqueueRemoveTriangle(0);
+  space.UpdateSpace();
+  EXPECT_EQ(4, space.GetVertices().rows());
+  EXPECT_EQ(6, space.GetVertices().cols());
+  EXPECT_EQ(2, space.GetTriangleCount());
+  Eigen::Matrix<float, 4, Eigen::Dynamic> M;
+  size_t n = 0;
+  for (size_t i : {2, 1})  // Expected reordering
+  {
+    for (size_t k : {0, 1, 2}) {
+      EXPECT_EQ(t[i].GetVertex(k).GetVector(),
+                space.GetVertices().col(3 * n + k));
+    }
+    n++;
+  }
+}
+
+TEST(Space, RemoveSingleTriangleFromMiddle) {
+  Space space;
+  Triangle t[3] = {::CreateRandomTriangle(), ::CreateRandomTriangle(),
+                   ::CreateRandomTriangle()};
+  space.EnqueueAddTriangle(t[0]);
+  space.EnqueueAddTriangle(t[1]);
+  space.EnqueueAddTriangle(t[2]);
+  space.UpdateSpace();
+  space.EnqueueRemoveTriangle(1);
+  space.UpdateSpace();
+  EXPECT_EQ(4, space.GetVertices().rows());
+  EXPECT_EQ(6, space.GetVertices().cols());
+  EXPECT_EQ(2, space.GetTriangleCount());
+  Eigen::Matrix<float, 4, Eigen::Dynamic> M;
+  size_t n = 0;
+  for (size_t i : {0, 2})  // Expected reordering
+  {
+    for (size_t k : {0, 1, 2}) {
+      EXPECT_EQ(t[i].GetVertex(k).GetVector(),
+                space.GetVertices().col(3 * n + k));
+    }
+    n++;
+  }
+}
+
+TEST(Space, RemoveSingleTriangleFromBottom) {
+  Space space;
+  Triangle t[3] = {::CreateRandomTriangle(), ::CreateRandomTriangle(),
+                   ::CreateRandomTriangle()};
+  space.EnqueueAddTriangle(t[0]);
+  space.EnqueueAddTriangle(t[1]);
+  space.EnqueueAddTriangle(t[2]);
+  space.UpdateSpace();
+  space.EnqueueRemoveTriangle(2);
+  space.UpdateSpace();
+  EXPECT_EQ(4, space.GetVertices().rows());
+  EXPECT_EQ(6, space.GetVertices().cols());
+  EXPECT_EQ(2, space.GetTriangleCount());
+  Eigen::Matrix<float, 4, Eigen::Dynamic> M;
+  size_t n = 0;
+  for (size_t i : {0, 1})  // Expected reordering
+  {
+    for (size_t k : {0, 1, 2}) {
+      EXPECT_EQ(t[i].GetVertex(k).GetVector(),
+                space.GetVertices().col(3 * n + k));
+    }
+    n++;
+  }
 }
