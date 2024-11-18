@@ -21,6 +21,41 @@ Triangle CreateRandomTriangle() {
   Triangle ret(v1, v2, v3);
   return Triangle(v1, v2, v3);
 }
+
+std::vector<Triangle> CreateRandomTriangleVector(size_t length) {
+  std::vector<Triangle> triangle_array;
+  for (size_t i = 0; i < length; i++) {
+    triangle_array.push_back(CreateRandomTriangle());
+  }
+  return triangle_array;
+}
+
+void EnqueAddMultipleTriangles(std::vector<size_t> ordered_triangle_indices,
+                               std::vector<Triangle>& triangle_vector,
+                               Space& space) {
+  for (size_t i : ordered_triangle_indices) {
+    space.EnqueueAddTriangle(triangle_vector.at(i));
+  }
+}
+
+void VerifyTriangleCount(size_t vector_count, Space& space) {
+  EXPECT_EQ(kDimensions, space.GetVertices().rows());
+  EXPECT_EQ(3 * vector_count, space.GetVertices().cols());
+  EXPECT_EQ(vector_count, space.GetTriangleCount());
+}
+
+void VerifyTriangleOrder(std::vector<size_t> ordered_indices,
+                         std::vector<Triangle>& triangle_vector,
+                         Space& space) {
+  size_t n = 0;
+  for (size_t i : ordered_indices) {
+    for (size_t k : {0, 1, 2}) {
+      EXPECT_EQ(triangle_vector[i].GetVertex(k).GetVector(),
+                space.GetVertices().col(3 * n + k));
+    }
+    n++;
+  }
+}
 }  // namespace
 
 // Replace delays with busy loops
@@ -177,114 +212,68 @@ TEST(Triangle, ConstructorVertices) {
 
 TEST(Space, AddSingleTriangle) {
   Space space;
-  Triangle t1 = ::CreateRandomTriangle();
-  EXPECT_EQ(4, space.GetVertices().rows());
-  EXPECT_EQ(0, space.GetVertices().cols());
-  EXPECT_EQ(0, space.GetTriangleCount());
+  Triangle t = ::CreateRandomTriangle();
+  ::VerifyTriangleCount(0, space);
   EXPECT_EQ(nullptr, space.GetTriangles()[0]);
-  space.EnqueueAddTriangle(t1);
-  EXPECT_EQ(4, space.GetVertices().rows());
-  EXPECT_EQ(0, space.GetVertices().cols());
-  EXPECT_EQ(0, space.GetTriangleCount());
+  space.EnqueueAddTriangle(t);
+  ::VerifyTriangleCount(0, space);
   EXPECT_EQ(nullptr, space.GetTriangles()[0]);
   space.UpdateSpace();
-  EXPECT_EQ(4, space.GetVertices().rows());
-  EXPECT_EQ(3, space.GetVertices().cols());
-  EXPECT_EQ(1, space.GetTriangleCount());
-  EXPECT_EQ(&t1, space.GetTriangles()[0]);
+  ::VerifyTriangleCount(1, space);
+  EXPECT_EQ(&t, space.GetTriangles()[0]);
 }
 
 TEST(Space, AddMultipleTriangles) {
   Space space;
-  Triangle t1 = ::CreateRandomTriangle();
-  Triangle t2 = ::CreateRandomTriangle();
-  Triangle t3 = ::CreateRandomTriangle();
-  Triangle t4 = ::CreateRandomTriangle();
-  space.EnqueueAddTriangle(t1);
-  space.EnqueueAddTriangle(t2);
-  space.EnqueueAddTriangle(t3);
-  space.EnqueueAddTriangle(t4);
+  std::vector<Triangle> t = ::CreateRandomTriangleVector(4);
+  ::EnqueAddMultipleTriangles({0, 1, 2, 3}, t, space);
   space.UpdateSpace();
-  EXPECT_EQ(4, space.GetVertices().rows());
-  EXPECT_EQ(12, space.GetVertices().cols());
-  EXPECT_EQ(4, space.GetTriangleCount());
-  EXPECT_EQ(&t1, space.GetTriangles()[0]);
-  EXPECT_EQ(&t2, space.GetTriangles()[1]);
-  EXPECT_EQ(&t3, space.GetTriangles()[2]);
-  EXPECT_EQ(&t4, space.GetTriangles()[3]);
+  ::VerifyTriangleCount(4, space);
+  ::VerifyTriangleOrder({0, 1, 2, 3}, t, space);
 }
 
 TEST(Space, RemoveSingleTriangleFromTop) {
   Space space;
-  Triangle t[3] = {::CreateRandomTriangle(), ::CreateRandomTriangle(),
-                   ::CreateRandomTriangle()};
-  space.EnqueueAddTriangle(t[0]);
-  space.EnqueueAddTriangle(t[1]);
-  space.EnqueueAddTriangle(t[2]);
+  std::vector<Triangle> t = ::CreateRandomTriangleVector(3);
+  ::EnqueAddMultipleTriangles({0, 1, 2}, t, space);
   space.UpdateSpace();
   space.EnqueueRemoveTriangle(0);
   space.UpdateSpace();
-  EXPECT_EQ(4, space.GetVertices().rows());
-  EXPECT_EQ(6, space.GetVertices().cols());
-  EXPECT_EQ(2, space.GetTriangleCount());
-  Eigen::Matrix<float, 4, Eigen::Dynamic> M;
-  size_t n = 0;
-  for (size_t i : {2, 1})  // Expected reordering
-  {
-    for (size_t k : {0, 1, 2}) {
-      EXPECT_EQ(t[i].GetVertex(k).GetVector(),
-                space.GetVertices().col(3 * n + k));
-    }
-    n++;
-  }
+  ::VerifyTriangleCount(2, space);
+  ::VerifyTriangleOrder({2, 1}, t, space);
 }
 
 TEST(Space, RemoveSingleTriangleFromMiddle) {
   Space space;
-  Triangle t[3] = {::CreateRandomTriangle(), ::CreateRandomTriangle(),
-                   ::CreateRandomTriangle()};
-  space.EnqueueAddTriangle(t[0]);
-  space.EnqueueAddTriangle(t[1]);
-  space.EnqueueAddTriangle(t[2]);
+  std::vector<Triangle> t = ::CreateRandomTriangleVector(3);
+  ::EnqueAddMultipleTriangles({0, 1, 2}, t, space);
   space.UpdateSpace();
   space.EnqueueRemoveTriangle(1);
   space.UpdateSpace();
-  EXPECT_EQ(4, space.GetVertices().rows());
-  EXPECT_EQ(6, space.GetVertices().cols());
-  EXPECT_EQ(2, space.GetTriangleCount());
-  Eigen::Matrix<float, 4, Eigen::Dynamic> M;
-  size_t n = 0;
-  for (size_t i : {0, 2})  // Expected reordering
-  {
-    for (size_t k : {0, 1, 2}) {
-      EXPECT_EQ(t[i].GetVertex(k).GetVector(),
-                space.GetVertices().col(3 * n + k));
-    }
-    n++;
-  }
+  ::VerifyTriangleCount(2, space);
+  ::VerifyTriangleOrder({0, 2}, t, space);
 }
 
 TEST(Space, RemoveSingleTriangleFromBottom) {
   Space space;
-  Triangle t[3] = {::CreateRandomTriangle(), ::CreateRandomTriangle(),
-                   ::CreateRandomTriangle()};
-  space.EnqueueAddTriangle(t[0]);
-  space.EnqueueAddTriangle(t[1]);
-  space.EnqueueAddTriangle(t[2]);
+  std::vector<Triangle> t = ::CreateRandomTriangleVector(3);
+  ::EnqueAddMultipleTriangles({0, 1, 2}, t, space);
   space.UpdateSpace();
   space.EnqueueRemoveTriangle(2);
   space.UpdateSpace();
-  EXPECT_EQ(4, space.GetVertices().rows());
-  EXPECT_EQ(6, space.GetVertices().cols());
-  EXPECT_EQ(2, space.GetTriangleCount());
-  Eigen::Matrix<float, 4, Eigen::Dynamic> M;
-  size_t n = 0;
-  for (size_t i : {0, 1})  // Expected reordering
-  {
-    for (size_t k : {0, 1, 2}) {
-      EXPECT_EQ(t[i].GetVertex(k).GetVector(),
-                space.GetVertices().col(3 * n + k));
-    }
-    n++;
-  }
+  ::VerifyTriangleCount(2, space);
+  ::VerifyTriangleOrder({0, 1}, t, space);
+}
+
+TEST(Space, AddAndRemoveMultipleTriangles) {
+  Space space;
+  std::vector<Triangle> t = ::CreateRandomTriangleVector(6);
+  ::EnqueAddMultipleTriangles({0, 1, 2}, t, space);
+  space.UpdateSpace();
+  space.EnqueueRemoveTriangle(0);
+  space.EnqueueRemoveTriangle(1);
+  ::EnqueAddMultipleTriangles({3, 4, 5}, t, space);
+  space.UpdateSpace();
+  ::VerifyTriangleCount(4, space);
+  ::VerifyTriangleOrder({3, 4, 2, 5}, t, space);
 }
