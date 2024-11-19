@@ -10,6 +10,7 @@
 #include "point.hpp"
 #include "space.hpp"
 #include "timer.hpp"
+#include "transform.hpp"
 #include "triangle.hpp"
 #include "vertex.hpp"
 
@@ -276,4 +277,31 @@ TEST(Space, AddAndRemoveMultipleTriangles) {
   space.UpdateSpace();
   ::VerifyTriangleCount(4, space);
   ::VerifyTriangleOrder({3, 4, 2, 5}, t, space);
+}
+
+TEST(Camera, ConstructorDefault) {
+  Camera cam;
+  EXPECT_EQ(Point(0, 0, 0), cam.GetLocation());
+  EXPECT_FLOAT_EQ(0, cam.GetPitch());
+  EXPECT_FLOAT_EQ(0, cam.GetYaw());
+  EXPECT_FLOAT_EQ(0, cam.GetRoll());
+}
+
+TEST(Camera, ConstructorArguments) {
+  Camera cam_1({1, 2, 3}, 1.1, 2.2, 3.3);
+  EXPECT_EQ(Point(1, 2, 3), cam_1.GetLocation());
+  EXPECT_FLOAT_EQ(1.1, cam_1.GetPitch());
+  EXPECT_FLOAT_EQ(2.2, cam_1.GetYaw());
+  EXPECT_FLOAT_EQ(3.3, cam_1.GetRoll());
+  Camera cam_2({-1, -2, -3});
+  EXPECT_EQ(Point(-1, -2, -3), cam_2.GetLocation());
+  EXPECT_FLOAT_EQ(0, cam_2.GetPitch());
+  EXPECT_FLOAT_EQ(0, cam_2.GetYaw());
+  EXPECT_FLOAT_EQ(0, cam_2.GetRoll());
+}
+
+TEST(Transform, Constructor) {
+  Eigen::Matrix4f M = Eigen::Matrix4f::Random();
+  Transform t(M);
+  EXPECT_EQ(M, t.GetMatrix());
 }
