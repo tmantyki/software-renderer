@@ -12,8 +12,19 @@ class Transform {
   Transform(Eigen::Matrix4f matrix);
   Eigen::Matrix4f GetMatrix() const;
 
- private:
+ protected:
   Eigen::Matrix4f matrix_;
+};
+
+class CameraTransform : public Transform {
+ public:
+  CameraTransform();
+  CameraTransform(Camera camera);
+  Camera& GetCamera();
+
+ private:
+  Camera camera_;
+  void UpdateTransformFromCamera();
 };
 
 #endif

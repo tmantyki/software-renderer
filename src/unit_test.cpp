@@ -57,6 +57,18 @@ void VerifyTriangleOrder(std::vector<size_t> ordered_indices,
     n++;
   }
 }
+
+bool CamerasAreEqual(Camera& lhs, Camera& rhs) {
+  if (lhs.GetLocation() != rhs.GetLocation())
+    return false;
+  if (lhs.GetPitch() != rhs.GetPitch())
+    return false;
+  if (lhs.GetYaw() != rhs.GetYaw())
+    return false;
+  if (lhs.GetRoll() != rhs.GetRoll())
+    return false;
+  return true;
+}
 }  // namespace
 
 // Replace delays with busy loops
@@ -300,8 +312,24 @@ TEST(Camera, ConstructorArguments) {
   EXPECT_FLOAT_EQ(0, cam_2.GetRoll());
 }
 
-TEST(Transform, Constructor) {
+TEST(Transform, ConstructorMatrix) {
   Eigen::Matrix4f M = Eigen::Matrix4f::Random();
   Transform t(M);
   EXPECT_EQ(M, t.GetMatrix());
+}
+
+TEST(CameraTransform, ConstructorDefault) {
+  Camera c;
+  CameraTransform ct;
+  EXPECT_TRUE(::CamerasAreEqual(c, ct.GetCamera()));
+  EXPECT_EQ(Eigen::Matrix4f::Identity(), ct.GetMatrix());
+}
+
+TEST(CameraTransform, ConstructorWithLocationOffset) {
+  Camera c({1, 2, 3});
+  CameraTransform ct(c);
+  EXPECT_TRUE(::CamerasAreEqual(c, ct.GetCamera()));
+  Eigen::Matrix4f M = Eigen::Matrix4f::Identity();
+  M.col(3) = Eigen::Vector4f(-1, -2, -3, 1);
+  EXPECT_EQ(M, ct.GetMatrix());
 }
