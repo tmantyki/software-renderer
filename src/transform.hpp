@@ -24,6 +24,8 @@ class CameraTransform : public Transform {
 
  private:
   Camera camera_;
+  Eigen::Matrix4f rotation_matrix_;
+  Eigen::Matrix4f translation_matrix_;
   void UpdateTransformFromCamera();
 };
 

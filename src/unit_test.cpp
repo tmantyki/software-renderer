@@ -333,3 +333,15 @@ TEST(CameraTransform, ConstructorWithLocationOffset) {
   M.col(3) = Eigen::Vector4f(-1, -2, -3, 1);
   EXPECT_EQ(M, ct.GetMatrix());
 }
+
+// #TODO: check signs and direction conventions
+TEST(CameraTransform, ConstructorWithPitch) {
+  Camera c({0, 0, 0}, 1, 0, 0);  // +57.3 degrees pitch
+  CameraTransform ct(c);
+  Eigen::Vector4f p(0, 0, -1, 1);
+  Eigen::Vector4f p_transformed = ct.GetMatrix() * p;
+  EXPECT_FLOAT_EQ(0, p_transformed[0]);
+  EXPECT_FLOAT_EQ(std::sin(1), p_transformed[1]);
+  EXPECT_FLOAT_EQ(-std::cos(1), p_transformed[2]);
+  EXPECT_FLOAT_EQ(1, p_transformed[3]);
+}
