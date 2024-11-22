@@ -336,12 +336,34 @@ TEST(CameraTransform, ConstructorWithLocationOffset) {
 
 // #TODO: check signs and direction conventions
 TEST(CameraTransform, ConstructorWithPitch) {
-  Camera c({0, 0, 0}, 1, 0, 0);  // +57.3 degrees pitch
+  Camera c({0, 0, 0}, 1, 0, 0);
   CameraTransform ct(c);
   Eigen::Vector4f p(0, 0, -1, 1);
   Eigen::Vector4f p_transformed = ct.GetMatrix() * p;
   EXPECT_FLOAT_EQ(0, p_transformed[0]);
   EXPECT_FLOAT_EQ(std::sin(1), p_transformed[1]);
   EXPECT_FLOAT_EQ(-std::cos(1), p_transformed[2]);
+  EXPECT_FLOAT_EQ(1, p_transformed[3]);
+}
+
+TEST(CameraTransform, ConstructorWithYaw) {
+  Camera c({0, 0, 0}, 0, 1, 0);
+  CameraTransform ct(c);
+  Eigen::Vector4f p(0, 0, -1, 1);
+  Eigen::Vector4f p_transformed = ct.GetMatrix() * p;
+  EXPECT_FLOAT_EQ(-std::sin(1), p_transformed[0]);
+  EXPECT_FLOAT_EQ(0, p_transformed[1]);
+  EXPECT_FLOAT_EQ(-std::cos(1), p_transformed[2]);
+  EXPECT_FLOAT_EQ(1, p_transformed[3]);
+}
+
+TEST(CameraTransform, ConstructorWithRoll) {
+  Camera c({0, 0, 0}, 0, 0, 1);
+  CameraTransform ct(c);
+  Eigen::Vector4f p(1, 0, 0, 1);
+  Eigen::Vector4f p_transformed = ct.GetMatrix() * p;
+  EXPECT_FLOAT_EQ(std::cos(1), p_transformed[0]);
+  EXPECT_FLOAT_EQ(std::sin(1), p_transformed[1]);
+  EXPECT_FLOAT_EQ(0, p_transformed[2]);
   EXPECT_FLOAT_EQ(1, p_transformed[3]);
 }

@@ -28,7 +28,7 @@ void CameraTransform::UpdateTransformFromCamera() {
 
   // Rotation
   rotation_matrix_ = Eigen::Matrix4f::Identity();
-  Eigen::Vector3f initial_direction(0, 0, -1);  // #TODO: is this correct?
+  Eigen::Vector3f initial_direction(0, 0, 1);  // #TODO: is this correct?
 
   //// Pitch
   float cos_theta_expression = std::cos(camera_.GetPitch() / 2);
