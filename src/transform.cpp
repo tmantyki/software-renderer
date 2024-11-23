@@ -17,9 +17,9 @@ CameraTransform::CameraTransform(Camera camera)
 Camera& CameraTransform::GetCamera() {
   return camera_;
 }
-
 // #TODO: use word mapping instead of transform or matrix
 void CameraTransform::UpdateTransformFromCamera() {
+
   // Translation
   translation_matrix_ = Eigen::Matrix4f::Identity();
   Eigen::Vector4f translation_vector = -camera_.GetLocation().GetVector();
@@ -28,7 +28,6 @@ void CameraTransform::UpdateTransformFromCamera() {
 
   // Rotation
   rotation_matrix_ = Eigen::Matrix4f::Identity();
-  Eigen::Vector3f initial_direction(0, 0, 1);  // #TODO: is this correct?
 
   //// Pitch
   float cos_theta_expression = std::cos(camera_.GetPitch() / 2);
@@ -46,12 +45,7 @@ void CameraTransform::UpdateTransformFromCamera() {
   //// Roll
   cos_theta_expression = std::cos(camera_.GetRoll() / 2);
   sin_theta_expression = std::sin(camera_.GetRoll() / 2);
-  Eigen::Vector3f direction_after_pitch_and_yaw =
-      ((quaternion_yaw * quaternion_pitch) * initial_direction) *
-      sin_theta_expression;
-  Eigen::Quaternionf quaternion_roll(
-      cos_theta_expression, direction_after_pitch_and_yaw(0),
-      direction_after_pitch_and_yaw(1), direction_after_pitch_and_yaw(2));
+  Eigen::Quaternionf quaternion_roll(cos_theta_expression, 0, 0, sin_theta_expression);
   Eigen::Quaternionf quaternion_all =
       quaternion_roll * quaternion_yaw * quaternion_pitch;
   rotation_matrix_.block<3, 3>(0, 0) = quaternion_all.toRotationMatrix();
