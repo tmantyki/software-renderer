@@ -19,7 +19,6 @@ Camera& CameraTransform::GetCamera() {
 }
 // #TODO: use word mapping instead of transform or matrix
 void CameraTransform::UpdateTransformFromCamera() {
-
   // Translation
   translation_matrix_ = Eigen::Matrix4f::Identity();
   Eigen::Vector4f translation_vector = -camera_.GetLocation().GetVector();
@@ -45,9 +44,59 @@ void CameraTransform::UpdateTransformFromCamera() {
   //// Roll
   cos_theta_expression = std::cos(camera_.GetRoll() / 2);
   sin_theta_expression = std::sin(camera_.GetRoll() / 2);
-  Eigen::Quaternionf quaternion_roll(cos_theta_expression, 0, 0, sin_theta_expression);
+  Eigen::Quaternionf quaternion_roll(cos_theta_expression, 0, 0,
+                                     sin_theta_expression);
   Eigen::Quaternionf quaternion_all =
       quaternion_roll * quaternion_pitch * quaternion_yaw;
   rotation_matrix_.block<3, 3>(0, 0) = quaternion_all.toRotationMatrix();
   matrix_ = translation_matrix_ * rotation_matrix_;
+}
+
+PerspectiveProjection::PerspectiveProjection(float near,
+                                             float far,
+                                             float left,
+                                             float right,
+                                             float top,
+                                             float bottom)
+    : Transform(Eigen::Matrix4f::Zero()),
+      near_(near),
+      far_(far),
+      left_(left),
+      right_(right),
+      top_(top),
+      bottom_(bottom) {
+  assert(near >= 0 && far > 0);
+  assert(near < far);
+  assert(left < right);
+  assert(top > bottom);
+  UpdateTransformFromParameters();
+}
+
+float PerspectiveProjection::GetNear() const {
+  return near_;
+}
+float PerspectiveProjection::GetFar() const {
+  return far_;
+}
+float PerspectiveProjection::GetLeft() const {
+  return left_;
+}
+float PerspectiveProjection::GetRight() const {
+  return right_;
+}
+float PerspectiveProjection::GetTop() const {
+  return top_;
+}
+float PerspectiveProjection::GetBottom() const {
+  return bottom_;
+}
+
+void PerspectiveProjection::UpdateTransformFromParameters() {
+  matrix_(0, 0) = 2 * near_ / (right_ - left_);
+  matrix_(0, 2) = (right_ + left_) / (right_ - left_);
+  matrix_(1, 1) = 2 * near_ / (top_ - bottom_);
+  matrix_(1, 2) = (top_ + bottom_) / (top_ - bottom_);
+  matrix_(2, 2) = -(far_ + near_) / (far_ - near_);
+  matrix_(2, 3) = -(2 * near_ * far_) / (far_ - near_);
+  matrix_(3, 2) = -1;
 }

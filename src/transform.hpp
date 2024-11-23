@@ -29,4 +29,24 @@ class CameraTransform : public Transform {
   void UpdateTransformFromCamera();
 };
 
+class PerspectiveProjection : public Transform {
+ public:
+  PerspectiveProjection(float near,
+                        float far,
+                        float left,
+                        float right,
+                        float top,
+                        float bottom);
+  float GetNear() const;
+  float GetFar() const;
+  float GetLeft() const;
+  float GetRight() const;
+  float GetTop() const;
+  float GetBottom() const;
+
+ private:
+  float near_, far_, left_, right_, top_, bottom_;
+  void UpdateTransformFromParameters();
+};
+
 #endif

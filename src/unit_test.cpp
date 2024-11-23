@@ -381,3 +381,23 @@ TEST(CameraTransform, ConstructorWithPitchYawRoll) {
   EXPECT_NEAR(-1 / std::sqrt(3), p_transformed[2], abs_error);
   EXPECT_NEAR(1, p_transformed[3], abs_error);
 }
+
+TEST(PespectiveProjection, ConstructorArguments) {
+  float near = 1, far = 2, left = 4, right = 8, top = 32, bottom = 16;
+  PerspectiveProjection pp(near, far, left, right, top, bottom);
+  EXPECT_EQ(near, pp.GetNear());
+  EXPECT_EQ(far, pp.GetFar());
+  EXPECT_EQ(left, pp.GetLeft());
+  EXPECT_EQ(right, pp.GetRight());
+  EXPECT_EQ(top, pp.GetTop());
+  EXPECT_EQ(bottom, pp.GetBottom());
+  Eigen::Matrix4f M = Eigen::Matrix4f::Zero();
+  M(0, 0) = 0.5;
+  M(0, 2) = 3;
+  M(1, 1) = 0.125;
+  M(1, 2) = 3;
+  M(2, 2) = -3;
+  M(2, 3) = -4;
+  M(3, 2) = -1;
+  EXPECT_EQ(M, pp.GetMatrix());
+}
