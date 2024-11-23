@@ -370,12 +370,14 @@ TEST(CameraTransform, ConstructorWithRoll) {
 
 // #TODO: more thorough precision measurements
 TEST(CameraTransform, ConstructorWithPitchYawRoll) {
-  Camera c({0, 0, 0}, -kPi / 2, -kPi / 4, kPi / 4);
+  float abs_error = 0.000001;
+  Camera c({0, 0, 0}, std::acos(1 / std::sqrt(2)), std::acos(1 / std::sqrt(3)),
+           -kPi * 3 / 4);
   CameraTransform ct(c);
-  Eigen::Vector4f p(0, 1, 0, 1);
+  Eigen::Vector4f p(1, 0, 0, 1);
   Eigen::Vector4f p_transformed = ct.GetMatrix() * p;
-  EXPECT_FLOAT_EQ(0.5, p_transformed[0]);
-  EXPECT_FLOAT_EQ(0.5, p_transformed[1]);
-  EXPECT_FLOAT_EQ(-1 / std::sqrt(2), p_transformed[2]);
-  EXPECT_FLOAT_EQ(1, p_transformed[3]);
+  EXPECT_NEAR(0, p_transformed[0], abs_error);
+  EXPECT_NEAR(-std::sqrt(2.0 / 3), p_transformed[1], abs_error);
+  EXPECT_NEAR(-1 / std::sqrt(3), p_transformed[2], abs_error);
+  EXPECT_NEAR(1, p_transformed[3], abs_error);
 }

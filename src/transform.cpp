@@ -47,7 +47,7 @@ void CameraTransform::UpdateTransformFromCamera() {
   sin_theta_expression = std::sin(camera_.GetRoll() / 2);
   Eigen::Quaternionf quaternion_roll(cos_theta_expression, 0, 0, sin_theta_expression);
   Eigen::Quaternionf quaternion_all =
-      quaternion_roll * quaternion_yaw * quaternion_pitch;
+      quaternion_roll * quaternion_pitch * quaternion_yaw;
   rotation_matrix_.block<3, 3>(0, 0) = quaternion_all.toRotationMatrix();
   matrix_ = translation_matrix_ * rotation_matrix_;
 }
