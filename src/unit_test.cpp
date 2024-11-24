@@ -42,6 +42,7 @@ void EnqueAddMultipleTriangles(std::vector<size_t> ordered_triangle_indices,
 void VerifyTriangleCount(size_t vector_count, Space& space) {
   EXPECT_EQ(kDimensions, space.GetVertices().rows());
   EXPECT_EQ(3 * vector_count, space.GetVertices().cols());
+  EXPECT_EQ(vector_count, space.GetNormals().cols());
   EXPECT_EQ(vector_count, space.GetTriangleCount());
 }
 
@@ -54,6 +55,7 @@ void VerifyTriangleOrder(std::vector<size_t> ordered_indices,
       EXPECT_EQ(triangle_vector[i].GetVertex(k).GetVector(),
                 space.GetVertices().col(3 * n + k));
     }
+    EXPECT_EQ(triangle_vector[i].GetNormal(), space.GetNormals().col(n));
     n++;
   }
 }

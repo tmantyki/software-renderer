@@ -20,10 +20,11 @@ class Space {
   Space();
   void EnqueueAddTriangle(Triangle& triangle);
   void EnqueueRemoveTriangle(size_t index);
+  void UpdateSpace();
   size_t GetTriangleCount() const;
   const std::array<Triangle*, kMaxTriangles>& GetTriangles() const;
-  void UpdateSpace();
   const VertexMatrix& GetVertices() const;
+  const NormalMatrix& GetNormals() const;
 
  private:
   std::array<Triangle*, kMaxTriangles> triangles_;
@@ -31,6 +32,7 @@ class Space {
   std::queue<size_t> triangle_remove_queue_;
   size_t triangle_count_ = 0;
   VertexMatrix vertices_;
+  NormalMatrix normals_;
 };
 
 #endif
