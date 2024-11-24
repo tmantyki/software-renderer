@@ -221,7 +221,20 @@ TEST(Triangle, ConstructorVertices) {
   EXPECT_EQ(t.GetVertex(1), v2);
   EXPECT_EQ(t.GetVertex(2), v3);
 }
-// #TODO: test normals for Triangle
+
+TEST(Triangle, Normal) {
+  Vertex v1{1, 1, 1}, v2{2, 3, 4}, v3{7, 6, 5};
+  Triangle t(v1, v2, v3);
+  Eigen::Vector4f vector_1 =
+      t.GetVertex(0).GetVector() - t.GetVertex(1).GetVector();
+  Eigen::Vector4f vector_2 =
+      t.GetVertex(1).GetVector() - t.GetVertex(2).GetVector();
+  Eigen::Vector4f vector_3 =
+      t.GetVertex(2).GetVector() - t.GetVertex(0).GetVector();
+  EXPECT_EQ(0, vector_1.dot(t.GetNormal()));
+  EXPECT_EQ(0, vector_2.dot(t.GetNormal()));
+  EXPECT_EQ(0, vector_3.dot(t.GetNormal()));
+}
 
 TEST(Space, AddSingleTriangle) {
   Space space;
