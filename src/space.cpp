@@ -1,5 +1,8 @@
-#include "space.hpp"
 #include <array>
+#include <memory>
+
+#include "line_segment.hpp"
+#include "space.hpp"
 
 // #TODO: refactor helper functions
 namespace {
@@ -103,16 +106,102 @@ const NormalMatrix& Space::GetNormals() const {
 }
 
 #include <iostream>
-void Space::ClipTriangles(const Plane& plane) {
-  Eigen::VectorXf clipping_vector =
-      plane.GetVectorNormalized().transpose() * vertices_;
-  std::cout << "\n" << clipping_vector << "\n";
-  std::cout << "\n" << (clipping_vector.array() >= 0).reshaped(3, 8) << "\n";
-  std::cout << "\n"
-            << (clipping_vector.array() >= 0)
-                   .reshaped(3, 8)
-                   .cast<int>()
-                   .colwise()
-                   .sum()
-            << "\n";
+std::shared_ptr<Space> Space::ClipTriangles(const Plane& plane) {
+  Eigen::Array<int, 1, Eigen::Dynamic> clipping_array =
+      (((plane.GetVectorNormalized().transpose() * vertices_).array() >= 0)
+           .reshaped(3, 8)
+           .cast<int>()
+           .colwise() *
+       Eigen::Vector3i{1, 2, 4}.array())
+          .colwise()
+          .sum();
+  std::cout << "\n" << clipping_array << "\n\n";
+  std::shared_ptr<Space> post_clip_space = std::make_shared<Space>(*this);
+  size_t k = 0;
+  for (int i : clipping_array) {
+    std::vector<std::shared_ptr<Triangle>> new_triangles;
+    switch (i) {
+      case 0:  // All vertices are outside
+        break;
+      case 1:  // Vertex 1 is inside
+        new_triangles =
+            ClipTriangle(k, plane, 0, TriangleClipMode::kIncludePivot);
+        break;
+      case 2:  // Vertex 2 is inside
+        new_triangles =
+            ClipTriangle(k, plane, 1, TriangleClipMode::kIncludePivot);
+        break;
+      case 3:  // Vertex 3 is outside
+        new_triangles =
+            ClipTriangle(k, plane, 2, TriangleClipMode::kExcludePivot);
+        break;
+      case 4:  // Vertex 3 is inside
+        new_triangles =
+            ClipTriangle(k, plane, 2, TriangleClipMode::kIncludePivot);
+        break;
+      case 5:  // Vertex 2 is outside
+        new_triangles =
+            ClipTriangle(k, plane, 1, TriangleClipMode::kExcludePivot);
+        break;
+      case 6:  // Vertex 1 is outside
+        new_triangles =
+            ClipTriangle(k, plane, 0, TriangleClipMode::kExcludePivot);
+        break;
+      case 7:  // All vertices are inside
+        break;
+    }
+    // for (std::shared_ptr<Triangle> t : new_triangles) {
+    //   auto x = &(*t);
+    //   post_clip_space->EnqueueAddTriangle(*t));
+    // }
+    if (i != 7)
+      post_clip_space->EnqueueRemoveTriangle(k);
+    k++;
+  }
+  post_clip_space->UpdateSpace();
+  return post_clip_space;
+}
+
+std::vector<std::shared_ptr<Triangle>> Space::ClipTriangle(
+    size_t triangle_index,
+    const Plane& plane,
+    size_t pivot,
+    TriangleClipMode clip_mode) {
+  size_t i = triangle_index;
+  size_t a = pivot;
+  size_t b = (a + 1) % 3;
+  size_t c = (a + 2) % 3;
+  a += i * 3;
+  b += i * 3;
+  c += i * 3;
+  LineSegment line_segment_ab(Point(vertices_.block(0, a, 3, 1)),
+                              Point(vertices_.block(0, b, 3, 1)));
+  LineSegment line_segment_ac(Point(vertices_.block(0, a, 3, 1)),
+                              Point(vertices_.block(0, c, 3, 1)));
+  std::vector<std::shared_ptr<Triangle>> new_triangles;
+  float ab_t = line_segment_ab.GetPlaneIntersectionParameter(plane);
+  float ac_t = line_segment_ac.GetPlaneIntersectionParameter(plane);
+  Point ab_intersection = line_segment_ab.GetInterpolatedPoint(ab_t);
+  Point ac_intersection = line_segment_ac.GetInterpolatedPoint(ac_t);
+  // #TODO: refactor Point and Vertex constructors etc.
+  // #TODO: normals
+  // #TODO: vertex attributes
+  Vertex vertex_ab(ab_intersection.GetVector()({0, 1, 2}));
+  Vertex vertex_ac(ac_intersection.GetVector()({0, 1, 2}));
+  if (clip_mode == TriangleClipMode::kIncludePivot) {
+    Vertex vertex_0 = triangles_[triangle_index]->GetVertex(pivot);
+    std::shared_ptr<Triangle> triangle =
+        std::make_shared<Triangle>(vertex_0, vertex_ab, vertex_ac);
+    new_triangles.push_back(triangle);
+  } else if (clip_mode == TriangleClipMode::kExcludePivot) {
+    Vertex vertex_1 = triangles_[triangle_index]->GetVertex((pivot + 1) % 3);
+    Vertex vertex_2 = triangles_[triangle_index]->GetVertex((pivot + 2) % 3);
+    std::shared_ptr<Triangle> triangle_1 =
+        std::make_shared<Triangle>(vertex_ab, vertex_1, vertex_ac);
+    std::shared_ptr<Triangle> triangle_2 =
+        std::make_shared<Triangle>(vertex_ac, vertex_1, vertex_2);
+    new_triangles.push_back(triangle_1);
+    new_triangles.push_back(triangle_2);
+  }
+  return new_triangles;
 }

@@ -10,7 +10,7 @@ Point LineSegment::GetInterpolatedPoint(float t) const {
   return Point(((1 - t) * a_.GetVector() + t * b_.GetVector())({0, 1, 2}));
 }
 
-float LineSegment::GetPlaneIntersectionParameter(Plane& plane) const {
+float LineSegment::GetPlaneIntersectionParameter(const Plane& plane) const {
   // #TODO: handle case when plane is parallel to the line segment
   assert(plane.GetVector().dot(GetDirection().GetVector()) != 0);
   return -(plane.GetVector().dot(GetPointA().GetVector())) /

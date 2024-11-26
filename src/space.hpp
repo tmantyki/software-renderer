@@ -15,6 +15,8 @@ typedef Eigen::
     Matrix<float, kDimensions, Eigen::Dynamic, 0, kDimensions, kMaxTriangles>
         NormalMatrix;
 
+enum class TriangleClipMode { kIncludePivot, kExcludePivot };
+
 class Space {
  public:
   Space();
@@ -25,7 +27,12 @@ class Space {
   const std::array<Triangle*, kMaxTriangles>& GetTriangles() const;
   const VertexMatrix& GetVertices() const;
   const NormalMatrix& GetNormals() const;
-  void ClipTriangles(const Plane& plane);
+  std::shared_ptr<Space> ClipTriangles(const Plane& plane);
+  std::vector<std::shared_ptr<Triangle>> ClipTriangle(
+      size_t triangle_index,
+      const Plane& plane,
+      size_t pivot,
+      TriangleClipMode clip_mode);
 
  private:
   std::array<Triangle*, kMaxTriangles> triangles_;

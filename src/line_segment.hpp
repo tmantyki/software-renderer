@@ -9,7 +9,7 @@ class LineSegment {
   LineSegment() = delete;
   LineSegment(Point a, Point b);
   Point GetInterpolatedPoint(float t) const;
-  float GetPlaneIntersectionParameter(Plane& plane) const;
+  float GetPlaneIntersectionParameter(const Plane& plane) const;
   Point GetPointA() const;
   Point GetPointB() const;
   Direction GetDirection() const;
