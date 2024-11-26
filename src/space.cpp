@@ -101,3 +101,18 @@ const VertexMatrix& Space::GetVertices() const {
 const NormalMatrix& Space::GetNormals() const {
   return normals_;
 }
+
+#include <iostream>
+void Space::ClipTriangles(const Plane& plane) {
+  Eigen::VectorXf clipping_vector =
+      plane.GetVectorNormalized().transpose() * vertices_;
+  std::cout << "\n" << clipping_vector << "\n";
+  std::cout << "\n" << (clipping_vector.array() >= 0).reshaped(3, 8) << "\n";
+  std::cout << "\n"
+            << (clipping_vector.array() >= 0)
+                   .reshaped(3, 8)
+                   .cast<int>()
+                   .colwise()
+                   .sum()
+            << "\n";
+}

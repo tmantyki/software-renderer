@@ -25,6 +25,7 @@ class Space {
   const std::array<Triangle*, kMaxTriangles>& GetTriangles() const;
   const VertexMatrix& GetVertices() const;
   const NormalMatrix& GetNormals() const;
+  void ClipTriangles(const Plane& plane);
 
  private:
   std::array<Triangle*, kMaxTriangles> triangles_;

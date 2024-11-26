@@ -416,3 +416,13 @@ TEST(PespectiveProjection, ConstructorArguments) {
   M(3, 2) = -1;
   EXPECT_EQ(M, pp.GetMatrix());
 }
+
+TEST(SpaceTest, TriangleClipping) {
+  Space space;
+  std::vector<Triangle> t = ::CreateRandomTriangleVector(8);
+  ::EnqueAddMultipleTriangles({0, 1, 2, 3, 4, 5, 6, 7}, t, space);
+  space.UpdateSpace();
+
+  Plane pl(1, 0, 0, 0);
+  space.ClipTriangles(pl);
+}
