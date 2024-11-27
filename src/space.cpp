@@ -23,7 +23,7 @@ void CopyTriangleColumnsInMatrix(size_t source_index,
 }
 
 void UpdateMatrixColumnsFromTriangle(size_t destination_index,
-                                     Triangle* triangle,
+                                     TriangleSharedPointer triangle,
                                      VertexMatrix& vertices,
                                      NormalMatrix& normals) {
   size_t i = destination_index * 3;
@@ -35,8 +35,8 @@ void UpdateMatrixColumnsFromTriangle(size_t destination_index,
 
 Space::Space() : triangles_{0} {}
 
-void Space::EnqueueAddTriangle(Triangle& triangle) {
-  triangle_add_queue_.push(&triangle);
+void Space::EnqueueAddTriangle(TriangleSharedPointer triangle_ptr) {
+  triangle_add_queue_.push(triangle_ptr);
 }
 
 void Space::EnqueueRemoveTriangle(size_t index) {
@@ -93,7 +93,8 @@ size_t Space::GetTriangleCount() const {
   return triangle_count_;
 }
 
-const std::array<Triangle*, kMaxTriangles>& Space::GetTriangles() const {
+const std::array<TriangleSharedPointer, kMaxTriangles>& Space::GetTriangles()
+    const {
   return triangles_;
 }
 

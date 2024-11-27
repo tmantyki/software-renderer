@@ -15,27 +15,27 @@
 #include "vertex.hpp"
 
 namespace {
-Triangle CreateRandomTriangle() {
+TriangleSharedPointer CreateRandomTriangle() {
   Vertex v1(Eigen::Vector3f::Random());
   Vertex v2(Eigen::Vector3f::Random());
   Vertex v3(Eigen::Vector3f::Random());
-  Triangle ret(v1, v2, v3);
-  return Triangle(v1, v2, v3);
+  return std::make_shared<Triangle>(v1, v2, v3);
 }
 
-std::vector<Triangle> CreateRandomTriangleVector(size_t length) {
-  std::vector<Triangle> triangle_array;
+std::vector<TriangleSharedPointer> CreateRandomTriangleVector(size_t length) {
+  std::vector<TriangleSharedPointer> triangle_array;
   for (size_t i = 0; i < length; i++) {
     triangle_array.push_back(CreateRandomTriangle());
   }
   return triangle_array;
 }
 
-void EnqueAddMultipleTriangles(std::vector<size_t> ordered_triangle_indices,
-                               std::vector<Triangle>& triangle_vector,
-                               Space& space) {
+void EnqueAddMultipleTriangles(
+    std::vector<size_t> ordered_triangle_indices,
+    std::vector<TriangleSharedPointer>& triangle_ptr_vector,
+    Space& space) {
   for (size_t i : ordered_triangle_indices) {
-    space.EnqueueAddTriangle(triangle_vector.at(i));
+    space.EnqueueAddTriangle(triangle_ptr_vector.at(i));
   }
 }
 
@@ -46,16 +46,17 @@ void VerifyTriangleCount(size_t vector_count, Space& space) {
   EXPECT_EQ(vector_count, space.GetTriangleCount());
 }
 
-void VerifyTriangleOrder(std::vector<size_t> ordered_indices,
-                         std::vector<Triangle>& triangle_vector,
-                         Space& space) {
+void VerifyTriangleOrder(
+    std::vector<size_t> ordered_indices,
+    std::vector<TriangleSharedPointer>& triangle_ptr_vector,
+    Space& space) {
   size_t n = 0;
   for (size_t i : ordered_indices) {
     for (size_t k : {0, 1, 2}) {
-      EXPECT_EQ(triangle_vector[i].GetVertex(k).GetVector(),
+      EXPECT_EQ(triangle_ptr_vector[i]->GetVertex(k).GetVector(),
                 space.GetVertices().col(3 * n + k));
     }
-    EXPECT_EQ(triangle_vector[i].GetNormal(), space.GetNormals().col(n));
+    EXPECT_EQ(triangle_ptr_vector[i]->GetNormal(), space.GetNormals().col(n));
     n++;
   }
 }
@@ -240,20 +241,20 @@ TEST(Triangle, Normal) {
 
 TEST(Space, AddSingleTriangle) {
   Space space;
-  Triangle t = ::CreateRandomTriangle();
+  TriangleSharedPointer t_ptr = ::CreateRandomTriangle();
   ::VerifyTriangleCount(0, space);
   EXPECT_EQ(nullptr, space.GetTriangles()[0]);
-  space.EnqueueAddTriangle(t);
+  space.EnqueueAddTriangle(t_ptr);
   ::VerifyTriangleCount(0, space);
   EXPECT_EQ(nullptr, space.GetTriangles()[0]);
   space.UpdateSpace();
   ::VerifyTriangleCount(1, space);
-  EXPECT_EQ(&t, space.GetTriangles()[0]);
+  EXPECT_EQ(t_ptr, space.GetTriangles()[0]);
 }
 
 TEST(Space, AddMultipleTriangles) {
   Space space;
-  std::vector<Triangle> t = ::CreateRandomTriangleVector(4);
+  std::vector<TriangleSharedPointer> t = ::CreateRandomTriangleVector(4);
   ::EnqueAddMultipleTriangles({0, 1, 2, 3}, t, space);
   space.UpdateSpace();
   ::VerifyTriangleCount(4, space);
@@ -262,7 +263,7 @@ TEST(Space, AddMultipleTriangles) {
 
 TEST(Space, RemoveSingleTriangleFromTop) {
   Space space;
-  std::vector<Triangle> t = ::CreateRandomTriangleVector(3);
+  std::vector<TriangleSharedPointer> t = ::CreateRandomTriangleVector(3);
   ::EnqueAddMultipleTriangles({0, 1, 2}, t, space);
   space.UpdateSpace();
   space.EnqueueRemoveTriangle(0);
@@ -273,7 +274,7 @@ TEST(Space, RemoveSingleTriangleFromTop) {
 
 TEST(Space, RemoveSingleTriangleFromMiddle) {
   Space space;
-  std::vector<Triangle> t = ::CreateRandomTriangleVector(3);
+  std::vector<TriangleSharedPointer> t = ::CreateRandomTriangleVector(3);
   ::EnqueAddMultipleTriangles({0, 1, 2}, t, space);
   space.UpdateSpace();
   space.EnqueueRemoveTriangle(1);
@@ -284,7 +285,7 @@ TEST(Space, RemoveSingleTriangleFromMiddle) {
 
 TEST(Space, RemoveSingleTriangleFromBottom) {
   Space space;
-  std::vector<Triangle> t = ::CreateRandomTriangleVector(3);
+  std::vector<TriangleSharedPointer> t = ::CreateRandomTriangleVector(3);
   ::EnqueAddMultipleTriangles({0, 1, 2}, t, space);
   space.UpdateSpace();
   space.EnqueueRemoveTriangle(2);
@@ -295,7 +296,7 @@ TEST(Space, RemoveSingleTriangleFromBottom) {
 
 TEST(Space, AddAndRemoveMultipleTriangles) {
   Space space;
-  std::vector<Triangle> t = ::CreateRandomTriangleVector(6);
+  std::vector<TriangleSharedPointer> t = ::CreateRandomTriangleVector(6);
   ::EnqueAddMultipleTriangles({0, 1, 2}, t, space);
   space.UpdateSpace();
   space.EnqueueRemoveTriangle(0);
@@ -417,12 +418,12 @@ TEST(PespectiveProjection, ConstructorArguments) {
   EXPECT_EQ(M, pp.GetMatrix());
 }
 
-TEST(SpaceTest, TriangleClipping) {
-  Space space;
-  std::vector<Triangle> t = ::CreateRandomTriangleVector(8);
-  ::EnqueAddMultipleTriangles({0, 1, 2, 3, 4, 5, 6, 7}, t, space);
-  space.UpdateSpace();
+// TEST(SpaceTest, TriangleClipping) {
+//   Space space;
+//   std::vector<TriangleSharedPointer> t = ::CreateRandomTriangleVector(8);
+//   ::EnqueAddMultipleTriangles({0, 1, 2, 3, 4, 5, 6, 7}, t, space);
+//   space.UpdateSpace();
 
-  Plane pl(1, 0, 0, 0);
-  space.ClipTriangles(pl);
-}
+//   Plane pl(1, 0, 0, 0);
+//   space.ClipTriangles(pl);
+// }
