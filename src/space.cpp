@@ -44,6 +44,8 @@ void Space::EnqueueRemoveTriangle(size_t index) {
   triangle_remove_queue_.push(index);
 }
 
+#include <iostream> // #TODO: remove
+
 void Space::UpdateSpace() {
   // Calculate net amount of triangles
   size_t last_i = triangle_count_ - 1;
@@ -57,6 +59,7 @@ void Space::UpdateSpace() {
   while (!triangle_remove_queue_.empty()) {
     size_t i = triangle_remove_queue_.front();
     triangle_remove_queue_.pop();
+    std::cout << "Debug_removing: i: " << i << " last_i: " << last_i << "\n";
     assert(triangles_[i]);
     if (!triangle_add_queue_.empty()) {
       triangles_[i] = triangle_add_queue_.front();
@@ -106,8 +109,7 @@ const NormalMatrix& Space::GetNormals() const {
   return normals_;
 }
 
-#include <iostream>
-std::shared_ptr<Space> Space::ClipTriangles(const Plane& plane) {
+SpaceSharedPointer Space::ClipTriangles(const Plane& plane) {
   Eigen::Array<int, 1, Eigen::Dynamic> clipping_array =
       (((plane.GetVectorNormalized().transpose() * vertices_).array() >= 0)
            .reshaped(3, 8)
@@ -117,7 +119,7 @@ std::shared_ptr<Space> Space::ClipTriangles(const Plane& plane) {
           .colwise()
           .sum();
   std::cout << "\n" << clipping_array << "\n\n";
-  std::shared_ptr<Space> post_clip_space = std::make_shared<Space>(*this);
+  SpaceSharedPointer post_clip_space = std::make_shared<Space>(*this);
   size_t k = 0;
   for (int i : clipping_array) {
     std::vector<std::shared_ptr<Triangle>> new_triangles;
