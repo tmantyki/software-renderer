@@ -5,7 +5,9 @@ env['CXXFLAGS'] = [
   '-Wextra',
   '-Wpedantic',
   '-Werror',
-  '-O2',
+  '-g',
+  '-Og',
+  # '-O2',
   # '-fopenmp',
 ]
 env['CPPPATH'] = [

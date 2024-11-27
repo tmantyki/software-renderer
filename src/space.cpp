@@ -44,12 +44,12 @@ void Space::EnqueueRemoveTriangle(size_t index) {
   triangle_remove_queue_.push(index);
 }
 
-#include <iostream> // #TODO: remove
+#include <iostream>  // #TODO: remove
 
 void Space::UpdateSpace() {
   // Calculate net amount of triangles
   size_t last_i = triangle_count_ - 1;
-  size_t net_triangle_count = triangle_count_ + triangle_add_queue_.size() -
+  int32_t net_triangle_count = triangle_count_ + triangle_add_queue_.size() -
                               triangle_remove_queue_.size();
   assert(triangle_count_ + triangle_add_queue_.size() >=
          triangle_remove_queue_.size());
@@ -59,18 +59,33 @@ void Space::UpdateSpace() {
   while (!triangle_remove_queue_.empty()) {
     size_t i = triangle_remove_queue_.front();
     triangle_remove_queue_.pop();
-    std::cout << "Debug_removing: i: " << i << " last_i: " << last_i << "\n";
     assert(triangles_[i]);
     if (!triangle_add_queue_.empty()) {
       triangles_[i] = triangle_add_queue_.front();
       triangle_add_queue_.pop();
       ::UpdateMatrixColumnsFromTriangle(i, triangles_[i], vertices_, normals_);
     } else {
-      if (i != last_i) {
-        triangles_[i] = triangles_[last_i];
-        ::CopyTriangleColumnsInMatrix(last_i, i, vertices_, normals_);
-      }
-      triangles_[last_i--] = nullptr;
+      assert(net_triangle_count < triangle_count_);
+      triangles_[i] = nullptr;
+      last_i--;
+    }
+  }
+  if (net_triangle_count < triangle_count_) {
+    auto begin = triangles_.begin();
+    auto rbegin = triangles_.rbegin();
+    auto end = triangles_.end();
+    auto rend = triangles_.rend();
+    auto is_not_nullptr = [](TriangleSharedPointer& t) { return t != nullptr; };
+    for (size_t k = net_triangle_count - triangle_count_; k > 0; k--) {
+      auto it_null = std::find(begin, end, nullptr);
+      auto it_valid = std::find_if(rbegin, rend, is_not_nullptr);
+      size_t src_i = triangles_.rend() - it_valid - 1;
+      size_t dst_i = it_null - triangles_.begin();
+      *it_null = *it_valid;
+      *it_valid = nullptr;
+      ::CopyTriangleColumnsInMatrix(src_i, dst_i, vertices_, normals_);
+      begin = it_null + 1;
+      rbegin = it_valid + 1;
     }
   }
 
