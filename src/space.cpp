@@ -47,8 +47,7 @@ void Space::EnqueueRemoveTriangle(size_t index) {
 #include <iostream>  // #TODO: remove
 
 void Space::UpdateSpace() {
-  // Calculate net amount of triangles
-  // size_t last_i = triangle_count_ - 1;
+  // Calculate number of triangles
   size_t initial_triangle_count = triangle_count_;
   size_t add_queue_size = triangle_add_queue_.size();
   size_t remove_queue_size = triangle_remove_queue_.size();
@@ -68,18 +67,22 @@ void Space::UpdateSpace() {
       ::UpdateMatrixColumnsFromTriangle(i, triangles_[i], vertices_, normals_);
     } else {
       assert(final_triangle_count < initial_triangle_count);
+      assert(remove_queue_size > add_queue_size);
       triangles_[i] = nullptr;
     }
   }
-  if (net_triangle_count < triangle_count_) {
+  //// Defragment
+  if (final_triangle_count < initial_triangle_count) {
     auto begin = triangles_.begin();
     auto rbegin = triangles_.rbegin();
     auto end = triangles_.end();
     auto rend = triangles_.rend();
     auto is_not_nullptr = [](TriangleSharedPointer& t) { return t != nullptr; };
-    for (size_t k = net_triangle_count - triangle_count_; k > 0; k--) {
+    for (size_t k = initial_triangle_count - final_triangle_count; k > 0; k--) {
       auto it_null = std::find(begin, end, nullptr);
       auto it_valid = std::find_if(rbegin, rend, is_not_nullptr);
+      if (it_null > it_valid.base() - 2)
+        break;
       size_t src_i = triangles_.rend() - it_valid - 1;
       size_t dst_i = it_null - triangles_.begin();
       *it_null = *it_valid;
@@ -91,13 +94,13 @@ void Space::UpdateSpace() {
   }
 
   // Resize matrices
-  if (net_triangle_count != triangle_count_) {
-    vertices_.conservativeResize(kDimensions, 3 * net_triangle_count);
-    normals_.conservativeResize(kDimensions, net_triangle_count);
+  if (final_triangle_count != initial_triangle_count) {
+    vertices_.conservativeResize(kDimensions, 3 * final_triangle_count);
+    normals_.conservativeResize(kDimensions, final_triangle_count);
   }
 
   // Process remaining items in Add queue
-  size_t last_i = initial_triangle_count - remove_queue_size - 1;
+  size_t last_i = initial_triangle_count - 1;
   while (!triangle_add_queue_.empty()) {
     triangles_[++last_i] = triangle_add_queue_.front();
     triangle_add_queue_.pop();
@@ -106,7 +109,7 @@ void Space::UpdateSpace() {
   }
 
   // Update triangle count
-  triangle_count_ = net_triangle_count;
+  triangle_count_ = final_triangle_count;
 }
 
 size_t Space::GetTriangleCount() const {
@@ -129,14 +132,14 @@ const NormalMatrix& Space::GetNormals() const {
 SpaceSharedPointer Space::ClipTriangles(const Plane& plane) {
   Eigen::Array<int, 1, Eigen::Dynamic> clipping_array =
       (((plane.GetVectorNormalized().transpose() * vertices_).array() >= 0)
-           .reshaped(3, 8)
+           .reshaped(kVerticesPerTriangle, triangle_count_)
            .cast<int>()
            .colwise() *
        Eigen::Vector3i{1, 2, 4}.array())
           .colwise()
           .sum();
   std::cout << "\n" << clipping_array << "\n\n";
-  SpaceSharedPointer post_clip_space = std::make_shared<Space>(*this);
+  SpaceSharedPointer clipped_space = std::make_shared<Space>(*this);
   size_t k = 0;
   for (int i : clipping_array) {
     std::vector<std::shared_ptr<Triangle>> new_triangles;
@@ -170,16 +173,15 @@ SpaceSharedPointer Space::ClipTriangles(const Plane& plane) {
       case 7:  // All vertices are inside
         break;
     }
-    // for (std::shared_ptr<Triangle> t : new_triangles) {
-    //   auto x = &(*t);
-    //   post_clip_space->EnqueueAddTriangle(*t));
-    // }
+    for (std::shared_ptr<Triangle> t : new_triangles) {
+      clipped_space->EnqueueAddTriangle(t);
+    }
     if (i != 7)
-      post_clip_space->EnqueueRemoveTriangle(k);
+      clipped_space->EnqueueRemoveTriangle(k);
     k++;
   }
-  post_clip_space->UpdateSpace();
-  return post_clip_space;
+  clipped_space->UpdateSpace();
+  return clipped_space;
 }
 
 std::vector<std::shared_ptr<Triangle>> Space::ClipTriangle(
