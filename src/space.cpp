@@ -48,12 +48,14 @@ void Space::EnqueueRemoveTriangle(size_t index) {
 
 void Space::UpdateSpace() {
   // Calculate net amount of triangles
-  size_t last_i = triangle_count_ - 1;
-  int32_t net_triangle_count = triangle_count_ + triangle_add_queue_.size() -
-                              triangle_remove_queue_.size();
-  assert(triangle_count_ + triangle_add_queue_.size() >=
-         triangle_remove_queue_.size());
-  assert(net_triangle_count <= kMaxTriangles);
+  // size_t last_i = triangle_count_ - 1;
+  size_t initial_triangle_count = triangle_count_;
+  size_t add_queue_size = triangle_add_queue_.size();
+  size_t remove_queue_size = triangle_remove_queue_.size();
+  size_t final_triangle_count =
+      initial_triangle_count + add_queue_size - remove_queue_size;
+  assert(initial_triangle_count + add_queue_size >= remove_queue_size);
+  assert(final_triangle_count <= kMaxTriangles);
 
   // Process items in Remove queue
   while (!triangle_remove_queue_.empty()) {
@@ -65,9 +67,8 @@ void Space::UpdateSpace() {
       triangle_add_queue_.pop();
       ::UpdateMatrixColumnsFromTriangle(i, triangles_[i], vertices_, normals_);
     } else {
-      assert(net_triangle_count < triangle_count_);
+      assert(final_triangle_count < initial_triangle_count);
       triangles_[i] = nullptr;
-      last_i--;
     }
   }
   if (net_triangle_count < triangle_count_) {
@@ -96,6 +97,7 @@ void Space::UpdateSpace() {
   }
 
   // Process remaining items in Add queue
+  size_t last_i = initial_triangle_count - remove_queue_size - 1;
   while (!triangle_add_queue_.empty()) {
     triangles_[++last_i] = triangle_add_queue_.front();
     triangle_add_queue_.pop();
