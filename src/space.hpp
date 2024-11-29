@@ -19,7 +19,7 @@ class Space;
 typedef std::shared_ptr<Triangle> TriangleSharedPointer;
 typedef std::shared_ptr<Space> SpaceSharedPointer;
 
-enum class TriangleClipMode { kIncludePivot, kExcludePivot };
+enum class TriangleClipMode { kIncludeReference, kExcludeReference };
 
 class Space {
  public:
@@ -31,11 +31,11 @@ class Space {
   const std::array<TriangleSharedPointer, kMaxTriangles>& GetTriangles() const;
   const VertexMatrix& GetVertices() const;
   const NormalMatrix& GetNormals() const;
-  SpaceSharedPointer ClipTriangles(const Plane& plane);
   std::vector<TriangleSharedPointer> ClipTriangle(size_t triangle_index,
                                                   const Plane& plane,
                                                   size_t pivot,
                                                   TriangleClipMode clip_mode);
+  SpaceSharedPointer ClipAllTriangles(const Plane& plane);
 
  private:
   std::array<TriangleSharedPointer, kMaxTriangles> triangles_;
@@ -44,6 +44,18 @@ class Space {
   size_t triangle_count_ = 0;
   VertexMatrix vertices_;
   NormalMatrix normals_;
+  struct UpdateSpaceParameters {
+    size_t initial_triangle_count;
+    size_t final_triangle_count;
+    size_t add_queue_size;
+    size_t remove_queue_size;
+  };
+  void InitializeUpdateSpaceParameters(
+      struct UpdateSpaceParameters& parameters);
+  void ReplaceRemovedWithAdded(struct UpdateSpaceParameters& parameters);
+  void DefragmentVectorAndMatrices(struct UpdateSpaceParameters& parameters);
+  void ResizeVectorAndMatrices(struct UpdateSpaceParameters& parameters);
+  void AddRemainingInQueue(struct UpdateSpaceParameters& parameters);
 };
 
 #endif

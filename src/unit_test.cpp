@@ -486,7 +486,7 @@ TEST(TriangleClipping, SingleTriangleIsInside) {
   space.EnqueueAddTriangle(tr);
   space.UpdateSpace();
   Plane pl(1, 0, 0, 0);
-  SpaceSharedPointer clipped_space = space.ClipTriangles(pl);
+  SpaceSharedPointer clipped_space = space.ClipAllTriangles(pl);
 }
 
 TEST(TriangleClipping, SingleTriangleIsOutside) {
@@ -498,7 +498,7 @@ TEST(TriangleClipping, SingleTriangleIsOutside) {
   space.EnqueueAddTriangle(tr);
   space.UpdateSpace();
   Plane pl(-1, 0, 0, 0);
-  SpaceSharedPointer clipped_space = space.ClipTriangles(pl);
+  SpaceSharedPointer clipped_space = space.ClipAllTriangles(pl);
 }
 
 TEST(TriangleClipping, SingleTriangleIsClippedIntoOne) {
@@ -510,7 +510,7 @@ TEST(TriangleClipping, SingleTriangleIsClippedIntoOne) {
   space.EnqueueAddTriangle(tr);
   space.UpdateSpace();
   Plane pl(-1, 0, 0, 2);
-  SpaceSharedPointer clipped_space = space.ClipTriangles(pl);
+  SpaceSharedPointer clipped_space = space.ClipAllTriangles(pl);
   std::cout << clipped_space->GetTriangleCount() << "\n";
 }
 
@@ -523,6 +523,6 @@ TEST(TriangleClipping, SingleTriangleIsClippedIntoTwo) {
   space.EnqueueAddTriangle(tr);
   space.UpdateSpace();
   Plane pl(1, 0, 0, -2);
-  SpaceSharedPointer clipped_space = space.ClipTriangles(pl);
+  SpaceSharedPointer clipped_space = space.ClipAllTriangles(pl);
   std::cout << clipped_space->GetTriangleCount() << "\n";
 }
