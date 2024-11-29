@@ -15,6 +15,8 @@ typedef Eigen::
     Matrix<float, kDimensions, Eigen::Dynamic, 0, kDimensions, kMaxTriangles>
         NormalMatrix;
 
+typedef Eigen::Array<int, kVerticesPerTriangle, Eigen::Dynamic> ClippingMask;
+
 class Space;
 typedef std::shared_ptr<Triangle> TriangleSharedPointer;
 typedef std::shared_ptr<Space> SpaceSharedPointer;
@@ -25,6 +27,8 @@ class Space {
  public:
   Space();
   void EnqueueAddTriangle(TriangleSharedPointer triangle_ptr);
+  void EnqueueAddMultipleTriangles(
+      std::vector<TriangleSharedPointer> triangles);
   void EnqueueRemoveTriangle(size_t index);
   void UpdateSpace();
   size_t GetTriangleCount() const;
@@ -33,7 +37,7 @@ class Space {
   const NormalMatrix& GetNormals() const;
   std::vector<TriangleSharedPointer> ClipTriangle(size_t triangle_index,
                                                   const Plane& plane,
-                                                  size_t pivot,
+                                                  size_t solo_vertex,
                                                   TriangleClipMode clip_mode);
   SpaceSharedPointer ClipAllTriangles(const Plane& plane);
 
@@ -56,6 +60,10 @@ class Space {
   void DefragmentVectorAndMatrices(struct UpdateSpaceParameters& parameters);
   void ResizeVectorAndMatrices(struct UpdateSpaceParameters& parameters);
   void AddRemainingInQueue(struct UpdateSpaceParameters& parameters);
+  ClippingMask GenerateClippingMask(const Plane& plane);
+  void ProcessClippingMask(const ClippingMask& clipping_mask,
+                           Space& space,
+                           const Plane& plane);
 };
 
 #endif

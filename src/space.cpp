@@ -4,7 +4,6 @@
 #include "line_segment.hpp"
 #include "space.hpp"
 
-// #TODO: refactor helper functions
 namespace {
 void CopyTriangleColumnsInMatrix(size_t source_index,
                                  size_t destination_index,
@@ -19,7 +18,6 @@ void CopyTriangleColumnsInMatrix(size_t source_index,
   std::vector<size_t> dst_cols = {dst, dst + 1, dst + 2};
   vertices(Eigen::all, dst_cols) = vertices(Eigen::all, src_cols);
   normals.col(destination_index) = normals.col(source_index);
-  // #TODO: investigate if block operations are faster
 }
 
 void UpdateMatrixColumnsFromTriangle(size_t destination_index,
@@ -31,6 +29,13 @@ void UpdateMatrixColumnsFromTriangle(size_t destination_index,
     vertices.col(i + k) = triangle->GetVertex(k).GetVector();
   normals.col(destination_index) = triangle->GetNormal();
 }
+
+size_t FindSoloVertex(Eigen::Array<int, 3, 1> mask_column, int match_value) {
+  for (size_t index : {0, 1, 2})
+    if (mask_column(index) == match_value)
+      return index;
+  return -1;
+}
 }  // namespace
 
 Space::Space() : triangles_{0} {}
@@ -39,12 +44,16 @@ void Space::EnqueueAddTriangle(TriangleSharedPointer triangle_ptr) {
   triangle_add_queue_.push(triangle_ptr);
 }
 
+void Space::EnqueueAddMultipleTriangles(
+    std::vector<TriangleSharedPointer> triangles) {
+  for (TriangleSharedPointer tr : triangles)
+    triangle_add_queue_.push(tr);
+}
+
 void Space::EnqueueRemoveTriangle(size_t index) {
   assert(index < kMaxTriangles);
   triangle_remove_queue_.push(index);
 }
-
-#include <iostream>  // #TODO: remove
 
 void Space::UpdateSpace() {
   struct UpdateSpaceParameters update_parameters;
@@ -76,10 +85,10 @@ const NormalMatrix& Space::GetNormals() const {
 std::vector<std::shared_ptr<Triangle>> Space::ClipTriangle(
     size_t triangle_index,
     const Plane& plane,
-    size_t pivot,
+    size_t solo_vertex,
     TriangleClipMode clip_mode) {
   size_t i = triangle_index;
-  size_t a = pivot;
+  size_t a = solo_vertex;
   size_t b = (a + 1) % 3;
   size_t c = (a + 2) % 3;
   a += i * 3;
@@ -100,13 +109,15 @@ std::vector<std::shared_ptr<Triangle>> Space::ClipTriangle(
   Vertex vertex_ab(ab_intersection.GetVector()({0, 1, 2}));
   Vertex vertex_ac(ac_intersection.GetVector()({0, 1, 2}));
   if (clip_mode == TriangleClipMode::kIncludeReference) {
-    Vertex vertex_0 = triangles_[triangle_index]->GetVertex(pivot);
+    Vertex vertex_0 = triangles_[triangle_index]->GetVertex(solo_vertex);
     std::shared_ptr<Triangle> triangle =
         std::make_shared<Triangle>(vertex_0, vertex_ab, vertex_ac);
     new_triangles.push_back(triangle);
   } else if (clip_mode == TriangleClipMode::kExcludeReference) {
-    Vertex vertex_1 = triangles_[triangle_index]->GetVertex((pivot + 1) % 3);
-    Vertex vertex_2 = triangles_[triangle_index]->GetVertex((pivot + 2) % 3);
+    Vertex vertex_1 =
+        triangles_[triangle_index]->GetVertex((solo_vertex + 1) % 3);
+    Vertex vertex_2 =
+        triangles_[triangle_index]->GetVertex((solo_vertex + 2) % 3);
     std::shared_ptr<Triangle> triangle_1 =
         std::make_shared<Triangle>(vertex_ab, vertex_1, vertex_ac);
     std::shared_ptr<Triangle> triangle_2 =
@@ -118,58 +129,11 @@ std::vector<std::shared_ptr<Triangle>> Space::ClipTriangle(
 }
 
 SpaceSharedPointer Space::ClipAllTriangles(const Plane& plane) {
-  Eigen::Array<int, 1, Eigen::Dynamic> clipping_array =
-      (((plane.GetVectorNormalized().transpose() * vertices_).array() >= 0)
-           .reshaped(kVerticesPerTriangle, triangle_count_)
-           .cast<int>()
-           .colwise() *
-       Eigen::Vector3i{1, 2, 4}.array())
-          .colwise()
-          .sum();
-  std::cout << "\n" << clipping_array << "\n\n";
-  SpaceSharedPointer clipped_space = std::make_shared<Space>(*this);
-  size_t k = 0;
-  for (int i : clipping_array) {
-    std::vector<std::shared_ptr<Triangle>> new_triangles;
-    switch (i) {
-      case 0:  // All vertices are outside
-        break;
-      case 1:  // Vertex 1 is inside
-        new_triangles =
-            ClipTriangle(k, plane, 0, TriangleClipMode::kIncludeReference);
-        break;
-      case 2:  // Vertex 2 is inside
-        new_triangles =
-            ClipTriangle(k, plane, 1, TriangleClipMode::kIncludeReference);
-        break;
-      case 3:  // Vertex 3 is outside
-        new_triangles =
-            ClipTriangle(k, plane, 2, TriangleClipMode::kExcludeReference);
-        break;
-      case 4:  // Vertex 3 is inside
-        new_triangles =
-            ClipTriangle(k, plane, 2, TriangleClipMode::kIncludeReference);
-        break;
-      case 5:  // Vertex 2 is outside
-        new_triangles =
-            ClipTriangle(k, plane, 1, TriangleClipMode::kExcludeReference);
-        break;
-      case 6:  // Vertex 1 is outside
-        new_triangles =
-            ClipTriangle(k, plane, 0, TriangleClipMode::kExcludeReference);
-        break;
-      case 7:  // All vertices are inside
-        break;
-    }
-    for (std::shared_ptr<Triangle> t : new_triangles) {
-      clipped_space->EnqueueAddTriangle(t);
-    }
-    if (i != 7)
-      clipped_space->EnqueueRemoveTriangle(k);
-    k++;
-  }
-  clipped_space->UpdateSpace();
-  return clipped_space;
+  ClippingMask clipping_mask = GenerateClippingMask(plane);
+  SpaceSharedPointer clip_space = std::make_shared<Space>(*this);
+  ProcessClippingMask(clipping_mask, *clip_space, plane);
+  clip_space->UpdateSpace();
+  return clip_space;
 }
 
 void Space::InitializeUpdateSpaceParameters(
@@ -244,5 +208,34 @@ void Space::AddRemainingInQueue(struct UpdateSpaceParameters& parameters) {
     triangle_add_queue_.pop();
     UpdateMatrixColumnsFromTriangle(last_i, triangles_[last_i], vertices_,
                                     normals_);
+  }
+}
+
+ClippingMask Space::GenerateClippingMask(const Plane& plane) {
+  return ((plane.GetVectorNormalized().transpose() * vertices_).array() >= 0)
+      .reshaped(kVerticesPerTriangle, triangle_count_)
+      .cast<int>();
+}
+
+void Space::ProcessClippingMask(const ClippingMask& clipping_mask,
+                                Space& space,
+                                const Plane& plane) {
+  Eigen::Array<int, 1, Eigen::Dynamic> mask_cols_sums =
+      clipping_mask.colwise().sum();
+  for (size_t col = 0; col < static_cast<size_t>(clipping_mask.cols()); col++) {
+    int match_value = 0;
+    TriangleClipMode clip_mode = TriangleClipMode::kExcludeReference;
+    if (mask_cols_sums(col) == 3)
+      continue;
+    else if (mask_cols_sums(col) == 0) {
+      space.EnqueueRemoveTriangle(col);
+      continue;
+    } else if (mask_cols_sums(col) == 1) {
+      clip_mode = TriangleClipMode::kIncludeReference;
+      match_value = 1;
+    }
+    size_t solo_vertex = ::FindSoloVertex(clipping_mask.col(col), match_value);
+    space.EnqueueAddMultipleTriangles(
+        ClipTriangle(col, plane, solo_vertex, clip_mode));
   }
 }
