@@ -10,6 +10,10 @@
 class Triangle {
  public:
   Triangle(Vertex vertex_1, Vertex vertex_2, Vertex vertex_3);
+  Triangle(Vertex vertex_1,
+           Vertex vertex_2,
+           Vertex vertex_3,
+           Direction normal);
   Vertex GetVertex(size_t index) const;
   const Eigen::Vector4f& GetNormal() const;
 

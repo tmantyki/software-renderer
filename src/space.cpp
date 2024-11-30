@@ -61,19 +61,20 @@ void AddSubstituteTriangles(const Triangle& triangle,
                             TriangleClipMode clip_mode,
                             const TrianglePlaneIntersections& intersections,
                             std::vector<TriangleSharedPointer>& substitutes) {
+  Direction normal(triangle.GetNormal()({0, 1, 2}));
   Vertex vertex_ab(intersections[TriangleEdge::kAB].GetVector()({0, 1, 2}));
   Vertex vertex_ac(intersections[TriangleEdge::kAC].GetVector()({0, 1, 2}));
   if (clip_mode == TriangleClipMode::kIncludeReference) {
     Vertex vertex_0 = triangle.GetVertex(single_vertex_index);
     substitutes.push_back(
-        std::make_shared<Triangle>(vertex_0, vertex_ab, vertex_ac));
+        std::make_shared<Triangle>(vertex_0, vertex_ab, vertex_ac, normal));
   } else if (clip_mode == TriangleClipMode::kExcludeReference) {
     Vertex vertex_1 = triangle.GetVertex((single_vertex_index + 1) % 3);
     Vertex vertex_2 = triangle.GetVertex((single_vertex_index + 2) % 3);
     substitutes.push_back(
-        std::make_shared<Triangle>(vertex_ab, vertex_1, vertex_ac));
+        std::make_shared<Triangle>(vertex_ab, vertex_1, vertex_ac, normal));
     substitutes.push_back(
-        std::make_shared<Triangle>(vertex_ac, vertex_1, vertex_2));
+        std::make_shared<Triangle>(vertex_ac, vertex_1, vertex_2, normal));
   }
 }
 }  // namespace
@@ -126,20 +127,17 @@ std::vector<TriangleSharedPointer> Space::GetClipSubstitutes(
     size_t triangle_index,
     const Plane& plane,
     size_t single_vertex_index,
-    TriangleClipMode clip_mode) {
+    TriangleClipMode clip_mode) const {
   TrianglePlaneIntersections intersections = ::GetTrianglePlaneIntersections(
       triangle_index, single_vertex_index, vertices_, plane);
   std::vector<TriangleSharedPointer> substitutes;
-  // CreateNewVertices()
-  // #TODO: refactor Point and Vertex constructors etc.
-  // #TODO: normals
   // #TODO: vertex attributes
   ::AddSubstituteTriangles(*triangles_[triangle_index], single_vertex_index,
                            clip_mode, intersections, substitutes);
   return substitutes;
 }
 
-SpaceSharedPointer Space::ClipAllTriangles(const Plane& plane) {
+SpaceSharedPointer Space::ClipAllTriangles(const Plane& plane) const {
   ClippingMask clipping_mask = GenerateClippingMask(plane);
   SpaceSharedPointer clip_space = std::make_shared<Space>(*this);
   ProcessClippingMask(clipping_mask, *clip_space, plane);
@@ -222,7 +220,7 @@ void Space::AddRemainingInQueue(struct UpdateSpaceParameters& parameters) {
   }
 }
 
-ClippingMask Space::GenerateClippingMask(const Plane& plane) {
+ClippingMask Space::GenerateClippingMask(const Plane& plane) const {
   return ((plane.GetVectorNormalized().transpose() * vertices_).array() >= 0)
       .reshaped(kVerticesPerTriangle, triangle_count_)
       .cast<int>();
@@ -230,7 +228,7 @@ ClippingMask Space::GenerateClippingMask(const Plane& plane) {
 
 void Space::ProcessClippingMask(const ClippingMask& clipping_mask,
                                 Space& space,
-                                const Plane& plane) {
+                                const Plane& plane) const {
   Eigen::Array<int, 1, Eigen::Dynamic> mask_cols_sums =
       clipping_mask.colwise().sum();
   for (size_t col = 0; col < static_cast<size_t>(clipping_mask.cols()); col++) {
@@ -238,8 +236,8 @@ void Space::ProcessClippingMask(const ClippingMask& clipping_mask,
     TriangleClipMode clip_mode = TriangleClipMode::kExcludeReference;
     if (mask_cols_sums(col) == 3)
       continue;
-    else if (mask_cols_sums(col) == 0) {
-      space.EnqueueRemoveTriangle(col);
+    space.EnqueueRemoveTriangle(col);
+    if (mask_cols_sums(col) == 0) {
       continue;
     } else if (mask_cols_sums(col) == 1) {
       clip_mode = TriangleClipMode::kIncludeReference;

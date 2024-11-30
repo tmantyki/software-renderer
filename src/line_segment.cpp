@@ -1,5 +1,4 @@
 #include "line_segment.hpp"
-#include <cassert>
 
 LineSegment::LineSegment(Point a, Point b) : a_(a), b_(b) {
   assert(a.GetVector() != b.GetVector());

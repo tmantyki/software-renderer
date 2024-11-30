@@ -1,6 +1,7 @@
 #ifndef COMMON_HPP
 #define COMMON_HPP
 
+#include <cassert>
 #include <cstddef>
 #include <memory>
 

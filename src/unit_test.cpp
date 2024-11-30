@@ -477,52 +477,55 @@ TEST(PespectiveProjection, ConstructorArguments) {
   EXPECT_EQ(M, pp.GetMatrix());
 }
 
-TEST(TriangleClipping, SingleTriangleIsInside) {
-  Space space;
-  Vertex v1(3, 3, 0);
-  Vertex v2(3, 1, 0);
-  Vertex v3(1, 1, 0);
-  TriangleSharedPointer tr = std::make_shared<Triangle>(v1, v2, v3);
-  space.EnqueueAddTriangle(tr);
-  space.UpdateSpace();
-  Plane pl(1, 0, 0, 0);
-  SpaceSharedPointer clipped_space = space.ClipAllTriangles(pl);
+class SingleTriangleClipping : public testing::Test {
+ protected:
+  SingleTriangleClipping()
+      : v1_(3, 3, 0),
+        v2_(3, 1, 0),
+        v3_(1, 1, 0),
+        tr_(std::make_shared<Triangle>(v1_, v2_, v3_)) {
+    space_.EnqueueAddTriangle(tr_);
+    space_.UpdateSpace();
+  }
+  Space space_;
+  Vertex v1_;
+  Vertex v2_;
+  Vertex v3_;
+  TriangleSharedPointer tr_;
+};
+
+// #TODO: check normals after clipping
+
+TEST_F(SingleTriangleClipping, TriangleIsInside) {
+  Plane plane(1, 0, 0, 0);
+  SpaceSharedPointer clip_space = space_.ClipAllTriangles(plane);
+  ::VerifyTriangleCount(1, *clip_space);
+  EXPECT_EQ(tr_, clip_space->GetTriangles()[0]);
 }
 
-TEST(TriangleClipping, SingleTriangleIsOutside) {
-  Space space;
-  Vertex v1(3, 3, 0);
-  Vertex v2(3, 1, 0);
-  Vertex v3(1, 1, 0);
-  TriangleSharedPointer tr = std::make_shared<Triangle>(v1, v2, v3);
-  space.EnqueueAddTriangle(tr);
-  space.UpdateSpace();
-  Plane pl(-1, 0, 0, 0);
-  SpaceSharedPointer clipped_space = space.ClipAllTriangles(pl);
+TEST_F(SingleTriangleClipping, TriangleIsOutside) {
+  Plane plane(-1, 0, 0, 0);
+  SpaceSharedPointer clip_space = space_.ClipAllTriangles(plane);
+  ::VerifyTriangleCount(0, *clip_space);
 }
 
-TEST(TriangleClipping, SingleTriangleIsClippedIntoOne) {
-  Space space;
-  Vertex v1(3, 3, 0);
-  Vertex v2(3, 1, 0);
-  Vertex v3(1, 1, 0);
-  TriangleSharedPointer tr = std::make_shared<Triangle>(v1, v2, v3);
-  space.EnqueueAddTriangle(tr);
-  space.UpdateSpace();
-  Plane pl(-1, 0, 0, 2);
-  SpaceSharedPointer clipped_space = space.ClipAllTriangles(pl);
-  std::cout << clipped_space->GetTriangleCount() << "\n";
+TEST_F(SingleTriangleClipping, TriangleIsClippedIntoOne) {
+  Plane plane(-1, 0, 0, 2);
+  SpaceSharedPointer clip_space = space_.ClipAllTriangles(plane);
+  ::VerifyTriangleCount(1, *clip_space);
+  EXPECT_EQ(Point(1, 1, 0), clip_space->GetTriangles()[0]->GetVertex(0));
+  EXPECT_EQ(Point(2, 2, 0), clip_space->GetTriangles()[0]->GetVertex(1));
+  EXPECT_EQ(Point(2, 1, 0), clip_space->GetTriangles()[0]->GetVertex(2));
 }
 
-TEST(TriangleClipping, SingleTriangleIsClippedIntoTwo) {
-  Space space;
-  Vertex v1(3, 3, 0);
-  Vertex v2(3, 1, 0);
-  Vertex v3(1, 1, 0);
-  TriangleSharedPointer tr = std::make_shared<Triangle>(v1, v2, v3);
-  space.EnqueueAddTriangle(tr);
-  space.UpdateSpace();
-  Plane pl(1, 0, 0, -2);
-  SpaceSharedPointer clipped_space = space.ClipAllTriangles(pl);
-  std::cout << clipped_space->GetTriangleCount() << "\n";
+TEST_F(SingleTriangleClipping, TriangleIsClippedIntoTwo) {
+  Plane plane(1, 0, 0, -2);
+  SpaceSharedPointer clip_space = space_.ClipAllTriangles(plane);
+  ::VerifyTriangleCount(2, *clip_space);
+  EXPECT_EQ(Point(2, 2, 0), clip_space->GetTriangles()[0]->GetVertex(0));
+  EXPECT_EQ(Point(3, 3, 0), clip_space->GetTriangles()[0]->GetVertex(1));
+  EXPECT_EQ(Point(2, 1, 0), clip_space->GetTriangles()[0]->GetVertex(2));
+  EXPECT_EQ(Point(2, 1, 0), clip_space->GetTriangles()[1]->GetVertex(0));
+  EXPECT_EQ(Point(3, 3, 0), clip_space->GetTriangles()[1]->GetVertex(1));
+  EXPECT_EQ(Point(3, 1, 0), clip_space->GetTriangles()[1]->GetVertex(2));
 }
