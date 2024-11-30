@@ -3,7 +3,6 @@
 
 #include <array>
 #include "common.hpp"
-#include "plane.hpp"
 #include "vertex.hpp"
 
 // #TODO: implement vertex reuse
