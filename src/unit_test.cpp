@@ -498,34 +498,34 @@ class SingleTriangleClipping : public testing::Test {
 
 TEST_F(SingleTriangleClipping, TriangleIsInside) {
   Plane plane(1, 0, 0, 0);
-  SpaceSharedPointer clip_space = space_.ClipAllTriangles(plane);
-  ::VerifyTriangleCount(1, *clip_space);
-  EXPECT_EQ(tr_, clip_space->GetTriangles()[0]);
+  space_.ClipAllTriangles(plane);
+  ::VerifyTriangleCount(1, space_);
+  EXPECT_EQ(tr_, space_.GetTriangles()[0]);
 }
 
 TEST_F(SingleTriangleClipping, TriangleIsOutside) {
   Plane plane(-1, 0, 0, 0);
-  SpaceSharedPointer clip_space = space_.ClipAllTriangles(plane);
-  ::VerifyTriangleCount(0, *clip_space);
+  space_.ClipAllTriangles(plane);
+  ::VerifyTriangleCount(0, space_);
 }
 
 TEST_F(SingleTriangleClipping, TriangleIsClippedIntoOne) {
   Plane plane(-1, 0, 0, 2);
-  SpaceSharedPointer clip_space = space_.ClipAllTriangles(plane);
-  ::VerifyTriangleCount(1, *clip_space);
-  EXPECT_EQ(Point(1, 1, 0), clip_space->GetTriangles()[0]->GetVertex(0));
-  EXPECT_EQ(Point(2, 2, 0), clip_space->GetTriangles()[0]->GetVertex(1));
-  EXPECT_EQ(Point(2, 1, 0), clip_space->GetTriangles()[0]->GetVertex(2));
+  space_.ClipAllTriangles(plane);
+  ::VerifyTriangleCount(1, space_);
+  EXPECT_EQ(Point(1, 1, 0), space_.GetTriangles()[0]->GetVertex(0));
+  EXPECT_EQ(Point(2, 2, 0), space_.GetTriangles()[0]->GetVertex(1));
+  EXPECT_EQ(Point(2, 1, 0), space_.GetTriangles()[0]->GetVertex(2));
 }
 
 TEST_F(SingleTriangleClipping, TriangleIsClippedIntoTwo) {
   Plane plane(1, 0, 0, -2);
-  SpaceSharedPointer clip_space = space_.ClipAllTriangles(plane);
-  ::VerifyTriangleCount(2, *clip_space);
-  EXPECT_EQ(Point(2, 2, 0), clip_space->GetTriangles()[0]->GetVertex(0));
-  EXPECT_EQ(Point(3, 3, 0), clip_space->GetTriangles()[0]->GetVertex(1));
-  EXPECT_EQ(Point(2, 1, 0), clip_space->GetTriangles()[0]->GetVertex(2));
-  EXPECT_EQ(Point(2, 1, 0), clip_space->GetTriangles()[1]->GetVertex(0));
-  EXPECT_EQ(Point(3, 3, 0), clip_space->GetTriangles()[1]->GetVertex(1));
-  EXPECT_EQ(Point(3, 1, 0), clip_space->GetTriangles()[1]->GetVertex(2));
+  space_.ClipAllTriangles(plane);
+  ::VerifyTriangleCount(2, space_);
+  EXPECT_EQ(Point(2, 2, 0), space_.GetTriangles()[0]->GetVertex(0));
+  EXPECT_EQ(Point(3, 3, 0), space_.GetTriangles()[0]->GetVertex(1));
+  EXPECT_EQ(Point(2, 1, 0), space_.GetTriangles()[0]->GetVertex(2));
+  EXPECT_EQ(Point(2, 1, 0), space_.GetTriangles()[1]->GetVertex(0));
+  EXPECT_EQ(Point(3, 3, 0), space_.GetTriangles()[1]->GetVertex(1));
+  EXPECT_EQ(Point(3, 1, 0), space_.GetTriangles()[1]->GetVertex(2));
 }

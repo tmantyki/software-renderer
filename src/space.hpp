@@ -21,7 +21,7 @@ class Space {
       const Plane& plane,
       size_t solo_vertex,
       TriangleClipMode clip_mode) const;
-  [[nodiscard]] SpaceSharedPointer ClipAllTriangles(const Plane& plane) const;
+  void ClipAllTriangles(const Plane& plane);
 
  private:
   std::array<TriangleSharedPointer, kMaxTriangles> triangles_;
@@ -44,8 +44,7 @@ class Space {
   void AddRemainingInQueue(struct UpdateSpaceParameters& parameters);
   ClippingMask GenerateClippingMask(const Plane& plane) const;
   void ProcessClippingMask(const ClippingMask& clipping_mask,
-                           Space& space,
-                           const Plane& plane) const;
+                           const Plane& plane);
 };
 
 #endif

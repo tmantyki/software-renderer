@@ -137,12 +137,10 @@ std::vector<TriangleSharedPointer> Space::GetClipSubstitutes(
   return substitutes;
 }
 
-SpaceSharedPointer Space::ClipAllTriangles(const Plane& plane) const {
+void Space::ClipAllTriangles(const Plane& plane) {
   ClippingMask clipping_mask = GenerateClippingMask(plane);
-  SpaceSharedPointer clip_space = std::make_shared<Space>(*this);
-  ProcessClippingMask(clipping_mask, *clip_space, plane);
-  clip_space->UpdateSpace();
-  return clip_space;
+  ProcessClippingMask(clipping_mask, plane);
+  UpdateSpace();
 }
 
 void Space::InitializeUpdateSpaceParameters(
@@ -227,8 +225,7 @@ ClippingMask Space::GenerateClippingMask(const Plane& plane) const {
 }
 
 void Space::ProcessClippingMask(const ClippingMask& clipping_mask,
-                                Space& space,
-                                const Plane& plane) const {
+                                const Plane& plane) {
   Eigen::Array<int, 1, Eigen::Dynamic> mask_cols_sums =
       clipping_mask.colwise().sum();
   for (size_t col = 0; col < static_cast<size_t>(clipping_mask.cols()); col++) {
@@ -236,7 +233,7 @@ void Space::ProcessClippingMask(const ClippingMask& clipping_mask,
     TriangleClipMode clip_mode = TriangleClipMode::kExcludeReference;
     if (mask_cols_sums(col) == 3)
       continue;
-    space.EnqueueRemoveTriangle(col);
+    EnqueueRemoveTriangle(col);
     if (mask_cols_sums(col) == 0) {
       continue;
     } else if (mask_cols_sums(col) == 1) {
@@ -245,7 +242,7 @@ void Space::ProcessClippingMask(const ClippingMask& clipping_mask,
     }
     size_t single_vertex_index =
         ::FindVertexIndexByClipMask(clipping_mask.col(col), match_mask_value);
-    space.EnqueueAddMultipleTriangles(
+    EnqueueAddMultipleTriangles(
         GetClipSubstitutes(col, plane, single_vertex_index, clip_mode));
   }
 }
