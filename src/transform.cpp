@@ -1,6 +1,8 @@
 #include "transform.hpp"
 #include <Eigen/Geometry>
 
+Transform::Transform() : matrix_(Eigen::Matrix4f::Zero()) {};
+
 Transform::Transform(Eigen::Matrix4f matrix) : matrix_(matrix) {}
 
 Eigen::Matrix4f Transform::GetMatrix() const {
@@ -18,6 +20,7 @@ Camera& CameraTransform::GetCamera() {
   return camera_;
 }
 // #TODO: use word mapping instead of transform or matrix
+// #TODO: refactor!
 void CameraTransform::UpdateTransformFromCamera() {
   // Translation
   translation_matrix_ = Eigen::Matrix4f::Identity();
@@ -58,7 +61,7 @@ PerspectiveProjection::PerspectiveProjection(float near,
                                              float right,
                                              float top,
                                              float bottom)
-    : Transform(Eigen::Matrix4f::Zero()),
+    : Transform(),
       near_(near),
       far_(far),
       left_(left),
@@ -100,3 +103,12 @@ void PerspectiveProjection::UpdateTransformFromParameters() {
   matrix_(2, 3) = -(2 * near_ * far_) / (far_ - near_);
   matrix_(3, 2) = -1;
 }
+
+ViewportTransformation::ViewportTransformation(uint16_t width,
+                                               uint16_t height,
+                                               int16_t x_offset,
+                                               int16_t y_offset)
+    : width_(width),
+      height_(height),
+      x_offset_(x_offset),
+      y_offset_(y_offset) {}

@@ -8,7 +8,7 @@
 
 class Transform {
  public:
-  Transform() = delete;
+  Transform();
   Transform(Eigen::Matrix4f matrix);
   Eigen::Matrix4f GetMatrix() const;
 
@@ -31,6 +31,7 @@ class CameraTransform : public Transform {
 
 class PerspectiveProjection : public Transform {
  public:
+  PerspectiveProjection() = delete;
   PerspectiveProjection(float near,
                         float far,
                         float left,
@@ -47,6 +48,31 @@ class PerspectiveProjection : public Transform {
  private:
   float near_, far_, left_, right_, top_, bottom_;
   void UpdateTransformFromParameters();
+};
+
+class ViewportTransformation : public Transform {
+ public:
+  ViewportTransformation() = delete;
+  ViewportTransformation(uint16_t width,
+                         uint16_t height,
+                         int16_t x_offset = 0,
+                         int16_t y_offset = 0);
+
+ private:
+  uint16_t width_, height_;
+  int16_t x_offset_, y_offset_;
+};
+
+class TransformPipeline {
+ public:
+  void UpdateCamera();
+  void UpdatePerspective();
+
+ private:
+  CameraTransform camera_transform_;
+  PerspectiveProjection perpective_projection_;
+  Transform world_to_clip_transform_;
+  Transform clip_to_viewspace_;
 };
 
 #endif
