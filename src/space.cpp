@@ -174,6 +174,7 @@ void Space::ReplaceRemovedWithAdded(struct UpdateSpaceParameters& parameters) {
       triangle_add_queue_.pop();
       ::UpdateMatrixColumnsFromTriangle(i, triangles_[i], vertices_, normals_);
     } else {
+      (void)parameters; // required for Release build
       assert(parameters.final_triangle_count <
              parameters.initial_triangle_count);
       assert(parameters.remove_queue_size > parameters.add_queue_size);
