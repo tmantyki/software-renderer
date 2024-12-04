@@ -4,8 +4,8 @@
 #include <Eigen/Core>
 #include "camera.hpp"
 #include "common.hpp"
-#include "space.hpp"
 #include "point.hpp"
+#include "space.hpp"
 
 class Transform {
  public:
@@ -76,7 +76,10 @@ class TransformPipeline {
   TransformPipeline(std::shared_ptr<CameraTransform> camera,
                     std::shared_ptr<PerspectiveProjection> perspective,
                     std::shared_ptr<ViewportTransform> viewport);
-  void UpdateOutput(Space& input_space);
+  std::shared_ptr<CameraTransform> GetCameraTransform();
+  std::shared_ptr<PerspectiveProjection> GetPerspectiveProjection();
+  std::shared_ptr<ViewportTransform> GetViewportTransform();
+  void RunPipeline(const Space& input_space);
 
  private:
   std::shared_ptr<CameraTransform> camera_;

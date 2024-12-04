@@ -386,17 +386,17 @@ TEST(Space, DivideByW) {
 
 TEST(Space, TransformVerticesAndNormals) {
   Space space;
+  Eigen::Matrix4f random_transform = Eigen::Matrix4f::Random();
   std::vector<TriangleSharedPointer> t = ::CreateRandomTriangleVector(8);
   ::EnqueAddMultipleTriangles({0, 1, 2, 3, 4, 5, 6, 7}, t, space);
   space.UpdateSpace();
   VertexMatrix pre_vertices = space.GetVertices();
   VertexMatrix pre_normals = space.GetNormals();
-  Eigen::Matrix4f random_transform = Eigen::Matrix4f::Random();
   space.TransformVertices(random_transform);
-  VertexMatrix post_vertices = space.GetVertices();
-  EXPECT_EQ(random_transform * pre_vertices, post_vertices);
   space.TransformNormals(random_transform);
+  VertexMatrix post_vertices = space.GetVertices();
   VertexMatrix post_normals = space.GetNormals();
+  EXPECT_EQ(random_transform * pre_vertices, post_vertices);
   EXPECT_EQ(random_transform * pre_normals, post_normals);
 }
 
@@ -420,12 +420,6 @@ TEST(Camera, ConstructorArguments) {
   EXPECT_FLOAT_EQ(0, cam_2.GetYaw());
   EXPECT_FLOAT_EQ(0, cam_2.GetRoll());
 }
-
-// TEST(Transform, ConstructorMatrix) {
-//   Eigen::Matrix4f M = Eigen::Matrix4f::Random();
-//   Transform t(M);
-//   EXPECT_EQ(M, t.GetMatrix());
-// }
 
 TEST(CameraTransform, ConstructorDefault) {
   Camera c;
@@ -673,4 +667,16 @@ TEST_F(ViewportTransformTest, FullTransform) {
   EXPECT_EQ(((1 - v_y) * height / 2.0) + y_offset, GetTransformedVector()[1]);
   EXPECT_EQ(v_z, GetTransformedVector()[2]);
   EXPECT_EQ(v_w, GetTransformedVector()[3]);
+}
+
+TEST(TransformPipeline, ConstructorObjects) {
+  std::shared_ptr<CameraTransform> camera = std::make_shared<CameraTransform>();
+  std::shared_ptr<PerspectiveProjection> perspective =
+      std::make_shared<PerspectiveProjection>(1, 100, -50, 50, 40, -40);
+  std::shared_ptr<ViewportTransform> viewport =
+      std::make_shared<ViewportTransform>(800, 600, 0, 0);
+  TransformPipeline pipeline(camera, perspective, viewport);
+  EXPECT_EQ(camera, pipeline.GetCameraTransform());
+  EXPECT_EQ(perspective, pipeline.GetPerspectiveProjection());
+  EXPECT_EQ(viewport, pipeline.GetViewportTransform());
 }

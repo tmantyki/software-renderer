@@ -148,13 +148,26 @@ TransformPipeline::TransformPipeline(
     std::shared_ptr<ViewportTransform> viewport)
     : camera_(camera), perspective_(perspective), viewport_(viewport) {}
 
-void TransformPipeline::UpdateOutput(Space& input_space) {
-  Space transformed_space = input_space;
-  transformed_space.TransformVertices(camera_->GetMatrix() *
-                                      perspective_->GetMatrix());
-  transformed_space.TransformNormals(
+std::shared_ptr<CameraTransform> TransformPipeline::GetCameraTransform() {
+  return camera_;
+}
+
+std::shared_ptr<PerspectiveProjection>
+TransformPipeline::GetPerspectiveProjection() {
+  return perspective_;
+}
+
+std::shared_ptr<ViewportTransform> TransformPipeline::GetViewportTransform() {
+  return viewport_;
+}
+
+void TransformPipeline::RunPipeline(const Space& input_space) {
+  output_space_ = input_space;
+  output_space_.TransformVertices(camera_->GetMatrix() *
+                                  perspective_->GetMatrix());
+  output_space_.TransformNormals(
       camera_->GetMatrix());  // check for correctness
-  transformed_space.DivideByW();
+  output_space_.DivideByW();
   const static std::array<Plane, kNumberOfClippingPlanes> clipping_planes = {{
       {1, 0, 0, 1},
       {-1, 0, 0, 1},
@@ -164,7 +177,7 @@ void TransformPipeline::UpdateOutput(Space& input_space) {
       {0, 0, -1, 1},
   }};
   for (const Plane& plane : clipping_planes) {
-    transformed_space.ClipAllTriangles(plane);
+    output_space_.ClipAllTriangles(plane);
   }
-  transformed_space.TransformVertices(viewport_->GetMatrix());
+  output_space_.TransformVertices(viewport_->GetMatrix());
 }
