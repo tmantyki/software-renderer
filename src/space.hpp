@@ -22,6 +22,9 @@ class Space {
       size_t solo_vertex,
       TriangleClipMode clip_mode) const;
   void ClipAllTriangles(const Plane& plane);
+  void TransformVertices(const Eigen::Matrix4f& transformation);
+  void TransformNormals(const Eigen::Matrix4f& transformation);
+  void DivideByW();
 
  private:
   std::array<TriangleSharedPointer, kMaxTriangles> triangles_;

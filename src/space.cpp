@@ -143,6 +143,14 @@ void Space::ClipAllTriangles(const Plane& plane) {
   UpdateSpace();
 }
 
+void Space::TransformVertices(const Eigen::Matrix4f& transformation) {
+  vertices_ = transformation * vertices_;
+}
+
+void Space::TransformNormals(const Eigen::Matrix4f& transformation) {
+  normals_ = transformation * normals_;
+}
+
 void Space::InitializeUpdateSpaceParameters(
     struct UpdateSpaceParameters& parameters) {
   parameters.initial_triangle_count = triangle_count_;
@@ -245,4 +253,9 @@ void Space::ProcessClippingMask(const ClippingMask& clipping_mask,
     EnqueueAddMultipleTriangles(
         GetClipSubstitutes(col, plane, single_vertex_index, clip_mode));
   }
+}
+
+void Space::DivideByW() {
+  vertices_ =
+      (vertices_.array().rowwise() / -vertices_.row(3).array()).matrix();
 }
