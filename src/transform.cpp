@@ -13,15 +13,16 @@ CameraTransform::CameraTransform() : CameraTransform(Camera()) {}
 
 CameraTransform::CameraTransform(Camera camera)
     : Transform(Eigen::Matrix4f::Identity()), camera_(camera) {
-  UpdateTransformFromCamera();
+  UpdateTransform();
 }
 
 Camera& CameraTransform::GetCamera() {
   return camera_;
 }
+
 // #TODO: use word mapping instead of transform or matrix
 // #TODO: refactor!
-void CameraTransform::UpdateTransformFromCamera() {
+bool CameraTransform::UpdateTransform() {
   // Translation
   translation_matrix_ = Eigen::Matrix4f::Identity();
   Eigen::Vector4f translation_vector = -camera_.GetLocation().GetVector();
@@ -53,6 +54,7 @@ void CameraTransform::UpdateTransformFromCamera() {
       quaternion_roll * quaternion_pitch * quaternion_yaw;
   rotation_matrix_.block<3, 3>(0, 0) = quaternion_all.toRotationMatrix();
   matrix_ = translation_matrix_ * rotation_matrix_;
+  return true;
 }
 
 PerspectiveProjection::PerspectiveProjection(float near,
@@ -72,29 +74,34 @@ PerspectiveProjection::PerspectiveProjection(float near,
   assert(near < far);
   assert(left < right);
   assert(top > bottom);
-  UpdateTransformFromParameters();
+  UpdateTransform();
 }
 
 float PerspectiveProjection::GetNear() const {
   return near_;
 }
+
 float PerspectiveProjection::GetFar() const {
   return far_;
 }
+
 float PerspectiveProjection::GetLeft() const {
   return left_;
 }
+
 float PerspectiveProjection::GetRight() const {
   return right_;
 }
+
 float PerspectiveProjection::GetTop() const {
   return top_;
 }
+
 float PerspectiveProjection::GetBottom() const {
   return bottom_;
 }
 
-void PerspectiveProjection::UpdateTransformFromParameters() {
+bool PerspectiveProjection::UpdateTransform() {
   matrix_(0, 0) = 2 * near_ / (right_ - left_);
   matrix_(0, 2) = (right_ + left_) / (right_ - left_);
   matrix_(1, 1) = 2 * near_ / (top_ - bottom_);
@@ -102,13 +109,57 @@ void PerspectiveProjection::UpdateTransformFromParameters() {
   matrix_(2, 2) = -(far_ + near_) / (far_ - near_);
   matrix_(2, 3) = -(2 * near_ * far_) / (far_ - near_);
   matrix_(3, 2) = -1;
+  return true;
 }
 
-ViewportTransformation::ViewportTransformation(uint16_t width,
-                                               uint16_t height,
-                                               int16_t x_offset,
-                                               int16_t y_offset)
-    : width_(width),
-      height_(height),
-      x_offset_(x_offset),
-      y_offset_(y_offset) {}
+ViewportTransform::ViewportTransform(uint16_t width,
+                                     uint16_t height,
+                                     int16_t x_offset,
+                                     int16_t y_offset)
+    : width_(width), height_(height), x_offset_(x_offset), y_offset_(y_offset) {
+  UpdateTransform();
+}
+
+uint16_t ViewportTransform::GetWidth() const {
+  return width_;
+}
+uint16_t ViewportTransform::GetHeight() const {
+  return height_;
+}
+int16_t ViewportTransform::GetOffsetX() const {
+  return x_offset_;
+}
+int16_t ViewportTransform::GetOffsetY() const {
+  return y_offset_;
+}
+
+bool ViewportTransform::UpdateTransform() {
+  return true;
+}
+
+TransformPipeline::TransformPipeline(
+    std::shared_ptr<CameraTransform> camera,
+    std::shared_ptr<PerspectiveProjection> perspective,
+    std::shared_ptr<ViewportTransform> viewport)
+    : camera_(camera), perspective_(perspective), viewport_(viewport) {}
+
+void TransformPipeline::UpdateOutput(Space& input_space) {
+  Space transformed_space = input_space;
+  transformed_space.TransformVertices(camera_->GetMatrix() *
+                                      perspective_->GetMatrix());
+  transformed_space.TransformNormals(
+      camera_->GetMatrix());  // check for correctness
+  transformed_space.DivideByW();
+  const static std::array<Plane, kNumberOfClippingPlanes> clipping_planes = {{
+      {1, 0, 0, 1},
+      {-1, 0, 0, 1},
+      {0, 1, 0, 1},
+      {0, -1, 0, 1},
+      {0, 0, 1, 1},
+      {0, 0, -1, 1},
+  }};
+  for (const Plane& plane : clipping_planes) {
+    transformed_space.ClipAllTriangles(plane);
+  }
+  transformed_space.TransformVertices(viewport_->GetMatrix());
+}

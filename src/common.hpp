@@ -8,7 +8,9 @@
 constexpr float kPi = 3.14159265358979323846264338;
 constexpr size_t kDimensions = 4;
 constexpr size_t kVerticesPerTriangle = 3;
+constexpr size_t kViewportDimensions = 3;
 constexpr size_t kMaxTriangles = 128;
+constexpr size_t kNumberOfClippingPlanes = 6;
 
 class Point;
 class Space;
@@ -26,7 +28,7 @@ typedef Eigen::Matrix<float,
                       Eigen::Dynamic,
                       0,
                       kDimensions,
-                      3 * kMaxTriangles>
+                      kVerticesPerTriangle * kMaxTriangles>
     VertexMatrix;
 
 enum class TriangleClipMode { kIncludeReference, kExcludeReference };

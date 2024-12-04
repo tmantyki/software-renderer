@@ -4,6 +4,7 @@
 #include <Eigen/Core>
 #include "camera.hpp"
 #include "common.hpp"
+#include "space.hpp"
 #include "point.hpp"
 
 class Transform {
@@ -11,9 +12,10 @@ class Transform {
   Transform();
   Transform(Eigen::Matrix4f matrix);
   Eigen::Matrix4f GetMatrix() const;
+  virtual bool UpdateTransform() = 0;
 
  protected:
-  Eigen::Matrix4f matrix_;
+  Eigen::Matrix4f matrix_;  // #TODO: rename to mapping?
 };
 
 class CameraTransform : public Transform {
@@ -21,12 +23,12 @@ class CameraTransform : public Transform {
   CameraTransform();
   CameraTransform(Camera camera);
   Camera& GetCamera();
+  bool UpdateTransform() override;
 
  private:
   Camera camera_;
   Eigen::Matrix4f rotation_matrix_;
   Eigen::Matrix4f translation_matrix_;
-  void UpdateTransformFromCamera();
 };
 
 class PerspectiveProjection : public Transform {
@@ -44,19 +46,24 @@ class PerspectiveProjection : public Transform {
   float GetRight() const;
   float GetTop() const;
   float GetBottom() const;
+  bool UpdateTransform() override;
 
  private:
   float near_, far_, left_, right_, top_, bottom_;
-  void UpdateTransformFromParameters();
 };
 
-class ViewportTransformation : public Transform {
+class ViewportTransform : public Transform {
  public:
-  ViewportTransformation() = delete;
-  ViewportTransformation(uint16_t width,
-                         uint16_t height,
-                         int16_t x_offset = 0,
-                         int16_t y_offset = 0);
+  ViewportTransform() = delete;
+  ViewportTransform(uint16_t width,
+                    uint16_t height,
+                    int16_t x_offset = 0,
+                    int16_t y_offset = 0);
+  uint16_t GetWidth() const;
+  uint16_t GetHeight() const;
+  int16_t GetOffsetX() const;
+  int16_t GetOffsetY() const;
+  bool UpdateTransform() override;
 
  private:
   uint16_t width_, height_;
@@ -65,14 +72,17 @@ class ViewportTransformation : public Transform {
 
 class TransformPipeline {
  public:
-  void UpdateCamera();
-  void UpdatePerspective();
+  TransformPipeline() = delete;
+  TransformPipeline(std::shared_ptr<CameraTransform> camera,
+                    std::shared_ptr<PerspectiveProjection> perspective,
+                    std::shared_ptr<ViewportTransform> viewport);
+  void UpdateOutput(Space& input_space);
 
  private:
-  CameraTransform camera_transform_;
-  PerspectiveProjection perpective_projection_;
-  Transform world_to_clip_transform_;
-  Transform clip_to_viewspace_;
+  std::shared_ptr<CameraTransform> camera_;
+  std::shared_ptr<PerspectiveProjection> perspective_;
+  std::shared_ptr<ViewportTransform> viewport_;
+  Space output_space_;
 };
 
 #endif
