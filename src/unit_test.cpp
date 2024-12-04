@@ -559,7 +559,11 @@ TEST(ViewportTransform, ConstructorArguments) {
 class ViewportTransformTest : public testing::Test {
  protected:
   ViewportTransformTest()
-      : vt_(width_, height_, x_offset_, y_offset_),
+      : width_(100),
+        height_(200),
+        x_offset_(300),
+        y_offset_(400),
+        vt_(width_, height_, x_offset_, y_offset_),
         v_x(3),
         v_y(5),
         v_z(7),
@@ -573,6 +577,7 @@ class ViewportTransformTest : public testing::Test {
     height_ = height;
     x_offset_ = x_offset;
     y_offset_ = y_offset;
+    vt_ = ViewportTransform(width_, height_, x_offset_, y_offset_);
   }
   uint16_t width_;
   uint16_t height_;
@@ -585,6 +590,23 @@ class ViewportTransformTest : public testing::Test {
     return vt_.GetMatrix() * vector_;
   }
 };
+
+TEST_F(ViewportTransformTest, GetFunctions) {
+  EXPECT_EQ(width_, vt_.GetWidth());
+  EXPECT_EQ(height_, vt_.GetHeight());
+  EXPECT_EQ(x_offset_, vt_.GetOffsetX());
+  EXPECT_EQ(y_offset_, vt_.GetOffsetY());
+}
+
+TEST_F(ViewportTransformTest, CoordinateZIsUnaffected) {
+  SetViewportParameters(13, 17, 19, -23);
+  EXPECT_EQ(v_z, GetTransformedVector()[2]);
+}
+
+TEST_F(ViewportTransformTest, CoordinateWIsUnaffected) {
+  SetViewportParameters(13, 17, 19, -23);
+  EXPECT_EQ(v_w, GetTransformedVector()[3]);
+}
 
 TEST_F(ViewportTransformTest, TransformAxisX) {
   uint16_t width = 512;
@@ -599,27 +621,32 @@ TEST_F(ViewportTransformTest, TransformAxisY) {
 }
 
 TEST_F(ViewportTransformTest, AddPositiveOffsetX) {
+  uint16_t width = 480;
   int16_t x_offset = 100;
-  SetViewportParameters(2, 0, x_offset, 0);
-  EXPECT_EQ(x_offset + 1, GetTransformedVector()[0]);
+  SetViewportParameters(width, 0, x_offset, 0);
+  // std::cout << vt_.GetMatrix() << "\n";
+  EXPECT_EQ(((v_x + 1) * width / 2.0) + x_offset, GetTransformedVector()[0]);
 }
 
 TEST_F(ViewportTransformTest, AddNegativeOffsetX) {
-  int16_t x_offset = -200;
-  SetViewportParameters(2, 0, x_offset, 0);
-  EXPECT_EQ(x_offset + 1, GetTransformedVector()[0]);
+  uint16_t width = 1024;
+  int16_t x_offset = -110;
+  SetViewportParameters(width, 0, x_offset, 0);
+  EXPECT_EQ(((v_x + 1) * width / 2.0) + x_offset, GetTransformedVector()[0]);
 }
 
 TEST_F(ViewportTransformTest, AddPositiveOffsetY) {
+  uint16_t height = 240;
   int16_t y_offset = 300;
-  SetViewportParameters(0, 2, y_offset, 0);
-  EXPECT_EQ(y_offset + 1, GetTransformedVector()[1]);
+  SetViewportParameters(0, height, 0, y_offset);
+  EXPECT_EQ(((1 - v_y) * height / 2.0) + y_offset, GetTransformedVector()[1]);
 }
 
 TEST_F(ViewportTransformTest, AddNegativeOffsetY) {
-  int16_t y_offset = -500;
-  SetViewportParameters(0, 2, y_offset, 0);
-  EXPECT_EQ(y_offset + 1, GetTransformedVector()[1]);
+  uint16_t height = 480;
+  int16_t y_offset = -150;
+  SetViewportParameters(0, height, 0, y_offset);
+  EXPECT_EQ(((1 - v_y) * height / 2.0) + y_offset, GetTransformedVector()[1]);
 }
 
 TEST_F(ViewportTransformTest, FullTransform) {
@@ -628,7 +655,6 @@ TEST_F(ViewportTransformTest, FullTransform) {
   SetViewportParameters(width, height, x_offset, y_offset);
   EXPECT_EQ(((v_x + 1) * width / 2.0) + x_offset, GetTransformedVector()[0]);
   EXPECT_EQ(((1 - v_y) * height / 2.0) + y_offset, GetTransformedVector()[1]);
+  EXPECT_EQ(v_z, GetTransformedVector()[2]);
+  EXPECT_EQ(v_w, GetTransformedVector()[3]);
 }
-
-// #TODO: test z (and w) coordinate..
-// #TODO: refactor test to use and verify UpdateOutput

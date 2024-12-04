@@ -134,6 +134,11 @@ int16_t ViewportTransform::GetOffsetY() const {
 }
 
 bool ViewportTransform::UpdateTransform() {
+  matrix_ = Eigen::Matrix4f::Identity();
+  matrix_(0, 0) = width_ / 2;
+  matrix_(0, 3) = (width_ / 2) + x_offset_;
+  matrix_(1, 1) = -height_ / 2;
+  matrix_(1, 3) = height_ / 2 + y_offset_;
   return true;
 }
 
