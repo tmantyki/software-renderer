@@ -1,7 +1,7 @@
 #include <Eigen/Core>
 #include <chrono>
 #include <iostream>
-#include "timer.hpp"
+#include "utility/timer.hpp"
 
 void PerformanceTest() {
   /* 4 by 1K matrix multiplication */

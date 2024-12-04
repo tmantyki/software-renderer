@@ -3,16 +3,16 @@
 #include <chrono>
 #include <thread>
 
-#include "coordinate.hpp"
-#include "direction.hpp"
-#include "line_segment.hpp"
-#include "plane.hpp"
-#include "point.hpp"
-#include "space.hpp"
-#include "timer.hpp"
-#include "transform.hpp"
-#include "triangle.hpp"
-#include "vertex.hpp"
+#include "geometry/coordinate.hpp"
+#include "geometry/direction.hpp"
+#include "geometry/line_segment.hpp"
+#include "geometry/plane.hpp"
+#include "geometry/point.hpp"
+#include "geometry/space.hpp"
+#include "geometry/transform.hpp"
+#include "geometry/triangle.hpp"
+#include "geometry/vertex.hpp"
+#include "utility/timer.hpp"
 
 namespace {
 TriangleSharedPointer CreateRandomTriangle() {
