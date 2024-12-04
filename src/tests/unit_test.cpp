@@ -384,6 +384,22 @@ TEST(Space, DivideByW) {
   }
 }
 
+TEST(Space, TransformVerticesAndNormals) {
+  Space space;
+  std::vector<TriangleSharedPointer> t = ::CreateRandomTriangleVector(8);
+  ::EnqueAddMultipleTriangles({0, 1, 2, 3, 4, 5, 6, 7}, t, space);
+  space.UpdateSpace();
+  VertexMatrix pre_vertices = space.GetVertices();
+  VertexMatrix pre_normals = space.GetNormals();
+  Eigen::Matrix4f random_transform = Eigen::Matrix4f::Random();
+  space.TransformVertices(random_transform);
+  VertexMatrix post_vertices = space.GetVertices();
+  EXPECT_EQ(random_transform * pre_vertices, post_vertices);
+  space.TransformNormals(random_transform);
+  VertexMatrix post_normals = space.GetNormals();
+  EXPECT_EQ(random_transform * pre_normals, post_normals);
+}
+
 TEST(Camera, ConstructorDefault) {
   Camera cam;
   EXPECT_EQ(Point(0, 0, 0), cam.GetLocation());
