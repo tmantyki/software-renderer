@@ -521,14 +521,18 @@ TEST(PespectiveProjection, ConstructorArguments) {
 class SingleTriangleClipping : public testing::Test {
  protected:
   SingleTriangleClipping()
-      : v1_(3, 3, 0),
-        v2_(3, 1, 0),
-        v3_(1, 1, 0),
+      : v1_(3 - x_offset, 3, 0),
+        v2_(3 - x_offset, 1, 0),
+        v3_(1 - x_offset, 1, 0),
         tr_(std::make_shared<Triangle>(v1_, v2_, v3_)) {
     space_.EnqueueAddTriangle(tr_);
     space_.UpdateSpace();
+    Eigen::Matrix4f translation = Eigen::Matrix4f::Identity();
+    translation(0, 3) = x_offset;
+    space_.TransformVertices(translation);
   }
   Space space_;
+  int16_t x_offset = 100;
   Vertex v1_;
   Vertex v2_;
   Vertex v3_;

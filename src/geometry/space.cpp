@@ -56,21 +56,28 @@ TrianglePlaneIntersections GetTrianglePlaneIntersections(
                               line_segment_ac.GetInterpolatedPoint(ac_t)};
 }
 
-void AddSubstituteTriangles(const Triangle& triangle,
+// #TODO: refactor
+void AddSubstituteTriangles(const VertexMatrix& vertices,
+                            const NormalMatrix& normals,
+                            size_t triangle_index,
                             size_t single_vertex_index,
                             TriangleClipMode clip_mode,
                             const TrianglePlaneIntersections& intersections,
                             std::vector<TriangleSharedPointer>& substitutes) {
-  Direction normal(triangle.GetNormal()({0, 1, 2}));
+  size_t c;
+  Direction normal(normals({0, 1, 2}, triangle_index));
   Vertex vertex_ab(intersections[TriangleEdge::kAB].GetVector()({0, 1, 2}));
   Vertex vertex_ac(intersections[TriangleEdge::kAC].GetVector()({0, 1, 2}));
   if (clip_mode == TriangleClipMode::kIncludeReference) {
-    Vertex vertex_0 = triangle.GetVertex(single_vertex_index);
+    c = triangle_index * 3 + single_vertex_index;
+    Vertex vertex_0 = Vertex(vertices({0, 1, 2}, c));
     substitutes.push_back(
         std::make_shared<Triangle>(vertex_0, vertex_ab, vertex_ac, normal));
   } else if (clip_mode == TriangleClipMode::kExcludeReference) {
-    Vertex vertex_1 = triangle.GetVertex((single_vertex_index + 1) % 3);
-    Vertex vertex_2 = triangle.GetVertex((single_vertex_index + 2) % 3);
+    c = triangle_index * 3 + ((single_vertex_index + 1) % 3);
+    Vertex vertex_1 = Vertex(vertices({0, 1, 2}, c));
+    c = triangle_index * 3 + ((single_vertex_index + 2) % 3);
+    Vertex vertex_2 = Vertex(vertices({0, 1, 2}, c));
     substitutes.push_back(
         std::make_shared<Triangle>(vertex_ab, vertex_1, vertex_ac, normal));
     substitutes.push_back(
@@ -132,8 +139,9 @@ std::vector<TriangleSharedPointer> Space::GetClipSubstitutes(
       triangle_index, single_vertex_index, vertices_, plane);
   std::vector<TriangleSharedPointer> substitutes;
   // #TODO: vertex attributes
-  ::AddSubstituteTriangles(*triangles_[triangle_index], single_vertex_index,
-                           clip_mode, intersections, substitutes);
+  ::AddSubstituteTriangles(vertices_, normals_, triangle_index,
+                           single_vertex_index, clip_mode, intersections,
+                           substitutes);
   return substitutes;
 }
 
@@ -174,7 +182,7 @@ void Space::ReplaceRemovedWithAdded(struct UpdateSpaceParameters& parameters) {
       triangle_add_queue_.pop();
       ::UpdateMatrixColumnsFromTriangle(i, triangles_[i], vertices_, normals_);
     } else {
-      (void)parameters; // required for Release build
+      (void)parameters;  // required for Release build
       assert(parameters.final_triangle_count <
              parameters.initial_triangle_count);
       assert(parameters.remove_queue_size > parameters.add_queue_size);
