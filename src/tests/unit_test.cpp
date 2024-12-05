@@ -421,6 +421,20 @@ TEST(Camera, ConstructorArguments) {
   EXPECT_FLOAT_EQ(0, cam_2.GetRoll());
 }
 
+TEST(Camera, GetAndSetFunctions) {
+  Camera cam;
+  float pitch = 0.13, yaw = 0.17, roll = 0.23;
+  Point new_location(1, 2, 3);
+  cam.SetLocation(new_location);
+  cam.SetPitch(pitch);
+  cam.SetYaw(yaw);
+  cam.SetRoll(roll);
+  EXPECT_EQ(new_location, cam.GetLocation());
+  EXPECT_EQ(pitch, cam.GetPitch());
+  EXPECT_EQ(yaw, cam.GetYaw());
+  EXPECT_EQ(roll, cam.GetRoll());
+}
+
 TEST(CameraTransform, ConstructorDefault) {
   Camera c;
   CameraTransform ct;

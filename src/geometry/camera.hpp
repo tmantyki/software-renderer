@@ -11,6 +11,10 @@ class Camera {
   float GetPitch() const;
   float GetYaw() const;
   float GetRoll() const;
+  void SetLocation(const Point& location);
+  void SetPitch(float pitch);
+  void SetYaw(float yaw);
+  void SetRoll(float roll);
 
  private:
   Point location_;

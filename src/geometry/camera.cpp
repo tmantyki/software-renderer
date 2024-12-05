@@ -21,3 +21,19 @@ float Camera::GetYaw() const {
 float Camera::GetRoll() const {
   return roll_;
 }
+
+void Camera::SetLocation(const Point& location) {
+  location_ = location;
+}
+
+void Camera::SetPitch(float pitch) {
+  pitch_ = pitch;
+}
+
+void Camera::SetYaw(float yaw) {
+  yaw_ = yaw;
+}
+
+void Camera::SetRoll(float roll) {
+  roll_ = roll;
+}
