@@ -6,6 +6,7 @@
 #include <memory>
 
 constexpr float kPi = 3.14159265358979323846264338;
+constexpr float kFloatTolerance = 1.0E-6;
 constexpr size_t kDimensions = 4;
 constexpr size_t kVerticesPerTriangle = 3;
 constexpr size_t kViewportDimensions = 3;

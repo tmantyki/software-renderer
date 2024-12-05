@@ -377,10 +377,10 @@ TEST(Space, DivideByW) {
   space.DivideByW();
   VertexMatrix post = space.GetVertices();
   for (int16_t c = 0; c < space.GetVertices().cols(); c++) {
-    EXPECT_EQ(pre(0, c) / -pre(3, c), post(0, c));
-    EXPECT_EQ(pre(1, c) / -pre(3, c), post(1, c));
-    EXPECT_EQ(pre(2, c) / -pre(3, c), post(2, c));
-    EXPECT_EQ(-1, post(3, c));
+    EXPECT_EQ(pre(0, c) / pre(3, c), post(0, c));
+    EXPECT_EQ(pre(1, c) / pre(3, c), post(1, c));
+    EXPECT_EQ(pre(2, c) / pre(3, c), post(2, c));
+    EXPECT_EQ(1, post(3, c));
   }
 }
 
@@ -486,7 +486,7 @@ TEST(CameraTransform, ConstructorWithRoll) {
 
 // #TODO: more thorough precision measurements
 TEST(CameraTransform, ConstructorWithPitchYawRoll) {
-  float abs_error = 0.000001;
+  float abs_error = kFloatTolerance;
   Camera c({0, 0, 0}, std::acos(1 / std::sqrt(2)), std::acos(1 / std::sqrt(3)),
            -kPi * 3 / 4);
   CameraTransform ct(c);
@@ -648,7 +648,6 @@ TEST_F(ViewportTransformTest, AddPositiveOffsetX) {
   uint16_t width = 480;
   int16_t x_offset = 100;
   SetViewportParameters(width, 0, x_offset, 0);
-  // std::cout << vt_.GetMatrix() << "\n";
   EXPECT_EQ(((v_x + 1) * width / 2.0) + x_offset, GetTransformedVector()[0]);
 }
 

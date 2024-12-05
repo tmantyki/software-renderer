@@ -237,6 +237,7 @@ void Space::ProcessClippingMask(const ClippingMask& clipping_mask,
                                 const Plane& plane) {
   Eigen::Array<int, 1, Eigen::Dynamic> mask_cols_sums =
       clipping_mask.colwise().sum();
+  // #TODO: can be parallellized
   for (size_t col = 0; col < static_cast<size_t>(clipping_mask.cols()); col++) {
     int match_mask_value = 0;
     TriangleClipMode clip_mode = TriangleClipMode::kExcludeReference;
@@ -257,6 +258,5 @@ void Space::ProcessClippingMask(const ClippingMask& clipping_mask,
 }
 
 void Space::DivideByW() {
-  vertices_ =
-      (vertices_.array().rowwise() / -vertices_.row(3).array()).matrix();
+  vertices_ = (vertices_.array().rowwise() / vertices_.row(3).array()).matrix();
 }
