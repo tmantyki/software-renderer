@@ -1,17 +1,20 @@
 #ifndef VERTEX_HPP
 #define VERTEX_HPP
 
+#include "common.hpp"
 #include "point.hpp"
 
 class Vertex : public Point {
  public:
   Vertex() = delete;
   Vertex(float x, float y, float z);
-  Vertex(Eigen::Vector3f vector_3f);
-  Eigen::Vector3f GetAttributeColor() const;
+  Vertex(Vector3 vector);
+  Vertex(Vector4 vector);
+  Vertex(Point& point);
+  // Vector3 GetAttributeColor() const;
 
- private:
-  Eigen::Vector3f attribute_color_;
+  //  private:
+  //   Vector3 attribute_color_;
 };
 
 #endif

@@ -3,7 +3,10 @@
 
 #include <cassert>
 #include <cstddef>
+#include <iostream>
 #include <memory>
+
+#include <Eigen/Core>
 
 constexpr float kPi = 3.14159265358979323846264338;
 constexpr float kFloatTolerance = 1.0E-6;
@@ -20,6 +23,10 @@ class Triangle;
 typedef std::array<Point, 2> TrianglePlaneIntersections;
 typedef std::shared_ptr<Space> SpaceSharedPointer;
 typedef std::shared_ptr<Triangle> TriangleSharedPointer;
+typedef Eigen::Vector3f Vector3;
+typedef Eigen::Vector4f Vector4;
+typedef Eigen::Matrix3f Matrix3;
+typedef Eigen::Matrix4f Matrix4;
 typedef Eigen::Array<int, kVerticesPerTriangle, Eigen::Dynamic> ClippingMask;
 typedef Eigen::
     Matrix<float, kDimensions, Eigen::Dynamic, 0, kDimensions, kMaxTriangles>
@@ -34,5 +41,7 @@ typedef Eigen::Matrix<float,
 
 enum class TriangleClipMode { kIncludeReference, kExcludeReference };
 enum TriangleEdge { kAB = 0, kAC = 1, kBC = 2 };
+enum Axis { kX = 0, kY = 1, kZ = 2 };
+enum AxisDirection { kNegative = -1, kPositive = 1 };
 
 #endif

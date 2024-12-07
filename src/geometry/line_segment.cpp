@@ -1,4 +1,5 @@
 #include "line_segment.hpp"
+#include "common.hpp"
 
 LineSegment::LineSegment(Point a, Point b) : a_(a), b_(b) {
   assert(a.GetVector() != b.GetVector());
@@ -6,7 +7,7 @@ LineSegment::LineSegment(Point a, Point b) : a_(a), b_(b) {
 
 Point LineSegment::GetInterpolatedPoint(float t) const {
   assert(t >= 0 && t <= 1);
-  return Point(((1 - t) * a_.GetVector() + t * b_.GetVector())({0, 1, 2}));
+  return Point(Vector4(((1 - t) * a_.GetVector() + t * b_.GetVector())));
 }
 
 float LineSegment::GetPlaneIntersectionParameter(const Plane& plane) const {
