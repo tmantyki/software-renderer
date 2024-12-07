@@ -361,7 +361,7 @@ TEST(Space, RemoveAllButOneTriangles) {
   ::VerifyTriangleOrder({7}, t, space);
 }
 
-TEST(Space, DivideByW) {
+TEST(Space, Dehomogenize) {
   Space space;
   TriangleSharedPointer tr = ::CreateRandomTriangle();
   space.EnqueueAddTriangle(tr);
@@ -369,7 +369,7 @@ TEST(Space, DivideByW) {
   Eigen::Matrix4f random_transform = Eigen::Matrix4f::Random();
   space.TransformVertices(random_transform);
   VertexMatrix pre = space.GetVertices();
-  space.DivideByW();
+  space.Dehomogenize();
   VertexMatrix post = space.GetVertices();
   for (int16_t c = 0; c < space.GetVertices().cols(); c++) {
     EXPECT_EQ(pre(0, c) / pre(3, c), post(0, c));
@@ -690,4 +690,41 @@ TEST(TransformPipeline, ConstructorObjects) {
   EXPECT_EQ(camera, pipeline.GetCameraTransform());
   EXPECT_EQ(perspective, pipeline.GetPerspectiveProjection());
   EXPECT_EQ(viewport, pipeline.GetViewportTransform());
+}
+
+class TransformPipelineTest : public testing ::Test {
+ protected:
+  TransformPipelineTest()
+
+      // : v1_(0, 0, -4),
+      //   v2_(1, 0, -2),
+      //   v3_(2, -2, 0),
+      : v1_(2, 0, 0),
+        v2_(4, 0, 0),
+        v3_(4, 0, 2),
+        camera_(std::make_shared<CameraTransform>()),
+        perspective_(
+            std::make_shared<PerspectiveProjection>(1, 10, -1, 1, 1, -1)),
+        viewport_(std::make_shared<ViewportTransform>(800, 800, 0, 0)),
+        pipeline_(camera_, perspective_, viewport_) {
+    world_space_.EnqueueAddTriangle(std::make_shared<Triangle>(v1_, v2_, v3_));
+    world_space_.UpdateSpace();
+  }
+  Space world_space_;
+  Vertex v1_, v2_, v3_;
+  std::shared_ptr<CameraTransform> camera_;
+  std::shared_ptr<PerspectiveProjection> perspective_;
+  std::shared_ptr<ViewportTransform> viewport_;
+  TransformPipeline pipeline_;
+};
+
+TEST_F(TransformPipelineTest, SingleFullyVisibleTriangle) {
+  camera_->GetCamera().SetLocation({3, 2, 1});
+  camera_->GetCamera().SetPitch(kPi / 2);
+  camera_->UpdateTransform();
+  pipeline_.RunPipeline(world_space_);
+  std::cout << "\nInput matrix:\n" << world_space_.GetVertices();
+  std::cout << "\nOutput matrix:\n"
+            << pipeline_.GetOutputSpace().GetVertices() << "\n";
+  EXPECT_EQ(1, pipeline_.GetOutputSpace().GetTriangleCount());
 }

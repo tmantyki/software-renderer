@@ -38,51 +38,45 @@ size_t FindVertexIndexByClipMask(Eigen::Array<int, 3, 1> mask_column,
   return -1;
 }
 
-TrianglePlaneIntersections GetTrianglePlaneIntersections(
-    size_t triangle_index,
-    size_t single_vertex_index,
-    const VertexMatrix& vertices,
-    const Plane& plane) {
-  size_t a = single_vertex_index + triangle_index * 3;
-  size_t b = (a + 1) % 3 + triangle_index * 3;
-  size_t c = (a + 2) % 3 + triangle_index * 3;
-  LineSegment line_segment_ab(Point(vertices.block(0, a, 3, 1)),
-                              Point(vertices.block(0, b, 3, 1)));
-  LineSegment line_segment_ac(Point(vertices.block(0, a, 3, 1)),
-                              Point(vertices.block(0, c, 3, 1)));
-  float ab_t = line_segment_ab.GetPlaneIntersectionParameter(plane);
-  float ac_t = line_segment_ac.GetPlaneIntersectionParameter(plane);
-  return std::array<Point, 2>{line_segment_ab.GetInterpolatedPoint(ab_t),
-                              line_segment_ac.GetInterpolatedPoint(ac_t)};
-}
-
 // #TODO: refactor
 void AddSubstituteTriangles(const VertexMatrix& vertices,
                             const NormalMatrix& normals,
                             size_t triangle_index,
                             size_t single_vertex_index,
                             TriangleClipMode clip_mode,
-                            const TrianglePlaneIntersections& intersections,
+                            TrianglePlaneIntersections& intersections,
                             std::vector<TriangleSharedPointer>& substitutes) {
-  size_t c;
+  size_t column;
   Direction normal(normals({0, 1, 2}, triangle_index));
-  Vertex vertex_ab(intersections[TriangleEdge::kAB].GetVector()({0, 1, 2}));
-  Vertex vertex_ac(intersections[TriangleEdge::kAC].GetVector()({0, 1, 2}));
+  Vertex vertex_ab(intersections[TriangleEdge::kAB]);
+  Vertex vertex_ac(intersections[TriangleEdge::kAC]);
   if (clip_mode == TriangleClipMode::kIncludeReference) {
-    c = triangle_index * 3 + single_vertex_index;
-    Vertex vertex_0 = Vertex(vertices({0, 1, 2}, c));
+    column = triangle_index * 3 + single_vertex_index;
+    Vertex vertex_0 = Vertex(Vector4(vertices.col(column)));
     substitutes.push_back(
         std::make_shared<Triangle>(vertex_0, vertex_ab, vertex_ac, normal));
   } else if (clip_mode == TriangleClipMode::kExcludeReference) {
-    c = triangle_index * 3 + ((single_vertex_index + 1) % 3);
-    Vertex vertex_1 = Vertex(vertices({0, 1, 2}, c));
-    c = triangle_index * 3 + ((single_vertex_index + 2) % 3);
-    Vertex vertex_2 = Vertex(vertices({0, 1, 2}, c));
+    column = triangle_index * 3 + ((single_vertex_index + 1) % 3);
+    Vertex vertex_1 = Vertex(Vector4(vertices.col(column)));
+    column = triangle_index * 3 + ((single_vertex_index + 2) % 3);
+    Vertex vertex_2 = Vertex(Vector4(vertices.col(column)));
     substitutes.push_back(
         std::make_shared<Triangle>(vertex_ab, vertex_1, vertex_ac, normal));
     substitutes.push_back(
         std::make_shared<Triangle>(vertex_ac, vertex_1, vertex_2, normal));
   }
+}
+
+float HomogenousInterpolation(Vector4 vector_a,
+                              Vector4 vector_b,
+                              Axis axis,
+                              AxisDirection axis_direction) {
+  float a_val = vector_a[axis];
+  float b_val = vector_b[axis];
+  float a_w = axis_direction * vector_a[3];
+  float b_w = axis_direction * vector_b[3];
+  assert(a_val - a_w - b_val + b_w != 0);
+  return (a_val - a_w) / (a_val - a_w - b_val + b_w);
 }
 }  // namespace
 
@@ -130,13 +124,14 @@ const NormalMatrix& Space::GetNormals() const {
   return normals_;
 }
 
-std::vector<TriangleSharedPointer> Space::GetClipSubstitutes(
+std::vector<TriangleSharedPointer> Space::GetHomogenousClipSubstitutes(
     size_t triangle_index,
-    const Plane& plane,
     size_t single_vertex_index,
+    Axis axis,
+    AxisDirection axis_direction,
     TriangleClipMode clip_mode) const {
-  TrianglePlaneIntersections intersections = ::GetTrianglePlaneIntersections(
-      triangle_index, single_vertex_index, vertices_, plane);
+  TrianglePlaneIntersections intersections = GetTrianglePlaneIntersections(
+      triangle_index, single_vertex_index, axis, axis_direction);
   std::vector<TriangleSharedPointer> substitutes;
   // #TODO: vertex attributes
   ::AddSubstituteTriangles(vertices_, normals_, triangle_index,
@@ -145,9 +140,9 @@ std::vector<TriangleSharedPointer> Space::GetClipSubstitutes(
   return substitutes;
 }
 
-void Space::ClipAllTriangles(const Plane& plane) {
-  ClippingMask clipping_mask = GenerateClippingMask(plane);
-  ProcessClippingMask(clipping_mask, plane);
+void Space::ClipAllTriangles(Axis axis, AxisDirection axis_direction) {
+  ClippingMask clipping_mask = HomogenousClippingMask(axis, axis_direction);
+  ProcessHomogenousClippingMask(clipping_mask, axis, axis_direction);
   UpdateSpace();
 }
 
@@ -235,14 +230,17 @@ void Space::AddRemainingInQueue(struct UpdateSpaceParameters& parameters) {
   }
 }
 
-ClippingMask Space::GenerateClippingMask(const Plane& plane) const {
-  return ((plane.GetVectorNormalized().transpose() * vertices_).array() >= 0)
+ClippingMask Space::HomogenousClippingMask(Axis axis,
+                                           AxisDirection axis_direction) const {
+  return (axis_direction * vertices_.row(axis).array() <=
+          (vertices_.row(3)).array())
       .reshaped(kVerticesPerTriangle, triangle_count_)
       .cast<int>();
 }
 
-void Space::ProcessClippingMask(const ClippingMask& clipping_mask,
-                                const Plane& plane) {
+void Space::ProcessHomogenousClippingMask(const ClippingMask& clipping_mask,
+                                          Axis axis,
+                                          AxisDirection axis_direction) {
   Eigen::Array<int, 1, Eigen::Dynamic> mask_cols_sums =
       clipping_mask.colwise().sum();
   // #TODO: can be parallellized
@@ -260,11 +258,37 @@ void Space::ProcessClippingMask(const ClippingMask& clipping_mask,
     }
     size_t single_vertex_index =
         ::FindVertexIndexByClipMask(clipping_mask.col(col), match_mask_value);
-    EnqueueAddMultipleTriangles(
-        GetClipSubstitutes(col, plane, single_vertex_index, clip_mode));
+    EnqueueAddMultipleTriangles(GetHomogenousClipSubstitutes(
+        col, single_vertex_index, axis, axis_direction, clip_mode));
   }
 }
 
-void Space::DivideByW() {
+// #TODO: refactor!
+TrianglePlaneIntersections Space::GetTrianglePlaneIntersections(
+    size_t triangle_index,
+    size_t single_vertex_index,
+    Axis axis,
+    AxisDirection axis_direction) const {
+  size_t a = single_vertex_index + triangle_index * 3;
+  size_t b = (a + 1) % 3 + triangle_index * 3;
+  size_t c = (a + 2) % 3 + triangle_index * 3;
+  Vector4 vector_a = vertices_.block(0, a, kDimensions, 1);
+  Vector4 vector_b = vertices_.block(0, b, kDimensions, 1);
+  Vector4 vector_c = vertices_.block(0, c, kDimensions, 1);
+  float ab_t =
+      ::HomogenousInterpolation(vector_a, vector_b, axis, axis_direction);
+  float ac_t =
+      ::HomogenousInterpolation(vector_a, vector_c, axis, axis_direction);
+  Vector4 interpolated_ab = vector_a * (1 - ab_t) + vector_b * ab_t;
+  Vector4 interpolated_ac = vector_a * (1 - ac_t) + vector_c * ac_t;
+
+  Point point_interpolated_ab(interpolated_ab(0), interpolated_ab(1),
+                              interpolated_ab(2), interpolated_ab(3));
+  Point point_interpolated_ac(interpolated_ac(0), interpolated_ac(1),
+                              interpolated_ac(2), interpolated_ac(3));
+  return std::array<Point, 2>{point_interpolated_ab, point_interpolated_ac};
+}
+
+void Space::Dehomogenize() {
   vertices_ = (vertices_.array().rowwise() / vertices_.row(3).array()).matrix();
 }

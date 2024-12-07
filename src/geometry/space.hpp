@@ -16,15 +16,16 @@ class Space {
   const std::array<TriangleSharedPointer, kMaxTriangles>& GetTriangles() const;
   const VertexMatrix& GetVertices() const;
   const NormalMatrix& GetNormals() const;
-  std::vector<TriangleSharedPointer> GetClipSubstitutes(
+  std::vector<TriangleSharedPointer> GetHomogenousClipSubstitutes(
       size_t triangle_index,
-      const Plane& plane,
       size_t solo_vertex,
+      Axis axis,
+      AxisDirection axis_direction,
       TriangleClipMode clip_mode) const;
-  void ClipAllTriangles(const Plane& plane);
+  void ClipAllTriangles(Axis axis, AxisDirection axis_direction);
   void TransformVertices(const Eigen::Matrix4f& transformation);
   void TransformNormals(const Eigen::Matrix4f& transformation);
-  void DivideByW();
+  void Dehomogenize();
 
  private:
   std::array<TriangleSharedPointer, kMaxTriangles> triangles_;
@@ -45,9 +46,16 @@ class Space {
   void DefragmentVectorAndMatrices(struct UpdateSpaceParameters& parameters);
   void ResizeVectorAndMatrices(struct UpdateSpaceParameters& parameters);
   void AddRemainingInQueue(struct UpdateSpaceParameters& parameters);
-  ClippingMask GenerateClippingMask(const Plane& plane) const;
-  void ProcessClippingMask(const ClippingMask& clipping_mask,
-                           const Plane& plane);
+  ClippingMask HomogenousClippingMask(Axis axis,
+                                      AxisDirection axis_direction) const;
+  void ProcessHomogenousClippingMask(const ClippingMask& clipping_mask,
+                                     Axis axis,
+                                     AxisDirection axis_direction);
+  TrianglePlaneIntersections GetTrianglePlaneIntersections(
+      size_t triangle_index,
+      size_t single_vertex_index,
+      Axis axis,
+      AxisDirection axis_direction) const;
 };
 
 #endif
