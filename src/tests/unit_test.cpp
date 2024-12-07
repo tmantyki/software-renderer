@@ -430,67 +430,76 @@ TEST(Camera, GetAndSetFunctions) {
   EXPECT_EQ(roll, cam.GetRoll());
 }
 
-TEST(CameraTransform, ConstructorDefault) {
-  Camera c;
-  CameraTransform ct;
-  EXPECT_TRUE(::CamerasAreEqual(c, ct.GetCamera()));
-  EXPECT_EQ(Eigen::Matrix4f::Identity(), ct.GetMatrix());
+class CameraTransformTest : public testing::Test {
+ protected:
+  CameraTransformTest()
+      : camera_(camera_transform_.GetCamera()), constructed_camera_(camera_) {}
+  void ExpectOutput(Vector4 expectation) {
+    camera_transform_.UpdateTransform();
+    EXPECT_TRUE(::CamerasAreEqual(constructed_camera_, camera_));
+    Vector4 output = camera_transform_.GetMatrix() * input_;
+    for (size_t i : {0, 1, 2, 3})
+      EXPECT_NEAR(expectation[i], output[i], kFloatTolerance);
+  }
+  CameraTransform camera_transform_;
+  Camera& camera_;
+  Camera constructed_camera_;
+  Vector4 input_;
+};
+
+TEST_F(CameraTransformTest, ConstructorDefault) {
+  constructed_camera_ = Camera();
+  EXPECT_TRUE(::CamerasAreEqual(constructed_camera_, camera_));
+  EXPECT_EQ(Matrix4::Identity(), camera_transform_.GetMatrix());
 }
 
-TEST(CameraTransform, ConstructorWithLocationOffset) {
-  Camera c({1, 2, 3});
-  CameraTransform ct(c);
-  EXPECT_TRUE(::CamerasAreEqual(c, ct.GetCamera()));
+TEST_F(CameraTransformTest, ConstructorWithLocationOffset) {
+  float x = 1, y = 2, z = 3;
+  constructed_camera_ = {{x, y, z}, 0, 0, 0};
+  camera_.SetLocation({x, y, z});
+  camera_transform_.UpdateTransform();
   Eigen::Matrix4f M = Eigen::Matrix4f::Identity();
-  M.col(3) = Eigen::Vector4f(-1, -2, -3, 1);
-  EXPECT_EQ(M, ct.GetMatrix());
+  M.col(3) = Vector4(-x, -y, -z, 1);
+  EXPECT_TRUE(::CamerasAreEqual(camera_, constructed_camera_));
+  EXPECT_EQ(M, camera_transform_.GetMatrix());
 }
 
-TEST(CameraTransform, ConstructorWithPitch) {
-  Camera c({0, 0, 0}, 1, 0, 0);
-  CameraTransform ct(c);
-  Eigen::Vector4f p(0, 0, -1, 1);
-  Eigen::Vector4f p_transformed = ct.GetMatrix() * p;
-  EXPECT_FLOAT_EQ(0, p_transformed[0]);
-  EXPECT_FLOAT_EQ(std::sin(1), p_transformed[1]);
-  EXPECT_FLOAT_EQ(-std::cos(1), p_transformed[2]);
-  EXPECT_FLOAT_EQ(1, p_transformed[3]);
+TEST_F(CameraTransformTest, ConstructorWithPitch) {
+  float pitch = 1;
+  constructed_camera_ = {{0, 0, 0}, pitch, 0, 0};
+  camera_.SetPitch(pitch);
+  input_ = {0, 0, -1, 1};
+  ExpectOutput({0, std::sin(1), -std::cos(1), 1});
 }
 
-TEST(CameraTransform, ConstructorWithYaw) {
-  Camera c({0, 0, 0}, 0, 1, 0);
-  CameraTransform ct(c);
-  Eigen::Vector4f p(0, 0, -1, 1);
-  Eigen::Vector4f p_transformed = ct.GetMatrix() * p;
-  EXPECT_FLOAT_EQ(-std::sin(1), p_transformed[0]);
-  EXPECT_FLOAT_EQ(0, p_transformed[1]);
-  EXPECT_FLOAT_EQ(-std::cos(1), p_transformed[2]);
-  EXPECT_FLOAT_EQ(1, p_transformed[3]);
+TEST_F(CameraTransformTest, ConstructorWithYaw) {
+  float yaw = 1;
+  constructed_camera_ = {{0, 0, 0}, 0, yaw, 0};
+  camera_.SetYaw(yaw);
+  input_ = {0, 0, -1, 1};
+  ExpectOutput({-std::sin(1), 0, -std::cos(1), 1});
 }
 
-TEST(CameraTransform, ConstructorWithRoll) {
-  Camera c({0, 0, 0}, 0, 0, 1);
-  CameraTransform ct(c);
-  Eigen::Vector4f p(1, 0, 0, 1);
-  Eigen::Vector4f p_transformed = ct.GetMatrix() * p;
-  EXPECT_FLOAT_EQ(std::cos(1), p_transformed[0]);
-  EXPECT_FLOAT_EQ(std::sin(1), p_transformed[1]);
-  EXPECT_FLOAT_EQ(0, p_transformed[2]);
-  EXPECT_FLOAT_EQ(1, p_transformed[3]);
+TEST_F(CameraTransformTest, ConstructorWithRoll) {
+  float roll = 1;
+  constructed_camera_ = {{0, 0, 0}, 0, 0, roll};
+  camera_.SetRoll(roll);
+  input_ = {1, 0, 0, 1};
+  ExpectOutput({std::cos(1), std::sin(1), 0, 1});
 }
 
-// #TODO: more thorough precision measurements
-TEST(CameraTransform, ConstructorWithPitchYawRoll) {
-  float abs_error = kFloatTolerance;
-  Camera c({0, 0, 0}, std::acos(1 / std::sqrt(2)), std::acos(1 / std::sqrt(3)),
-           -kPi * 3 / 4);
-  CameraTransform ct(c);
-  Eigen::Vector4f p(1, 0, 0, 1);
-  Eigen::Vector4f p_transformed = ct.GetMatrix() * p;
-  EXPECT_NEAR(0, p_transformed[0], abs_error);
-  EXPECT_NEAR(-std::sqrt(2.0 / 3), p_transformed[1], abs_error);
-  EXPECT_NEAR(-1 / std::sqrt(3), p_transformed[2], abs_error);
-  EXPECT_NEAR(1, p_transformed[3], abs_error);
+TEST_F(CameraTransformTest, ConstructorWithLocationPitchYawRoll) {
+  float pitch = std::acos(1 / std::sqrt(2));
+  float yaw = std::acos(1 / std::sqrt(3));
+  float roll = -kPi * 3 / 4;
+  float x_offset = 3, y_offset = -7, z_offset = 13;
+  constructed_camera_ = {{x_offset, y_offset, z_offset}, pitch, yaw, roll};
+  camera_.SetLocation({x_offset, y_offset, z_offset});
+  camera_.SetPitch(pitch);
+  camera_.SetYaw(yaw);
+  camera_.SetRoll(roll);
+  input_ = {1 + x_offset, y_offset, z_offset, 1};
+  ExpectOutput({0, -std::sqrt(2.0 / 3), -1 / std::sqrt(3), 1});
 }
 
 TEST(PespectiveProjection, ConstructorArguments) {

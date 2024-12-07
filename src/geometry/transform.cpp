@@ -53,7 +53,7 @@ bool CameraTransform::UpdateTransform() {
   Eigen::Quaternionf quaternion_all =
       quaternion_roll * quaternion_pitch * quaternion_yaw;
   rotation_matrix_.block<3, 3>(0, 0) = quaternion_all.toRotationMatrix();
-  matrix_ = translation_matrix_ * rotation_matrix_;
+  matrix_ = rotation_matrix_ * translation_matrix_;
   return true;
 }
 
