@@ -163,8 +163,8 @@ std::shared_ptr<ViewportTransform> TransformPipeline::GetViewportTransform() {
 
 void TransformPipeline::RunPipeline(const Space& input_space) {
   output_space_ = input_space;
-  output_space_.TransformVertices(camera_->GetMatrix() *
-                                  perspective_->GetMatrix());
+  // #TODO: optimize by giving as two arguments rather than ready product
+  output_space_.TransformVertices(perspective_->GetMatrix() * camera_->GetMatrix());
   output_space_.TransformNormals(
       camera_->GetMatrix());  // check for correctness
   output_space_.DivideByW();
@@ -180,4 +180,8 @@ void TransformPipeline::RunPipeline(const Space& input_space) {
     output_space_.ClipAllTriangles(plane);
   }
   output_space_.TransformVertices(viewport_->GetMatrix());
+}
+
+Space& TransformPipeline::GetOutputSpace() {
+  return output_space_;
 }

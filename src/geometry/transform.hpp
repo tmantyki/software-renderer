@@ -80,6 +80,7 @@ class TransformPipeline {
   std::shared_ptr<PerspectiveProjection> GetPerspectiveProjection();
   std::shared_ptr<ViewportTransform> GetViewportTransform();
   void RunPipeline(const Space& input_space);
+  Space& GetOutputSpace();  // #TODO: returning reference ok?
 
  private:
   std::shared_ptr<CameraTransform> camera_;
