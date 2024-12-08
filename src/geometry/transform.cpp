@@ -181,7 +181,7 @@ void TransformPipeline::RunPipeline(const Space& input_space) {
     for (AxisDirection axis_direction :
          {AxisDirection::kNegative, AxisDirection::kPositive}) {
       output_space_.ClipAllTriangles(axis, axis_direction);
-  }
+    }
   }
   output_space_.Dehomogenize();
   output_space_.TransformVertices(viewport_->GetMatrix());

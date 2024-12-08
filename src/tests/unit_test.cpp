@@ -366,7 +366,7 @@ TEST(Space, Dehomogenize) {
   TriangleSharedPointer tr = ::CreateRandomTriangle();
   space.EnqueueAddTriangle(tr);
   space.UpdateSpace();
-  Eigen::Matrix4f random_transform = Eigen::Matrix4f::Random();
+  Matrix4 random_transform = Matrix4::Random();
   space.TransformVertices(random_transform);
   VertexMatrix pre = space.GetVertices();
   space.Dehomogenize();
@@ -381,7 +381,7 @@ TEST(Space, Dehomogenize) {
 
 TEST(Space, TransformVerticesAndNormals) {
   Space space;
-  Eigen::Matrix4f random_transform = Eigen::Matrix4f::Random();
+  Matrix4 random_transform = Matrix4::Random();
   std::vector<TriangleSharedPointer> t = ::CreateRandomTriangleVector(8);
   ::EnqueAddMultipleTriangles({0, 1, 2, 3, 4, 5, 6, 7}, t, space);
   space.UpdateSpace();
@@ -458,7 +458,7 @@ TEST_F(CameraTransformTest, ConstructorWithLocationOffset) {
   constructed_camera_ = {{x, y, z}, 0, 0, 0};
   camera_.SetLocation({x, y, z});
   camera_transform_.UpdateTransform();
-  Eigen::Matrix4f M = Eigen::Matrix4f::Identity();
+  Matrix4 M = Matrix4::Identity();
   M.col(3) = Vector4(-x, -y, -z, 1);
   EXPECT_TRUE(::CamerasAreEqual(camera_, constructed_camera_));
   EXPECT_EQ(M, camera_transform_.GetMatrix());
@@ -511,7 +511,7 @@ TEST(PespectiveProjection, ConstructorArguments) {
   EXPECT_EQ(right, pp.GetRight());
   EXPECT_EQ(top, pp.GetTop());
   EXPECT_EQ(bottom, pp.GetBottom());
-  Eigen::Matrix4f M = Eigen::Matrix4f::Zero();
+  Matrix4 M = Matrix4::Zero();
   M(0, 0) = 0.5;
   M(0, 2) = 3;
   M(1, 1) = 0.125;
@@ -524,7 +524,7 @@ TEST(PespectiveProjection, ConstructorArguments) {
 
 // #TODO: check normals after clipping
 // #TODO: rewrite!
-/*
+
 class SingleTriangleClipping : public testing::Test {
  protected:
   SingleTriangleClipping()
@@ -534,7 +534,7 @@ class SingleTriangleClipping : public testing::Test {
         tr_(std::make_shared<Triangle>(v1_, v2_, v3_)) {
     space_.EnqueueAddTriangle(tr_);
     space_.UpdateSpace();
-    Eigen::Matrix4f translation = Eigen::Matrix4f::Identity();
+    Matrix4 translation = Matrix4::Identity();
     translation(0, 3) = x_offset;
     space_.TransformVertices(translation);
   }
@@ -548,38 +548,38 @@ class SingleTriangleClipping : public testing::Test {
 
 TEST_F(SingleTriangleClipping, TriangleIsInside) {
   Plane plane(1, 0, 0, 0);
-  space_.ClipAllTriangles(plane);
+  space_.ClipAllTriangles(Axis::kX, AxisDirection::kPositive);
   ::VerifyTriangleCount(1, space_);
   EXPECT_EQ(tr_, space_.GetTriangles()[0]);
 }
 
-TEST_F(SingleTriangleClipping, TriangleIsOutside) {
-  Plane plane(-1, 0, 0, 0);
-  space_.ClipAllTriangles(plane);
-  ::VerifyTriangleCount(0, space_);
-}
+// TEST_F(SingleTriangleClipping, TriangleIsOutside) {
+//   Plane plane(-1, 0, 0, 0);
+//   space_.ClipAllTriangles(plane);
+//   ::VerifyTriangleCount(0, space_);
+// }
 
-TEST_F(SingleTriangleClipping, TriangleIsClippedIntoOne) {
-  Plane plane(-1, 0, 0, 2);
-  space_.ClipAllTriangles(plane);
-  ::VerifyTriangleCount(1, space_);
-  EXPECT_EQ(Point(1, 1, 0), space_.GetTriangles()[0]->GetVertex(0));
-  EXPECT_EQ(Point(2, 2, 0), space_.GetTriangles()[0]->GetVertex(1));
-  EXPECT_EQ(Point(2, 1, 0), space_.GetTriangles()[0]->GetVertex(2));
-}
+// TEST_F(SingleTriangleClipping, TriangleIsClippedIntoOne) {
+//   Plane plane(-1, 0, 0, 2);
+//   space_.ClipAllTriangles(plane);
+//   ::VerifyTriangleCount(1, space_);
+//   EXPECT_EQ(Point(1, 1, 0), space_.GetTriangles()[0]->GetVertex(0));
+//   EXPECT_EQ(Point(2, 2, 0), space_.GetTriangles()[0]->GetVertex(1));
+//   EXPECT_EQ(Point(2, 1, 0), space_.GetTriangles()[0]->GetVertex(2));
+// }
 
-TEST_F(SingleTriangleClipping, TriangleIsClippedIntoTwo) {
-  Plane plane(1, 0, 0, -2);
-  space_.ClipAllTriangles(plane);
-  ::VerifyTriangleCount(2, space_);
-  EXPECT_EQ(Point(2, 2, 0), space_.GetTriangles()[0]->GetVertex(0));
-  EXPECT_EQ(Point(3, 3, 0), space_.GetTriangles()[0]->GetVertex(1));
-  EXPECT_EQ(Point(2, 1, 0), space_.GetTriangles()[0]->GetVertex(2));
-  EXPECT_EQ(Point(2, 1, 0), space_.GetTriangles()[1]->GetVertex(0));
-  EXPECT_EQ(Point(3, 3, 0), space_.GetTriangles()[1]->GetVertex(1));
-  EXPECT_EQ(Point(3, 1, 0), space_.GetTriangles()[1]->GetVertex(2));
-}
- */
+// TEST_F(SingleTriangleClipping, TriangleIsClippedIntoTwo) {
+//   Plane plane(1, 0, 0, -2);
+//   space_.ClipAllTriangles(plane);
+//   ::VerifyTriangleCount(2, space_);
+//   EXPECT_EQ(Point(2, 2, 0), space_.GetTriangles()[0]->GetVertex(0));
+//   EXPECT_EQ(Point(3, 3, 0), space_.GetTriangles()[0]->GetVertex(1));
+//   EXPECT_EQ(Point(2, 1, 0), space_.GetTriangles()[0]->GetVertex(2));
+//   EXPECT_EQ(Point(2, 1, 0), space_.GetTriangles()[1]->GetVertex(0));
+//   EXPECT_EQ(Point(3, 3, 0), space_.GetTriangles()[1]->GetVertex(1));
+//   EXPECT_EQ(Point(3, 1, 0), space_.GetTriangles()[1]->GetVertex(2));
+// }
+
 TEST(ViewportTransform, ConstructorArguments) {
   int w = 800, h = 600, x_offset = 10, y_offset = -20;
   ViewportTransform vt(w, h, x_offset, y_offset);
@@ -737,3 +737,29 @@ TEST_F(TransformPipelineTest, SingleFullyVisibleTriangle) {
             << pipeline_.GetOutputSpace().GetVertices() << "\n";
   EXPECT_EQ(1, pipeline_.GetOutputSpace().GetTriangleCount());
 }
+
+// TEST_F(TransformPipelineTest, SingleFullyClippedTriangle) {
+//   camera_->UpdateTransform();
+//   pipeline_.RunPipeline(world_space_);
+//   EXPECT_EQ(0, pipeline_.GetOutputSpace().GetTriangleCount());
+// }
+
+// TEST(TransformPipeline, SingleFullyVisibleTriangle) {
+//   Space world_space;
+//   float z_offset = -2;
+//   Vertex v1(0, 0, z_offset), v2(2, 0, z_offset), v3(0, -2, z_offset);
+//   TriangleSharedPointer tr = std::make_shared<Triangle>(v1, v2, v3);
+//   world_space.EnqueueAddTriangle(tr);
+//   world_space.UpdateSpace();
+//   std::shared_ptr<CameraTransform> camera =
+//   std::make_shared<CameraTransform>(); std::shared_ptr<PerspectiveProjection>
+//   perspective =
+//       std::make_shared<PerspectiveProjection>(1, 10, -1, 1, 1, -1);
+//   std::shared_ptr<ViewportTransform> viewport =
+//       std::make_shared<ViewportTransform>(800, 800, 0, 0);
+//   TransformPipeline pipeline(camera, perspective, viewport);
+//   pipeline.RunPipeline(world_space);
+//   std::cout << "\nInput matrix:\n" << world_space.GetVertices();
+//   std::cout << "\nOutput matrix:\n"
+//             << pipeline.GetOutputSpace().GetVertices() << "\n";
+// }
