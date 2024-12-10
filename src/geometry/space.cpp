@@ -67,7 +67,7 @@ void AddSubstituteTriangles(const VertexMatrix& vertices,
   }
 }
 
-float HomogenousInterpolation(Vector4 vector_a,
+float HomogeneousInterpolation(Vector4 vector_a,
                               Vector4 vector_b,
                               Axis axis,
                               AxisDirection axis_direction) {
@@ -124,7 +124,7 @@ const NormalMatrix& Space::GetNormals() const {
   return normals_;
 }
 
-std::vector<TriangleSharedPointer> Space::GetHomogenousClipSubstitutes(
+std::vector<TriangleSharedPointer> Space::GetHomogeneousClipSubstitutes(
     size_t triangle_index,
     size_t single_vertex_index,
     Axis axis,
@@ -141,8 +141,8 @@ std::vector<TriangleSharedPointer> Space::GetHomogenousClipSubstitutes(
 }
 
 void Space::ClipAllTriangles(Axis axis, AxisDirection axis_direction) {
-  ClippingMask clipping_mask = HomogenousClippingMask(axis, axis_direction);
-  ProcessHomogenousClippingMask(clipping_mask, axis, axis_direction);
+  ClippingMask clipping_mask = HomogeneousClippingMask(axis, axis_direction);
+  ProcessHomogeneousClippingMask(clipping_mask, axis, axis_direction);
   UpdateSpace();
 }
 
@@ -230,7 +230,7 @@ void Space::AddRemainingInQueue(struct UpdateSpaceParameters& parameters) {
   }
 }
 
-ClippingMask Space::HomogenousClippingMask(Axis axis,
+ClippingMask Space::HomogeneousClippingMask(Axis axis,
                                            AxisDirection axis_direction) const {
   return (axis_direction * vertices_.row(axis).array() <=
           (vertices_.row(3)).array())
@@ -238,7 +238,7 @@ ClippingMask Space::HomogenousClippingMask(Axis axis,
       .cast<int>();
 }
 
-void Space::ProcessHomogenousClippingMask(const ClippingMask& clipping_mask,
+void Space::ProcessHomogeneousClippingMask(const ClippingMask& clipping_mask,
                                           Axis axis,
                                           AxisDirection axis_direction) {
   Eigen::Array<int, 1, Eigen::Dynamic> mask_cols_sums =
@@ -258,7 +258,7 @@ void Space::ProcessHomogenousClippingMask(const ClippingMask& clipping_mask,
     }
     size_t single_vertex_index =
         ::FindVertexIndexByClipMask(clipping_mask.col(col), match_mask_value);
-    EnqueueAddMultipleTriangles(GetHomogenousClipSubstitutes(
+    EnqueueAddMultipleTriangles(GetHomogeneousClipSubstitutes(
         col, single_vertex_index, axis, axis_direction, clip_mode));
   }
 }
@@ -276,9 +276,9 @@ TrianglePlaneIntersections Space::GetTrianglePlaneIntersections(
   Vector4 vector_b = vertices_.block(0, b, kDimensions, 1);
   Vector4 vector_c = vertices_.block(0, c, kDimensions, 1);
   float ab_t =
-      ::HomogenousInterpolation(vector_a, vector_b, axis, axis_direction);
+      ::HomogeneousInterpolation(vector_a, vector_b, axis, axis_direction);
   float ac_t =
-      ::HomogenousInterpolation(vector_a, vector_c, axis, axis_direction);
+      ::HomogeneousInterpolation(vector_a, vector_c, axis, axis_direction);
   Vector4 interpolated_ab = vector_a * (1 - ab_t) + vector_b * ab_t;
   Vector4 interpolated_ac = vector_a * (1 - ac_t) + vector_c * ac_t;
 

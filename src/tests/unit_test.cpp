@@ -523,43 +523,44 @@ TEST(PespectiveProjection, ConstructorArguments) {
 }
 
 // #TODO: check normals after clipping
+// #TODO: write separate tests for Camera transforms
 // #TODO: rewrite!
 
-class SingleTriangleClipping : public testing::Test {
+class HomogeneousClippingTest : public testing::Test {
  protected:
-  SingleTriangleClipping()
-      : v1_(3 - x_offset, 3, 0),
-        v2_(3 - x_offset, 1, 0),
-        v3_(1 - x_offset, 1, 0),
+  HomogeneousClippingTest()
+      : v1_(-0.5, 0.5, 1.5),
+        v2_(0.5, 0.5, 1.5),
+        v3_(-0.5, -0.5, 1.5),
         tr_(std::make_shared<Triangle>(v1_, v2_, v3_)) {
     space_.EnqueueAddTriangle(tr_);
     space_.UpdateSpace();
-    Matrix4 translation = Matrix4::Identity();
-    translation(0, 3) = x_offset;
-    space_.TransformVertices(translation);
   }
   Space space_;
-  int16_t x_offset = 100;
   Vertex v1_;
   Vertex v2_;
   Vertex v3_;
   TriangleSharedPointer tr_;
 };
 
-TEST_F(SingleTriangleClipping, TriangleIsInside) {
-  Plane plane(1, 0, 0, 0);
+TEST_F(HomogeneousClippingTest, TriangleIsInside) {
   space_.ClipAllTriangles(Axis::kX, AxisDirection::kPositive);
   ::VerifyTriangleCount(1, space_);
   EXPECT_EQ(tr_, space_.GetTriangles()[0]);
 }
 
-// TEST_F(SingleTriangleClipping, TriangleIsOutside) {
+TEST_F(HomogeneousClippingTest, TriangleIsOutside) {
+  space_.ClipAllTriangles(Axis::kZ, AxisDirection::kPositive);
+  ::VerifyTriangleCount(0, space_);
+}
+
+// TEST_F(HomogeneousClippingTest, TriangleIsOutside) {
 //   Plane plane(-1, 0, 0, 0);
 //   space_.ClipAllTriangles(plane);
 //   ::VerifyTriangleCount(0, space_);
 // }
 
-// TEST_F(SingleTriangleClipping, TriangleIsClippedIntoOne) {
+// TEST_F(HomogeneousClippingTest, TriangleIsClippedIntoOne) {
 //   Plane plane(-1, 0, 0, 2);
 //   space_.ClipAllTriangles(plane);
 //   ::VerifyTriangleCount(1, space_);
@@ -568,7 +569,7 @@ TEST_F(SingleTriangleClipping, TriangleIsInside) {
 //   EXPECT_EQ(Point(2, 1, 0), space_.GetTriangles()[0]->GetVertex(2));
 // }
 
-// TEST_F(SingleTriangleClipping, TriangleIsClippedIntoTwo) {
+// TEST_F(HomogeneousClippingTest, TriangleIsClippedIntoTwo) {
 //   Plane plane(1, 0, 0, -2);
 //   space_.ClipAllTriangles(plane);
 //   ::VerifyTriangleCount(2, space_);

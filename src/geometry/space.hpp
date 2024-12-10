@@ -16,7 +16,7 @@ class Space {
   const std::array<TriangleSharedPointer, kMaxTriangles>& GetTriangles() const;
   const VertexMatrix& GetVertices() const;
   const NormalMatrix& GetNormals() const;
-  std::vector<TriangleSharedPointer> GetHomogenousClipSubstitutes(
+  std::vector<TriangleSharedPointer> GetHomogeneousClipSubstitutes(
       size_t triangle_index,
       size_t solo_vertex,
       Axis axis,
@@ -46,9 +46,9 @@ class Space {
   void DefragmentVectorAndMatrices(struct UpdateSpaceParameters& parameters);
   void ResizeVectorAndMatrices(struct UpdateSpaceParameters& parameters);
   void AddRemainingInQueue(struct UpdateSpaceParameters& parameters);
-  ClippingMask HomogenousClippingMask(Axis axis,
+  ClippingMask HomogeneousClippingMask(Axis axis,
                                       AxisDirection axis_direction) const;
-  void ProcessHomogenousClippingMask(const ClippingMask& clipping_mask,
+  void ProcessHomogeneousClippingMask(const ClippingMask& clipping_mask,
                                      Axis axis,
                                      AxisDirection axis_direction);
   TrianglePlaneIntersections GetTrianglePlaneIntersections(
