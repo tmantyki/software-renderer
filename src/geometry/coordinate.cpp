@@ -1,17 +1,18 @@
 #include <Eigen/Geometry>
 
+#include "common.hpp"
 #include "coordinate.hpp"
 
 Coordinate::Coordinate(float x, float y, float z, float w)
     : vector_(x, y, z, w) {}
 
-Coordinate::Coordinate(Eigen::Vector4f vector_4f) : vector_(vector_4f) {}
+Coordinate::Coordinate(Vector4 vector_4f) : vector_(vector_4f) {}
 
-Eigen::Vector4f Coordinate::GetVector() const {
+Vector4 Coordinate::GetVector() const {
   return vector_;
 }
 
-Eigen::Vector4f Coordinate::cross3(const Coordinate& rhs) const {
+Vector4 Coordinate::cross3(const Coordinate& rhs) const {
   return vector_.cross3(rhs.vector_);
 }
 

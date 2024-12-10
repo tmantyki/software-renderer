@@ -26,6 +26,6 @@ Vertex Triangle::GetVertex(size_t index) const {
   return vertices_[index];
 }
 
-const Eigen::Vector4f& Triangle::GetNormal() const {
+const Vector4& Triangle::GetNormal() const {
   return normal_;
 }

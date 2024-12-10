@@ -5,8 +5,8 @@ Plane::Plane(float x, float y, float z, float w) : vector_(x, y, z, w) {
   NormalizeVector();
 }
 
-Plane::Plane(Eigen::Vector4f vector_4f) : vector_(vector_4f) {
-  assert(vector_4f({0, 1, 2}) != Eigen::Vector3f(0, 0, 0));
+Plane::Plane(Vector4 vector_4f) : vector_(vector_4f) {
+  assert(vector_4f({0, 1, 2}) != Vector3(0, 0, 0));
   NormalizeVector();
 }
 
@@ -18,14 +18,14 @@ void Plane::NormalizeVector() {
   vector_normalized_[3] = vector_[3] / norm;
 }
 
-Eigen::Vector4f Plane::GetVector() const {
+Vector4 Plane::GetVector() const {
   return vector_;
 }
 
-Eigen::Vector4f Plane::GetVectorNormalized() const {
+Vector4 Plane::GetVectorNormalized() const {
   return vector_normalized_;
 }
 
 float Plane::SignedDistanceFromOrigin() const {
-  return Eigen::Vector4f(0, 0, 0, 1).dot(vector_normalized_);
+  return Vector4(0, 0, 0, 1).dot(vector_normalized_);
 }

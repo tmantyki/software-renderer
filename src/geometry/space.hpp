@@ -23,8 +23,8 @@ class Space {
       AxisDirection axis_direction,
       TriangleClipMode clip_mode) const;
   void ClipAllTriangles(Axis axis, AxisDirection axis_direction);
-  void TransformVertices(const Eigen::Matrix4f& transformation);
-  void TransformNormals(const Eigen::Matrix4f& transformation);
+  void TransformVertices(const Matrix4& transformation);
+  void TransformNormals(const Matrix4& transformation);
   void Dehomogenize();
 
  private:

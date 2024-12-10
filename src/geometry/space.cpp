@@ -146,11 +146,11 @@ void Space::ClipAllTriangles(Axis axis, AxisDirection axis_direction) {
   UpdateSpace();
 }
 
-void Space::TransformVertices(const Eigen::Matrix4f& transformation) {
+void Space::TransformVertices(const Matrix4& transformation) {
   vertices_ = transformation * vertices_;
 }
 
-void Space::TransformNormals(const Eigen::Matrix4f& transformation) {
+void Space::TransformNormals(const Matrix4& transformation) {
   normals_ = transformation * normals_;
 }
 

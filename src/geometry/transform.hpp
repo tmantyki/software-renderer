@@ -10,12 +10,12 @@
 class Transform {
  public:
   Transform();
-  Transform(Eigen::Matrix4f matrix);
-  Eigen::Matrix4f GetMatrix() const;
+  Transform(Matrix4 matrix);
+  Matrix4 GetMatrix() const;
   virtual bool UpdateTransform() = 0;
 
  protected:
-  Eigen::Matrix4f matrix_;  // #TODO: rename to mapping?
+  Matrix4 matrix_;  // #TODO: rename to mapping?
 };
 
 class CameraTransform : public Transform {
@@ -27,8 +27,8 @@ class CameraTransform : public Transform {
 
  private:
   Camera camera_;
-  Eigen::Matrix4f rotation_matrix_;
-  Eigen::Matrix4f translation_matrix_;
+  Matrix4 rotation_matrix_;
+  Matrix4 translation_matrix_;
 };
 
 class PerspectiveProjection : public Transform {

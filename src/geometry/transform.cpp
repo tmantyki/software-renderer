@@ -1,18 +1,18 @@
 #include "transform.hpp"
 #include <Eigen/Geometry>
 
-Transform::Transform() : matrix_(Eigen::Matrix4f::Zero()) {};
+Transform::Transform() : matrix_(Matrix4::Zero()) {};
 
-Transform::Transform(Eigen::Matrix4f matrix) : matrix_(matrix) {}
+Transform::Transform(Matrix4 matrix) : matrix_(matrix) {}
 
-Eigen::Matrix4f Transform::GetMatrix() const {
+Matrix4 Transform::GetMatrix() const {
   return matrix_;
 }
 
 CameraTransform::CameraTransform() : CameraTransform(Camera()) {}
 
 CameraTransform::CameraTransform(Camera camera)
-    : Transform(Eigen::Matrix4f::Identity()), camera_(camera) {
+    : Transform(Matrix4::Identity()), camera_(camera) {
   UpdateTransform();
 }
 
@@ -24,13 +24,13 @@ Camera& CameraTransform::GetCamera() {
 // #TODO: refactor!
 bool CameraTransform::UpdateTransform() {
   // Translation
-  translation_matrix_ = Eigen::Matrix4f::Identity();
-  Eigen::Vector4f translation_vector = -camera_.GetLocation().GetVector();
+  translation_matrix_ = Matrix4::Identity();
+  Vector4 translation_vector = -camera_.GetLocation().GetVector();
   translation_vector(3) = 1;
   translation_matrix_.col(3) = translation_vector;
 
   // Rotation
-  rotation_matrix_ = Eigen::Matrix4f::Identity();
+  rotation_matrix_ = Matrix4::Identity();
 
   //// Pitch
   float cos_theta_expression = std::cos(camera_.GetPitch() / 2);
@@ -134,7 +134,7 @@ int16_t ViewportTransform::GetOffsetY() const {
 }
 
 bool ViewportTransform::UpdateTransform() {
-  matrix_ = Eigen::Matrix4f::Identity();
+  matrix_ = Matrix4::Identity();
   matrix_(0, 0) = width_ / 2;
   matrix_(0, 3) = (width_ / 2) + x_offset_;
   matrix_(1, 1) = -height_ / 2;

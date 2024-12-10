@@ -15,11 +15,11 @@ class Triangle {
            Vertex vertex_3,
            Direction normal);
   Vertex GetVertex(size_t index) const;
-  const Eigen::Vector4f& GetNormal() const;
+  const Vector4& GetNormal() const;
 
  private:
   Vertex vertices_[3];
-  Eigen::Vector4f normal_;
+  Vector4 normal_;
 };
 
 #endif

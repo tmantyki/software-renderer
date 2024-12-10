@@ -3,18 +3,20 @@
 
 #include <Eigen/Core>
 
+#include "common.hpp"
+
 class Plane {
  public:
   Plane() = delete;
   Plane(float x, float y, float z, float w);
-  Plane(Eigen::Vector4f vector_4f);
-  Eigen::Vector4f GetVector() const;
-  Eigen::Vector4f GetVectorNormalized() const;
+  Plane(Vector4 vector_4f);
+  Vector4 GetVector() const;
+  Vector4 GetVectorNormalized() const;
   float SignedDistanceFromOrigin() const;
 
  private:
-  Eigen::Vector4f vector_;
-  Eigen::Vector4f vector_normalized_;
+  Vector4 vector_;
+  Vector4 vector_normalized_;
   void NormalizeVector();
 };
 
