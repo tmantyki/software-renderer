@@ -523,18 +523,21 @@ TEST(PespectiveProjection, ConstructorArguments) {
 }
 
 // #TODO: check normals after clipping
-// #TODO: write separate tests for Camera transforms
-// #TODO: rewrite!
 
 class HomogeneousClippingTest : public testing::Test {
  protected:
   HomogeneousClippingTest()
-      : v1_(-0.5, 0.5, 1.5),
-        v2_(0.5, 0.5, 1.5),
-        v3_(-0.5, -0.5, 1.5),
+      : v1_(-2.0, 0.5, 1.5),
+        v2_(2.0, 0.5, 1.5),
+        v3_(-2.0, -0.5, 1.5),
         tr_(std::make_shared<Triangle>(v1_, v2_, v3_)) {
     space_.EnqueueAddTriangle(tr_);
     space_.UpdateSpace();
+  }
+  void ExpectTriangle(const Triangle& expected_triangle,
+                      const Triangle& actual_triangle) {
+    for (size_t i : {0, 1, 2})
+      EXPECT_EQ(expected_triangle.GetVertex(i), actual_triangle.GetVertex(i));
   }
   Space space_;
   Vertex v1_;
@@ -544,7 +547,7 @@ class HomogeneousClippingTest : public testing::Test {
 };
 
 TEST_F(HomogeneousClippingTest, TriangleIsInside) {
-  space_.ClipAllTriangles(Axis::kX, AxisDirection::kPositive);
+  space_.ClipAllTriangles(Axis::kY, AxisDirection::kPositive);
   ::VerifyTriangleCount(1, space_);
   EXPECT_EQ(tr_, space_.GetTriangles()[0]);
 }
@@ -554,32 +557,21 @@ TEST_F(HomogeneousClippingTest, TriangleIsOutside) {
   ::VerifyTriangleCount(0, space_);
 }
 
-// TEST_F(HomogeneousClippingTest, TriangleIsOutside) {
-//   Plane plane(-1, 0, 0, 0);
-//   space_.ClipAllTriangles(plane);
-//   ::VerifyTriangleCount(0, space_);
-// }
+TEST_F(HomogeneousClippingTest, TriangleIsClippedIntoOne) {
+  space_.ClipAllTriangles(Axis::kX, AxisDirection::kNegative);
+  ::VerifyTriangleCount(1, space_);
+  Triangle tr({2.0, 0.5, 1.5}, {-1.0, -0.25, 1.5}, {-1.0, 0.5, 1.5});
+  ExpectTriangle(tr, *space_.GetTriangles()[0]);
+}
 
-// TEST_F(HomogeneousClippingTest, TriangleIsClippedIntoOne) {
-//   Plane plane(-1, 0, 0, 2);
-//   space_.ClipAllTriangles(plane);
-//   ::VerifyTriangleCount(1, space_);
-//   EXPECT_EQ(Point(1, 1, 0), space_.GetTriangles()[0]->GetVertex(0));
-//   EXPECT_EQ(Point(2, 2, 0), space_.GetTriangles()[0]->GetVertex(1));
-//   EXPECT_EQ(Point(2, 1, 0), space_.GetTriangles()[0]->GetVertex(2));
-// }
-
-// TEST_F(HomogeneousClippingTest, TriangleIsClippedIntoTwo) {
-//   Plane plane(1, 0, 0, -2);
-//   space_.ClipAllTriangles(plane);
-//   ::VerifyTriangleCount(2, space_);
-//   EXPECT_EQ(Point(2, 2, 0), space_.GetTriangles()[0]->GetVertex(0));
-//   EXPECT_EQ(Point(3, 3, 0), space_.GetTriangles()[0]->GetVertex(1));
-//   EXPECT_EQ(Point(2, 1, 0), space_.GetTriangles()[0]->GetVertex(2));
-//   EXPECT_EQ(Point(2, 1, 0), space_.GetTriangles()[1]->GetVertex(0));
-//   EXPECT_EQ(Point(3, 3, 0), space_.GetTriangles()[1]->GetVertex(1));
-//   EXPECT_EQ(Point(3, 1, 0), space_.GetTriangles()[1]->GetVertex(2));
-// }
+TEST_F(HomogeneousClippingTest, TriangleIsClippedIntoTwo) {
+  space_.ClipAllTriangles(Axis::kX, AxisDirection::kPositive);
+  ::VerifyTriangleCount(2, space_);
+  Triangle tr_1({1.0, 0.25, 1.5}, {-2.0, -0.5, 1.5}, {1.0, 0.5, 1.5});
+  Triangle tr_2({1.0, 0.5, 1.5}, {-2.0, -0.5, 1.5}, {-2.0, 0.5, 1.5});
+  ExpectTriangle(tr_1, *space_.GetTriangles()[0]);
+  ExpectTriangle(tr_2, *space_.GetTriangles()[1]);
+}
 
 TEST(ViewportTransform, ConstructorArguments) {
   int w = 800, h = 600, x_offset = 10, y_offset = -20;
@@ -753,8 +745,8 @@ TEST_F(TransformPipelineTest, SingleFullyVisibleTriangle) {
 //   world_space.EnqueueAddTriangle(tr);
 //   world_space.UpdateSpace();
 //   std::shared_ptr<CameraTransform> camera =
-//   std::make_shared<CameraTransform>(); std::shared_ptr<PerspectiveProjection>
-//   perspective =
+//   std::make_shared<CameraTransform>();
+//   std::shared_ptr<PerspectiveProjection> perspective =
 //       std::make_shared<PerspectiveProjection>(1, 10, -1, 1, 1, -1);
 //   std::shared_ptr<ViewportTransform> viewport =
 //       std::make_shared<ViewportTransform>(800, 800, 0, 0);
