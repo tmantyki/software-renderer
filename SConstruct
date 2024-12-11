@@ -13,6 +13,7 @@ env["CPPPATH"] = [
 env["LIBS"] = [
     "gtest",
     "gtest_main",
+    "SDL2",
 ]
 sources = [
     "geometry/coordinate.cpp",
@@ -35,7 +36,7 @@ env_debug.AppendUnique(
     ]
 )
 env_debug["LINKFLAGS"] = [
-    "-fsanitize=address,undefined",
+    # "-fsanitize=address,undefined",
 ]
 env_release = env.Clone()
 env_release.AppendUnique(

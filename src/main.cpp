@@ -1,4 +1,6 @@
+#include <SDL2/SDL.h>
 #include <Eigen/Core>
+
 #include <chrono>
 #include <iostream>
 #include "utility/timer.hpp"
@@ -55,6 +57,16 @@ void PerformanceTest() {
 int main() {
   std::cout << "Hello, this is Software Renderer.\n\n";
   PerformanceTest();
-  std::cout << "\nExiting..\n";
+  SDL_Window* window = nullptr;
+  if (SDL_Init(SDL_INIT_VIDEO) < 0) {
+    std::cout << "Error during SDL_Init()!\n";
+  }
+  window = SDL_CreateWindow("Software renderer", SDL_WINDOWPOS_CENTERED,
+                            SDL_WINDOWPOS_CENTERED, 800, 600, SDL_WINDOW_SHOWN);
+  if (window == nullptr)
+    std::cout << "Error while creating window!\n";
+  SDL_Delay(1000);
+  SDL_DestroyWindow(window);
+  SDL_Quit();
   return 0;
 }
