@@ -164,19 +164,10 @@ std::shared_ptr<ViewportTransform> TransformPipeline::GetViewportTransform() {
 void TransformPipeline::RunPipeline(const Space& input_space) {
   output_space_ = input_space;
   // #TODO: optimize by giving as two arguments rather than ready product
-  std::cout << "world_space:\n" << output_space_.GetVertices() << "\n";
-  std::cout << "camera_matrix:\n" << camera_->GetMatrix() << "\n";
-  // output_space_.TransformVertices(perspective_->GetMatrix() *
-  //                                 camera_->GetMatrix());
-  output_space_.TransformVertices(camera_->GetMatrix());
-  std::cout << "camera_space:\n" << output_space_.GetVertices() << "\n";
-  output_space_.TransformVertices(perspective_->GetMatrix());
-
+  output_space_.TransformVertices(perspective_->GetMatrix() *
+                                  camera_->GetMatrix());
   output_space_.TransformNormals(
       camera_->GetMatrix());  // check for correctness
-
-  std::cout << "perspective_space:\n" << output_space_.GetVertices() << "\n";
-
   for (Axis axis : {Axis::kX, Axis::kY, Axis::kZ}) {
     for (AxisDirection axis_direction :
          {AxisDirection::kNegative, AxisDirection::kPositive}) {

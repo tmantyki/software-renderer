@@ -697,14 +697,11 @@ TEST(TransformPipeline, ConstructorObjects) {
 class TransformPipelineTest : public testing ::Test {
  protected:
   TransformPipelineTest()
-
-      // : v1_(0, 0, -4),
-      //   v2_(1, 0, -2),
-      //   v3_(2, -2, 0),
       : v1_(2, 0, 0),
         v2_(4, 0, 0),
         v3_(4, 0, 2),
-        camera_(std::make_shared<CameraTransform>()),
+        camera_(std::make_shared<CameraTransform>(
+            Camera({0, 0, 0}, kPi / 2, -kPi / 2, -kPi / 2))),
         perspective_(
             std::make_shared<PerspectiveProjection>(1, 10, -1, 1, 1, -1)),
         viewport_(std::make_shared<ViewportTransform>(800, 800, 0, 0)),
@@ -712,47 +709,58 @@ class TransformPipelineTest : public testing ::Test {
     world_space_.EnqueueAddTriangle(std::make_shared<Triangle>(v1_, v2_, v3_));
     world_space_.UpdateSpace();
   }
+  void SetAndUpdateCameraLocation(const Point& location) {
+    camera_->GetCamera().SetLocation(location);
+    camera_->UpdateTransform();
+    pipeline_.RunPipeline(world_space_);
+  }
+  void ExpectVertices(const Triangle& expected_triangle,
+                      size_t triangle_index) {
+    size_t i = triangle_index;
+    for (size_t k = 0; k < kVerticesPerTriangle; k++)
+      for (size_t d : {0, 1, 2, 3})
+        EXPECT_NEAR(expected_triangle.GetVertex(k).GetVector()[d],
+                    pipeline_.GetOutputSpace().GetVertices().col(
+                        i * kVerticesPerTriangle + k)[d],
+                    kFloatTolerance);
+  }
   Space world_space_;
   Vertex v1_, v2_, v3_;
   std::shared_ptr<CameraTransform> camera_;
   std::shared_ptr<PerspectiveProjection> perspective_;
   std::shared_ptr<ViewportTransform> viewport_;
   TransformPipeline pipeline_;
+  float expected_z_ = (20 * (1 - (1 / 2.0)) / 9) - 1;
 };
 
 TEST_F(TransformPipelineTest, SingleFullyVisibleTriangle) {
-  camera_->GetCamera().SetLocation({3, 2, 1});
-  camera_->GetCamera().SetPitch(kPi / 2);
-  camera_->UpdateTransform();
-  pipeline_.RunPipeline(world_space_);
-  std::cout << "\nInput matrix:\n" << world_space_.GetVertices();
-  std::cout << "\nOutput matrix:\n"
-            << pipeline_.GetOutputSpace().GetVertices() << "\n";
+  SetAndUpdateCameraLocation({3, 2, 1});
   EXPECT_EQ(1, pipeline_.GetOutputSpace().GetTriangleCount());
+  Triangle tr({600, 600, expected_z_}, {200, 600, expected_z_},
+              {200, 200, expected_z_});
+  ExpectVertices(tr, 0);
 }
 
-// TEST_F(TransformPipelineTest, SingleFullyClippedTriangle) {
-//   camera_->UpdateTransform();
-//   pipeline_.RunPipeline(world_space_);
-//   EXPECT_EQ(0, pipeline_.GetOutputSpace().GetTriangleCount());
-// }
+TEST_F(TransformPipelineTest, SingleFullyClippedTriangle) {
+  SetAndUpdateCameraLocation({-3, 2, 1});
+  EXPECT_EQ(0, pipeline_.GetOutputSpace().GetTriangleCount());
+}
 
-// TEST(TransformPipeline, SingleFullyVisibleTriangle) {
-//   Space world_space;
-//   float z_offset = -2;
-//   Vertex v1(0, 0, z_offset), v2(2, 0, z_offset), v3(0, -2, z_offset);
-//   TriangleSharedPointer tr = std::make_shared<Triangle>(v1, v2, v3);
-//   world_space.EnqueueAddTriangle(tr);
-//   world_space.UpdateSpace();
-//   std::shared_ptr<CameraTransform> camera =
-//   std::make_shared<CameraTransform>();
-//   std::shared_ptr<PerspectiveProjection> perspective =
-//       std::make_shared<PerspectiveProjection>(1, 10, -1, 1, 1, -1);
-//   std::shared_ptr<ViewportTransform> viewport =
-//       std::make_shared<ViewportTransform>(800, 800, 0, 0);
-//   TransformPipeline pipeline(camera, perspective, viewport);
-//   pipeline.RunPipeline(world_space);
-//   std::cout << "\nInput matrix:\n" << world_space.GetVertices();
-//   std::cout << "\nOutput matrix:\n"
-//             << pipeline.GetOutputSpace().GetVertices() << "\n";
-// }
+TEST_F(TransformPipelineTest, SingleTriangleClippedIntoOne) {
+  SetAndUpdateCameraLocation({3, 2, 3});
+  EXPECT_EQ(1, pipeline_.GetOutputSpace().GetTriangleCount());
+  Triangle tr({200, 600, expected_z_}, {400, 800, expected_z_},
+              {200, 800, expected_z_});
+  ExpectVertices(tr, 0);
+}
+
+TEST_F(TransformPipelineTest, SingleTriangleClippedIntoTwo) {
+  SetAndUpdateCameraLocation({3, 2, -1});
+  EXPECT_EQ(2, pipeline_.GetOutputSpace().GetTriangleCount());
+  Triangle tr_1({400, 0, expected_z_}, {600, 200, expected_z_},
+                {200, 0, expected_z_});
+  Triangle tr_2({200, 0, expected_z_}, {600, 200, expected_z_},
+                {200, 200, expected_z_});
+  ExpectVertices(tr_1, 0);
+  ExpectVertices(tr_2, 1);
+}
