@@ -3,6 +3,8 @@
 
 #include <chrono>
 #include <iostream>
+#include "geometry/space.hpp"
+#include "geometry/transform.hpp"
 #include "utility/timer.hpp"
 
 void PerformanceTest() {
@@ -58,14 +60,44 @@ int main() {
   std::cout << "Hello, this is Software Renderer.\n\n";
   PerformanceTest();
   SDL_Window* window = nullptr;
-  if (SDL_Init(SDL_INIT_VIDEO) < 0) {
+  if (SDL_Init(SDL_INIT_VIDEO) < 0)
     std::cout << "Error during SDL_Init()!\n";
-  }
   window = SDL_CreateWindow("Software renderer", SDL_WINDOWPOS_CENTERED,
-                            SDL_WINDOWPOS_CENTERED, 800, 600, SDL_WINDOW_SHOWN);
+                            SDL_WINDOWPOS_CENTERED, 800, 800, SDL_WINDOW_SHOWN);
   if (window == nullptr)
     std::cout << "Error while creating window!\n";
-  SDL_Delay(1000);
+  // SDL_Surface* surface = SDL_GetWindowSurface(window);
+  SDL_Renderer* renderer = SDL_CreateRenderer(window, -1, 0);
+  SDL_RenderClear(renderer);
+  SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255);
+
+  auto camera = std::make_shared<CameraTransform>();
+  auto perspective =
+      std::make_shared<PerspectiveProjection>(1, 10, -1, 1, 1, -1);
+  auto viewport = std::make_shared<ViewportTransform>(800, 800, 0, 0);
+  TransformPipeline pipeline(camera, perspective, viewport);
+  Vertex v1(-1, 1, -3), v2(2, 1, -3), v3(0, -1, -3);
+  auto tr = std::make_shared<Triangle>(v1, v2, v3);
+  Space world_space;
+  world_space.EnqueueAddTriangle(tr);
+  world_space.UpdateSpace();
+  pipeline.RunPipeline(world_space);
+  Space output_space = pipeline.GetOutputSpace();
+  for (size_t t = 0; t < output_space.GetTriangleCount(); t++) {
+    for (size_t a : {0, 1, 2}) {
+      size_t b = (a + 1) % 3;
+      int a_x = output_space.GetVertices()(0, t * kVerticesPerTriangle + a);
+      int a_y = output_space.GetVertices()(1, t * kVerticesPerTriangle + a);
+      int b_x = output_space.GetVertices()(0, t * kVerticesPerTriangle + b);
+      int b_y = output_space.GetVertices()(1, t * kVerticesPerTriangle + b);
+      SDL_RenderDrawLine(renderer, a_x, a_y, b_x, b_y);
+    }
+  }
+  SDL_RenderPresent(renderer);
+  
+  SDL_Delay(5000);
+  SDL_DestroyRenderer(renderer);
+  // SDL_DestroyWindowSurface(window);
   SDL_DestroyWindow(window);
   SDL_Quit();
   return 0;
