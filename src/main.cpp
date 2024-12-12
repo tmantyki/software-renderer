@@ -76,10 +76,24 @@ int main() {
       std::make_shared<PerspectiveProjection>(1, 10, -1, 1, 1, -1);
   auto viewport = std::make_shared<ViewportTransform>(800, 800, 0, 0);
   TransformPipeline pipeline(camera, perspective, viewport);
-  Vertex v1(-1, 1, -3), v2(2, 1, -3), v3(0, -1, -3);
-  auto tr = std::make_shared<Triangle>(v1, v2, v3);
+  Vertex v1(-1, 2, -3), v2(2, 2, -3), v3(2, 2, -6), v4(-1, 2, -6);
+  Vertex v5(-1, -1, -3), v6(2, -1, -3), v7(2, -1, -6), v8(-1, -1, -6);
+  TriangleSharedPointer tr[12];
+  tr[0] = std::make_shared<Triangle>(v2, v1, v5);
+  tr[1] = std::make_shared<Triangle>(v5, v6, v2);
+  tr[2] = std::make_shared<Triangle>(v3, v2, v6);
+  tr[3] = std::make_shared<Triangle>(v6, v7, v3);
+  tr[4] = std::make_shared<Triangle>(v4, v3, v7);
+  tr[5] = std::make_shared<Triangle>(v7, v8, v4);
+  tr[6] = std::make_shared<Triangle>(v1, v4, v8);
+  tr[7] = std::make_shared<Triangle>(v8, v5, v1);
+  tr[8] = std::make_shared<Triangle>(v3, v4, v1);
+  tr[9] = std::make_shared<Triangle>(v1, v2, v3);
+  tr[10] = std::make_shared<Triangle>(v7, v6, v5);
+  tr[11] = std::make_shared<Triangle>(v5, v8, v7);
   Space world_space;
-  world_space.EnqueueAddTriangle(tr);
+  for (size_t i = 0; i < 12; i++)
+    world_space.EnqueueAddTriangle(tr[i]);
   world_space.UpdateSpace();
   pipeline.RunPipeline(world_space);
   Space output_space = pipeline.GetOutputSpace();
@@ -94,7 +108,7 @@ int main() {
     }
   }
   SDL_RenderPresent(renderer);
-  
+
   SDL_Delay(5000);
   SDL_DestroyRenderer(renderer);
   // SDL_DestroyWindowSurface(window);
