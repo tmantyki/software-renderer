@@ -1,25 +1,24 @@
 #ifndef UI_HPP
 #define UI_HPP
 
+#include <SDL2/SDL.h>
 #include <cstdint>
-
-constexpr int16_t kCentered = -1;
 
 class UserInterface {
  public:
-  UserInterface();
-  UserInterface(int16_t x_position,
-                int16_t y_position,
-                uint16_t width,
-                uint16_t height);
-  bool CreateWindow();
-  void DestroyWindow();
+  UserInterface(uint16_t width = 800, uint16_t height = 800);
+  ~UserInterface();
+  UserInterface(const UserInterface&) = delete;
+  UserInterface& operator=(UserInterface&) = delete;
+  bool InitializeSdlObjects();
+  void DestroySdlObjects();
+
  private:
-  const uint16_t x_position_;
-  const uint16_t y_position_;
   const uint16_t width_;
   const uint16_t height_;
-  bool window_created_;
+  bool sdl_objects_initialized_;
+  SDL_Window* sdl_window_;
+  SDL_Renderer* sdl_renderer_;
 };
 
 #endif
