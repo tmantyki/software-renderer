@@ -43,6 +43,6 @@ typedef Eigen::Matrix<float,
 enum class TriangleClipMode { kIncludeReference, kExcludeReference };
 enum TriangleEdge { kAB = 0, kAC = 1, kBC = 2 };
 enum Axis { kX = 0, kY = 1, kZ = 2 };
-enum AxisDirection { kNegative = -1, kPositive = 1 };
+enum AxisDirection { kNegative = -1, kNeutral = 0, kPositive = 1 };
 
 #endif

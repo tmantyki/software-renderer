@@ -36,6 +36,7 @@ utility_sources = [
 ]
 application_sources = geometry_sources + [
     "main.cpp",
+    "ui/controller.cpp",
     "ui/ui.cpp",
 ]
 unit_test_sources = (
