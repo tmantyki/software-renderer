@@ -66,8 +66,8 @@ int main() {
                             SDL_WINDOWPOS_CENTERED, 800, 800, SDL_WINDOW_SHOWN);
   if (window == nullptr)
     std::cout << "Error while creating window!\n";
-  // SDL_Surface* surface = SDL_GetWindowSurface(window);
-  SDL_Renderer* renderer = SDL_CreateRenderer(window, -1, 0);
+  SDL_Renderer* renderer =
+      SDL_CreateRenderer(window, -1, SDL_RENDERER_PRESENTVSYNC);
   SDL_RenderClear(renderer);
   SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255);
 
@@ -95,21 +95,33 @@ int main() {
   for (size_t i = 0; i < 12; i++)
     world_space.EnqueueAddTriangle(tr[i]);
   world_space.UpdateSpace();
-  pipeline.RunPipeline(world_space);
-  Space output_space = pipeline.GetOutputSpace();
-  for (size_t t = 0; t < output_space.GetTriangleCount(); t++) {
-    for (size_t a : {0, 1, 2}) {
-      size_t b = (a + 1) % 3;
-      int a_x = output_space.GetVertices()(0, t * kVerticesPerTriangle + a);
-      int a_y = output_space.GetVertices()(1, t * kVerticesPerTriangle + a);
-      int b_x = output_space.GetVertices()(0, t * kVerticesPerTriangle + b);
-      int b_y = output_space.GetVertices()(1, t * kVerticesPerTriangle + b);
-      SDL_RenderDrawLine(renderer, a_x, a_y, b_x, b_y);
-    }
-  }
-  SDL_RenderPresent(renderer);
 
-  SDL_Delay(5000);
+  float x_pos_start = 0.0, x_pos_end = 1.0;
+  float fps = 60.0;
+  float duration_sec = 20.0;
+  float x_pos_increment = (x_pos_end - x_pos_start) / (fps * duration_sec);
+
+  for (float x_pos = x_pos_start; x_pos < x_pos_end; x_pos += x_pos_increment) {
+    SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
+    SDL_RenderClear(renderer);
+    SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255);
+    camera->GetCamera().SetLocation({x_pos, 0, 0});
+    camera->UpdateTransform();
+    pipeline.RunPipeline(world_space);
+    Space output_space = pipeline.GetOutputSpace();
+    for (size_t t = 0; t < output_space.GetTriangleCount(); t++) {
+      for (size_t a : {0, 1, 2}) {
+        size_t b = (a + 1) % 3;
+        int a_x = output_space.GetVertices()(0, t * kVerticesPerTriangle + a);
+        int a_y = output_space.GetVertices()(1, t * kVerticesPerTriangle + a);
+        int b_x = output_space.GetVertices()(0, t * kVerticesPerTriangle + b);
+        int b_y = output_space.GetVertices()(1, t * kVerticesPerTriangle + b);
+        SDL_RenderDrawLine(renderer, a_x, a_y, b_x, b_y);
+      }
+    }
+    SDL_RenderPresent(renderer);
+  }
+
   SDL_DestroyRenderer(renderer);
   // SDL_DestroyWindowSurface(window);
   SDL_DestroyWindow(window);
