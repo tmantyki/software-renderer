@@ -17,6 +17,9 @@ env["LIBS"] = [
 ]
 application_sources = [
     "main.cpp",
+    "server/game_state.cpp",
+    "server/player.cpp",
+    "ui/controller.cpp",
     "ui/ui.cpp",
 ]
 geometry_sources = [
@@ -34,11 +37,7 @@ geometry_sources = [
 utility_sources = [
     "utility/timer.cpp",
 ]
-application_sources = geometry_sources + [
-    "main.cpp",
-    "ui/controller.cpp",
-    "ui/ui.cpp",
-]
+application_sources += geometry_sources
 unit_test_sources = (
     geometry_sources
     + utility_sources
