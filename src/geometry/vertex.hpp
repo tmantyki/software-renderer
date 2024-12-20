@@ -6,7 +6,7 @@
 
 class Vertex : public Point {
  public:
-  Vertex() = delete;
+  Vertex();
   Vertex(float x, float y, float z);
   Vertex(Vector3 vector);
   Vertex(Vector4 vector);

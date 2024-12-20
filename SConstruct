@@ -33,6 +33,7 @@ geometry_sources = [
     "geometry/transform.cpp",
     "geometry/triangle.cpp",
     "geometry/vertex.cpp",
+    "utility/geometry_importer.cpp",
 ]
 utility_sources = [
     "utility/timer.cpp",

@@ -1,22 +1,12 @@
 #include <iostream>
 
-#include "server/game_state.hpp"
-#include "ui/controller.hpp"
-#include "ui/ui.hpp"
+#include "geometry/space.hpp"
+#include "utility/geometry_importer.hpp"
 
 int main() {
   std::cout << "Hello, this is Software Renderer.\n\n";
-  UserInterface user_interface;
-
-  GameState game_state;
-  user_interface.InitializeSdlObjects();
-  Controller controller;
-  Camera camera;
-  do {
-    controller.UpdateState();
-    controller.OffsetCamera(camera);
-    SDL_Delay(10);
-  } while (!controller.CheckQuitRequest());
-  user_interface.DestroySdlObjects();
+  Space space;
+  ObjGeomteryImporter obj_importer;
+  obj_importer.ImportGeometryFromFile("assets/teapot.obj", space);
   return 0;
 }
