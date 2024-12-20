@@ -14,7 +14,8 @@ constexpr float kFloatTolerance = 1.0E-3;
 constexpr size_t kDimensions = 4;
 constexpr size_t kVerticesPerTriangle = 3;
 constexpr size_t kViewportDimensions = 3;
-constexpr size_t kMaxTriangles = 128;
+constexpr size_t kMaxTriangles = 2048;
+constexpr size_t kMaxVertices = kVerticesPerTriangle * kMaxTriangles;
 constexpr size_t kNumberOfClippingPlanes = 6;
 
 class Point;

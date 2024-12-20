@@ -6,17 +6,23 @@
 class GeometryImporter {
  public:
   GeometryImporter(Space& space);
-  virtual void ImportGeometryFromFile(const char* filename) = 0;
+  virtual bool ImportGeometryFromFile(const char* filename) = 0;
 
  protected:
-  std::array<Vertex, kVerticesPerTriangle * kMaxTriangles> vertices_;
+  std::array<Vertex, kMaxVertices> vertices_;
   Space& space_;
 };
 
 class ObjGeometryImporter : public GeometryImporter {
  public:
   ObjGeometryImporter(Space& space);
-  virtual void ImportGeometryFromFile(const char* filename) override;
+  virtual bool ImportGeometryFromFile(const char* filename) override;
+
+ private:
+  bool ParseLine(const std::string& line);
+  bool ParseVertex(std::stringstream& vertex_params);
+  size_t triangle_counter_;
+  size_t vertex_counter_;
 };
 
 #endif

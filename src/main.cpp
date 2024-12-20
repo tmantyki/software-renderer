@@ -6,7 +6,7 @@
 int main() {
   std::cout << "Hello, this is Software Renderer.\n\n";
   Space space;
-  ObjGeomteryImporter obj_importer;
-  obj_importer.ImportGeometryFromFile("assets/teapot.obj", space);
+  ObjGeometryImporter obj_importer(space);
+  obj_importer.ImportGeometryFromFile("assets/teapot.obj");
   return 0;
 }
