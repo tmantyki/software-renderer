@@ -21,6 +21,7 @@ class ObjGeometryImporter : public GeometryImporter {
  private:
   bool ParseLine(const std::string& line);
   bool ParseVertex(std::stringstream& vertex_params);
+  bool ParseFace(std::stringstream& face_params);
   size_t triangle_counter_;
   size_t vertex_counter_;
 };

@@ -14,9 +14,11 @@ constexpr float kFloatTolerance = 1.0E-3;
 constexpr size_t kDimensions = 4;
 constexpr size_t kVerticesPerTriangle = 3;
 constexpr size_t kViewportDimensions = 3;
-constexpr size_t kMaxTriangles = 2048;
-constexpr size_t kMaxVertices = kVerticesPerTriangle * kMaxTriangles;
+constexpr size_t kMaxTriangles = 10000;
+constexpr size_t kMaxVertices = kMaxTriangles;
 constexpr size_t kNumberOfClippingPlanes = 6;
+constexpr bool kClockwiseWinding = true;
+constexpr bool kCounterClockwiseWinding = !kClockwiseWinding;
 
 class Point;
 class Space;
@@ -30,16 +32,8 @@ typedef Eigen::Vector4f Vector4;
 typedef Eigen::Matrix4f Matrix4;
 typedef Eigen::Quaternionf Quaternion;
 typedef Eigen::Array<int, kVerticesPerTriangle, Eigen::Dynamic> ClippingMask;
-typedef Eigen::
-    Matrix<float, kDimensions, Eigen::Dynamic, 0, kDimensions, kMaxTriangles>
-        NormalMatrix;
-typedef Eigen::Matrix<float,
-                      kDimensions,
-                      Eigen::Dynamic,
-                      0,
-                      kDimensions,
-                      kVerticesPerTriangle * kMaxTriangles>
-    VertexMatrix;
+typedef Eigen::Matrix<float, kDimensions, Eigen::Dynamic> NormalMatrix;
+typedef Eigen::Matrix<float, kDimensions, Eigen::Dynamic> VertexMatrix;
 
 enum class TriangleClipMode { kIncludeReference, kExcludeReference };
 enum TriangleEdge { kAB = 0, kAC = 1, kBC = 2 };
