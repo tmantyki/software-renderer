@@ -5,8 +5,6 @@
 #include "geometry/vertex.hpp"
 #include "utility/geometry_importer.hpp"
 
-namespace {}
-
 GeometryImporter::GeometryImporter(Space& space) : space_(space) {}
 
 ObjGeometryImporter::ObjGeometryImporter(Space& space)
@@ -17,34 +15,32 @@ bool ObjGeometryImporter::ImportGeometryFromFile(const char* filename) {
   std::string line;
   input_file.open(filename);
   if (!input_file.is_open()) {
-    std::cout << "Error: could not open file " << filename << "\n";
+    std::cout << "Error: could not open file '" << filename << "'";
     return false;
   }
-
   while (std::getline(input_file, line)) {
     if (!ParseLine(line)) {
       input_file.close();
       return false;
     }
   }
-
   input_file.close();
   return true;
 }
 
 bool ObjGeometryImporter::ParseLine(const std::string& line) {
   std::stringstream ss(line);
+  ss >> std::ws;
   std::string word;
   if (std::getline(ss, word, ' ')) {
     if (word == "v") {
       return ParseVertex(ss);
     } else {
-      // std::cout << "Error! Unkown command: " << word << "\n";
+      std::cout << "Error: unknown command '" << word << "'\n";
       return false;
     }
-    return true;
   }
-  return false;
+  return true;  // empty lines return true
 }
 
 bool ObjGeometryImporter::ParseVertex(std::stringstream& vertex_params) {
@@ -56,7 +52,7 @@ bool ObjGeometryImporter::ParseVertex(std::stringstream& vertex_params) {
   }
   for (size_t dim : {0, 1, 2, 3}) {
     vertex_params >> std::ws;
-    if (vertex_params) {
+    if (!vertex_params.eof()) {
       vertex_params >> read_value[dim];
     } else {
       assert(dim == 3);
