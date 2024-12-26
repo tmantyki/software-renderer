@@ -10,6 +10,7 @@ UserInterface::~UserInterface() {
   DestroySdlObjects();
 }
 
+// #TODO: use exception instead of bool return value
 bool UserInterface::InitializeSdlObjects() {
   assert(!sdl_objects_initialized_);
   if (SDL_Init(SDL_INIT_VIDEO))
@@ -41,4 +42,22 @@ void UserInterface::DestroySdlObjects() {
   SDL_QuitSubSystem(SDL_INIT_VIDEO);
   SDL_Quit();
   sdl_objects_initialized_ = false;
+}
+
+uint16_t UserInterface::GetWidth() const noexcept {
+  return width_;
+}
+
+uint16_t UserInterface::GetHeight() const noexcept {
+  return height_;
+}
+
+SDL_Window* UserInterface::GetSdlWindow() noexcept {
+  assert(sdl_objects_initialized_);
+  return sdl_window_;
+}
+
+SDL_Renderer* UserInterface::GetSdlRenderer() noexcept {
+  assert(sdl_objects_initialized_);
+  return sdl_renderer_;
 }

@@ -4,6 +4,8 @@
 #include <SDL2/SDL.h>
 #include <cstdint>
 
+#include "server/game_state.hpp"
+
 class UserInterface {
  public:
   UserInterface(uint16_t width = 800, uint16_t height = 800);
@@ -12,6 +14,10 @@ class UserInterface {
   UserInterface& operator=(UserInterface&) = delete;
   bool InitializeSdlObjects();
   void DestroySdlObjects();
+  uint16_t GetWidth() const noexcept;
+  uint16_t GetHeight() const noexcept;
+  SDL_Window* GetSdlWindow() noexcept;
+  SDL_Renderer* GetSdlRenderer() noexcept;
 
  private:
   const uint16_t width_;

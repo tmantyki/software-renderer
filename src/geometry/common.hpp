@@ -8,6 +8,7 @@
 
 #include <Eigen/Core>
 #include <Eigen/Geometry>
+#include <SDL2/SDL.h>
 
 constexpr float kPi = 3.14159265358979323846264338;
 constexpr float kFloatTolerance = 1.0E-3;

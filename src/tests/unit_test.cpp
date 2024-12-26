@@ -683,11 +683,9 @@ TEST_F(ViewportTransformTest, FullTransform) {
 }
 
 TEST(TransformPipeline, ConstructorObjects) {
-  std::shared_ptr<CameraTransform> camera = std::make_shared<CameraTransform>();
-  std::shared_ptr<PerspectiveProjection> perspective =
-      std::make_shared<PerspectiveProjection>(1, 100, -50, 50, 40, -40);
-  std::shared_ptr<ViewportTransform> viewport =
-      std::make_shared<ViewportTransform>(800, 600, 0, 0);
+  CameraTransform camera;
+  PerspectiveProjection perspective(1, 100, -50, 50, 40, -40);
+  ViewportTransform viewport(800, 600, 0, 0);
   TransformPipeline pipeline(camera, perspective, viewport);
   EXPECT_EQ(camera, pipeline.GetCameraTransform());
   EXPECT_EQ(perspective, pipeline.GetPerspectiveProjection());
@@ -700,18 +698,16 @@ class TransformPipelineTest : public testing ::Test {
       : v1_(2, 0, 0),
         v2_(4, 0, 0),
         v3_(4, 0, 2),
-        camera_(std::make_shared<CameraTransform>(
-            Camera({0, 0, 0}, kPi / 2, -kPi / 2, -kPi / 2))),
-        perspective_(
-            std::make_shared<PerspectiveProjection>(1, 10, -1, 1, 1, -1)),
-        viewport_(std::make_shared<ViewportTransform>(800, 800, 0, 0)),
+        camera_{{{0, 0, 0}, kPi / 2, -kPi / 2, -kPi / 2}},
+        perspective_(1, 10, -1, 1, 1, -1),
+        viewport_(800, 800, 0, 0),
         pipeline_(camera_, perspective_, viewport_) {
     world_space_.EnqueueAddTriangle(std::make_shared<Triangle>(v1_, v2_, v3_));
     world_space_.UpdateSpace();
   }
   void SetAndUpdateCameraLocation(const Point& location) {
-    camera_->GetCamera().SetLocation(location);
-    camera_->UpdateTransform();
+    camera_.GetCamera().SetLocation(location);
+    camera_.UpdateTransform();
     pipeline_.RunPipeline(world_space_);
   }
   void ExpectVertices(const Triangle& expected_triangle,
@@ -726,9 +722,9 @@ class TransformPipelineTest : public testing ::Test {
   }
   Space world_space_;
   Vertex v1_, v2_, v3_;
-  std::shared_ptr<CameraTransform> camera_;
-  std::shared_ptr<PerspectiveProjection> perspective_;
-  std::shared_ptr<ViewportTransform> viewport_;
+  CameraTransform camera_;
+  PerspectiveProjection perspective_;
+  ViewportTransform viewport_;
   TransformPipeline pipeline_;
   float expected_z_ = (20 * (1 - (1 / 2.0)) / 9) - 1;
 };

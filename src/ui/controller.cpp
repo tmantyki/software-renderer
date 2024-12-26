@@ -28,8 +28,10 @@ Controller::Controller()
 void Controller::UpdateState() {
   SDL_PumpEvents();
   const uint8_t* keyboard_state = SDL_GetKeyboardState(nullptr);
-  UpdateDirectionByKeyPair(SDL_SCANCODE_A, SDL_SCANCODE_D, y_, keyboard_state);
-  UpdateDirectionByKeyPair(SDL_SCANCODE_S, SDL_SCANCODE_W, z_, keyboard_state);
+  UpdateDirectionByKeyPair(SDL_SCANCODE_A, SDL_SCANCODE_D, x_, keyboard_state);
+  UpdateDirectionByKeyPair(SDL_SCANCODE_LCTRL, SDL_SCANCODE_SPACE, y_,
+                           keyboard_state);
+  UpdateDirectionByKeyPair(SDL_SCANCODE_W, SDL_SCANCODE_S, z_, keyboard_state);
   UpdateDirectionByKeyPair(SDL_SCANCODE_DOWN, SDL_SCANCODE_UP, pitch_,
                            keyboard_state);
   UpdateDirectionByKeyPair(SDL_SCANCODE_LEFT, SDL_SCANCODE_RIGHT, yaw_,
@@ -41,12 +43,26 @@ bool Controller::CheckQuitRequest() const {
   return quit_request_;
 }
 
-void Controller::OffsetCamera(Camera& camera) const {
-  const float translation_offset = 0.01;
-  Vector3 translation_vector = {static_cast<float>(x_), static_cast<float>(y_),
-                                static_cast<float>(z_)};
-  translation_vector *= translation_offset;
-  camera.SetLocation(Vector3(camera.GetLocation().GetVector()({0, 1, 2}) +
-                             translation_vector));
-  std::cout << camera.GetLocation().GetVector() << "\n";
+AxisDirection Controller::GetX() const noexcept {
+  return x_;
+}
+
+AxisDirection Controller::GetY() const noexcept {
+  return y_;
+}
+
+AxisDirection Controller::GetZ() const noexcept {
+  return z_;
+}
+
+AxisDirection Controller::GetPitch() const noexcept {
+  return pitch_;
+}
+
+AxisDirection Controller::GetYaw() const noexcept {
+  return yaw_;
+}
+
+AxisDirection Controller::GetRoll() const noexcept {
+  return roll_;
 }

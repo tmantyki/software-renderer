@@ -57,6 +57,14 @@ bool CameraTransform::UpdateTransform() {
   return true;
 }
 
+const Camera& CameraTransform::GetCamera() const noexcept {
+  return camera_;
+}
+
+bool CameraTransform::operator==(const CameraTransform& rhs) const {
+  return this->GetCamera() == rhs.GetCamera();
+}
+
 PerspectiveProjection::PerspectiveProjection(float near,
                                              float far,
                                              float left,
@@ -112,6 +120,22 @@ bool PerspectiveProjection::UpdateTransform() {
   return true;
 }
 
+bool PerspectiveProjection::operator==(const PerspectiveProjection& rhs) const {
+  if (this->GetNear() != rhs.GetNear())
+    return false;
+  if (this->GetFar() != rhs.GetFar())
+    return false;
+  if (this->GetLeft() != rhs.GetLeft())
+    return false;
+  if (this->GetRight() != rhs.GetRight())
+    return false;
+  if (this->GetTop() != rhs.GetTop())
+    return false;
+  if (this->GetBottom() != rhs.GetBottom())
+    return false;
+  return true;
+}
+
 ViewportTransform::ViewportTransform(uint16_t width,
                                      uint16_t height,
                                      int16_t x_offset,
@@ -142,32 +166,41 @@ bool ViewportTransform::UpdateTransform() {
   return true;
 }
 
-TransformPipeline::TransformPipeline(
-    std::shared_ptr<CameraTransform> camera,
-    std::shared_ptr<PerspectiveProjection> perspective,
-    std::shared_ptr<ViewportTransform> viewport)
+bool ViewportTransform::operator==(const ViewportTransform& rhs) const {
+  if (this->GetWidth() != rhs.GetWidth())
+    return false;
+  if (this->GetHeight() != rhs.GetHeight())
+    return false;
+  if (this->GetOffsetX() != rhs.GetOffsetX())
+    return false;
+  if (this->GetOffsetY() != rhs.GetOffsetY())
+    return false;
+  return true;
+}
+
+TransformPipeline::TransformPipeline(CameraTransform& camera,
+                                     PerspectiveProjection& perspective,
+                                     ViewportTransform& viewport)
     : camera_(camera), perspective_(perspective), viewport_(viewport) {}
 
-std::shared_ptr<CameraTransform> TransformPipeline::GetCameraTransform() {
+CameraTransform& TransformPipeline::GetCameraTransform() {
   return camera_;
 }
 
-std::shared_ptr<PerspectiveProjection>
-TransformPipeline::GetPerspectiveProjection() {
+PerspectiveProjection& TransformPipeline::GetPerspectiveProjection() {
   return perspective_;
 }
 
-std::shared_ptr<ViewportTransform> TransformPipeline::GetViewportTransform() {
+ViewportTransform& TransformPipeline::GetViewportTransform() {
   return viewport_;
 }
 
 void TransformPipeline::RunPipeline(const Space& input_space) {
   output_space_ = input_space;
   // #TODO: optimize by giving as two arguments rather than ready product
-  output_space_.TransformVertices(perspective_->GetMatrix() *
-                                  camera_->GetMatrix());
-  output_space_.TransformNormals(
-      camera_->GetMatrix());  // check for correctness
+  output_space_.TransformVertices(perspective_.GetMatrix() *
+                                  camera_.GetMatrix());
+  output_space_.TransformNormals(camera_.GetMatrix());  // check for correctness
   for (Axis axis : {Axis::kX, Axis::kY, Axis::kZ}) {
     for (AxisDirection axis_direction :
          {AxisDirection::kNegative, AxisDirection::kPositive}) {
@@ -175,9 +208,9 @@ void TransformPipeline::RunPipeline(const Space& input_space) {
     }
   }
   output_space_.Dehomogenize();
-  output_space_.TransformVertices(viewport_->GetMatrix());
+  output_space_.TransformVertices(viewport_.GetMatrix());
 }
 
-Space& TransformPipeline::GetOutputSpace() {
+const Space& TransformPipeline::GetOutputSpace() const {
   return output_space_;
 }

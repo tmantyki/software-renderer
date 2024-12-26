@@ -20,6 +20,7 @@ application_sources = [
     "server/game_state.cpp",
     "server/player.cpp",
     "ui/controller.cpp",
+    "ui/rasterizer.cpp",
     "ui/ui.cpp",
 ]
 geometry_sources = [

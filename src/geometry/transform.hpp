@@ -24,6 +24,8 @@ class CameraTransform : public Transform {
   CameraTransform(Camera camera);
   Camera& GetCamera();
   bool UpdateTransform() override;
+  const Camera& GetCamera() const noexcept;
+  bool operator==(const CameraTransform& rhs) const;
 
  private:
   Camera camera_;
@@ -47,6 +49,7 @@ class PerspectiveProjection : public Transform {
   float GetTop() const;
   float GetBottom() const;
   bool UpdateTransform() override;
+  bool operator==(const PerspectiveProjection& rhs) const;
 
  private:
   float near_, far_, left_, right_, top_, bottom_;
@@ -64,6 +67,7 @@ class ViewportTransform : public Transform {
   int16_t GetOffsetX() const;
   int16_t GetOffsetY() const;
   bool UpdateTransform() override;
+  bool operator==(const ViewportTransform& rhs) const;
 
  private:
   uint16_t width_, height_;
@@ -73,19 +77,19 @@ class ViewportTransform : public Transform {
 class TransformPipeline {
  public:
   TransformPipeline() = delete;
-  TransformPipeline(std::shared_ptr<CameraTransform> camera,
-                    std::shared_ptr<PerspectiveProjection> perspective,
-                    std::shared_ptr<ViewportTransform> viewport);
-  std::shared_ptr<CameraTransform> GetCameraTransform();
-  std::shared_ptr<PerspectiveProjection> GetPerspectiveProjection();
-  std::shared_ptr<ViewportTransform> GetViewportTransform();
+  TransformPipeline(CameraTransform& camera,
+                    PerspectiveProjection& perspective,
+                    ViewportTransform& viewport);
+  CameraTransform& GetCameraTransform();
+  PerspectiveProjection& GetPerspectiveProjection();
+  ViewportTransform& GetViewportTransform();
   void RunPipeline(const Space& input_space);
-  Space& GetOutputSpace();  // #TODO: returning reference ok?
+  const Space& GetOutputSpace() const;
 
  private:
-  std::shared_ptr<CameraTransform> camera_;
-  std::shared_ptr<PerspectiveProjection> perspective_;
-  std::shared_ptr<ViewportTransform> viewport_;
+  CameraTransform& camera_;
+  PerspectiveProjection& perspective_;
+  ViewportTransform& viewport_;
   Space output_space_;
 };
 

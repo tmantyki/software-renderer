@@ -4,13 +4,17 @@
 #include "geometry/camera.hpp"
 #include "geometry/common.hpp"
 
-
 class Controller {
  public:
   Controller();
   void UpdateState();
   bool CheckQuitRequest() const;
-  void OffsetCamera(Camera& camera) const;
+  AxisDirection GetX() const noexcept;
+  AxisDirection GetY() const noexcept;
+  AxisDirection GetZ() const noexcept;
+  AxisDirection GetPitch() const noexcept;
+  AxisDirection GetYaw() const noexcept;
+  AxisDirection GetRoll() const noexcept;
 
  private:
   AxisDirection x_;

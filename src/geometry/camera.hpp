@@ -15,6 +15,7 @@ class Camera {
   void SetPitch(float pitch);
   void SetYaw(float yaw);
   void SetRoll(float roll);
+  bool operator==(const Camera& rhs) const;
 
  private:
   Point location_;
