@@ -43,6 +43,7 @@ unit_test_sources = (
     geometry_sources
     + utility_sources
     + [
+        "tests/geometry_importer_test.cpp",
         "tests/unit_test.cpp",
     ]
 )
