@@ -24,9 +24,9 @@ void GameState::UpdatePlayerState(const Controller& controller) noexcept {
   float pitch = static_cast<float>(controller.GetPitch());
   float yaw = static_cast<float>(controller.GetYaw());
   float roll = static_cast<float>(controller.GetRoll());
-  Vector4 translation_vector = {x, y, z, 0};
-  translation_vector =
-      camera_transform_.GetMatrixInverse() * translation_vector;
+  Direction translation_direction(x, y, z);
+  Vector4 translation_vector =
+      camera_transform_.GetMatrixInverse() * translation_direction.GetVector();
   translation_vector *= kTranslationIncrement;
   camera.SetLocation(Vector3(camera.GetLocation().GetVector()({0, 1, 2}) +
                              translation_vector({0, 1, 2})));

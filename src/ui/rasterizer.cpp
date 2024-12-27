@@ -11,7 +11,7 @@ void SetColor(SDL_Renderer* renderer, const SDL_Color color) noexcept {
 void WireframeRasterizer::RasterizeGameState(
     const GameState& game_state,
     UserInterface& user_interface) noexcept {
-  SDL_Color kBackgroundColor = {0x4, 0x4, 0x4, 0xff};
+  SDL_Color kBackgroundColor = {0x40, 0x40, 0x40, 0xff};
   SDL_Color kForegroundColor = {0xff, 0xff, 0xff, 0xff};
   const Space& space = game_state.GetOutputSpace();
   SDL_Renderer* renderer = user_interface.GetSdlRenderer();
