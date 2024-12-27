@@ -32,9 +32,11 @@ void Controller::UpdateState() {
   UpdateDirectionByKeyPair(SDL_SCANCODE_LCTRL, SDL_SCANCODE_SPACE, y_,
                            keyboard_state);
   UpdateDirectionByKeyPair(SDL_SCANCODE_W, SDL_SCANCODE_S, z_, keyboard_state);
-  UpdateDirectionByKeyPair(SDL_SCANCODE_DOWN, SDL_SCANCODE_UP, pitch_,
+  UpdateDirectionByKeyPair(SDL_SCANCODE_UP, SDL_SCANCODE_DOWN, pitch_,
                            keyboard_state);
   UpdateDirectionByKeyPair(SDL_SCANCODE_LEFT, SDL_SCANCODE_RIGHT, yaw_,
+                           keyboard_state);
+  UpdateDirectionByKeyPair(SDL_SCANCODE_Q, SDL_SCANCODE_E, roll_,
                            keyboard_state);
   quit_request_ = static_cast<bool>(keyboard_state[SDL_SCANCODE_ESCAPE]);
 }

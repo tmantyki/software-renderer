@@ -18,14 +18,21 @@ void GameState::ProcessTick() noexcept {
 
 void GameState::UpdatePlayerState(const Controller& controller) noexcept {
   Camera& camera = camera_transform_.GetCamera();
-  const float translation_offset = 0.01;
   float x = static_cast<float>(controller.GetX());
   float y = static_cast<float>(controller.GetY());
   float z = static_cast<float>(controller.GetZ());
-  Vector3 translation_vector = {x, y, z};
-  translation_vector *= translation_offset;
+  float pitch = static_cast<float>(controller.GetPitch());
+  float yaw = static_cast<float>(controller.GetYaw());
+  float roll = static_cast<float>(controller.GetRoll());
+  Vector4 translation_vector = {x, y, z, 0};
+  translation_vector =
+      camera_transform_.GetMatrixInverse() * translation_vector;
+  translation_vector *= kTranslationIncrement;
   camera.SetLocation(Vector3(camera.GetLocation().GetVector()({0, 1, 2}) +
-                             translation_vector));
+                             translation_vector({0, 1, 2})));
+  camera.SetPitch(camera.GetPitch() + pitch * kAngularIncrement);
+  camera.SetYaw(camera.GetYaw() + yaw * kAngularIncrement);
+  camera.SetRoll(camera.GetRoll() + roll * kAngularIncrement);
   camera_transform_.UpdateTransform();
 }
 

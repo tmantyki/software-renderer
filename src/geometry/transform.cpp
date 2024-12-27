@@ -5,7 +5,7 @@ Transform::Transform() : matrix_(Matrix4::Zero()) {};
 
 Transform::Transform(Matrix4 matrix) : matrix_(matrix) {}
 
-Matrix4 Transform::GetMatrix() const {
+Matrix4 Transform::GetMatrix() const noexcept {
   return matrix_;
 }
 
@@ -22,7 +22,7 @@ Camera& CameraTransform::GetCamera() {
 
 // #TODO: use word mapping instead of transform or matrix
 // #TODO: refactor!
-bool CameraTransform::UpdateTransform() {
+bool CameraTransform::UpdateTransform() noexcept {
   // Translation
   translation_matrix_ = Matrix4::Identity();
   Vector4 translation_vector = -camera_.GetLocation().GetVector();
@@ -54,7 +54,12 @@ bool CameraTransform::UpdateTransform() {
       quaternion_roll * quaternion_pitch * quaternion_yaw;
   rotation_matrix_.block<3, 3>(0, 0) = quaternion_all.toRotationMatrix();
   matrix_ = rotation_matrix_ * translation_matrix_;
+  matrix_inverse_ = matrix_.inverse(); // #TODO: faster to compute manually?
   return true;
+}
+
+Matrix4 CameraTransform::GetMatrixInverse() const noexcept {
+  return matrix_inverse_;
 }
 
 const Camera& CameraTransform::GetCamera() const noexcept {
@@ -109,7 +114,7 @@ float PerspectiveProjection::GetBottom() const {
   return bottom_;
 }
 
-bool PerspectiveProjection::UpdateTransform() {
+bool PerspectiveProjection::UpdateTransform() noexcept {
   matrix_(0, 0) = 2 * near_ / (right_ - left_);
   matrix_(0, 2) = (right_ + left_) / (right_ - left_);
   matrix_(1, 1) = 2 * near_ / (top_ - bottom_);
@@ -157,7 +162,7 @@ int16_t ViewportTransform::GetOffsetY() const {
   return y_offset_;
 }
 
-bool ViewportTransform::UpdateTransform() {
+bool ViewportTransform::UpdateTransform() noexcept {
   matrix_ = Matrix4::Identity();
   matrix_(0, 0) = width_ / 2;
   matrix_(0, 3) = (width_ / 2) + x_offset_;

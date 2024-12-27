@@ -11,7 +11,7 @@ class Transform {
  public:
   Transform();
   Transform(Matrix4 matrix);
-  Matrix4 GetMatrix() const;
+  Matrix4 GetMatrix() const noexcept;
   virtual bool UpdateTransform() = 0;
 
  protected:
@@ -23,11 +23,13 @@ class CameraTransform : public Transform {
   CameraTransform();
   CameraTransform(Camera camera);
   Camera& GetCamera();
-  bool UpdateTransform() override;
+  bool UpdateTransform() noexcept override;
+  Matrix4 GetMatrixInverse() const noexcept;
   const Camera& GetCamera() const noexcept;
   bool operator==(const CameraTransform& rhs) const;
 
  private:
+  Matrix4 matrix_inverse_;
   Camera camera_;
   Matrix4 rotation_matrix_;
   Matrix4 translation_matrix_;
@@ -48,7 +50,7 @@ class PerspectiveProjection : public Transform {
   float GetRight() const;
   float GetTop() const;
   float GetBottom() const;
-  bool UpdateTransform() override;
+  bool UpdateTransform() noexcept override;
   bool operator==(const PerspectiveProjection& rhs) const;
 
  private:
@@ -66,7 +68,7 @@ class ViewportTransform : public Transform {
   uint16_t GetHeight() const;
   int16_t GetOffsetX() const;
   int16_t GetOffsetY() const;
-  bool UpdateTransform() override;
+  bool UpdateTransform() noexcept override;
   bool operator==(const ViewportTransform& rhs) const;
 
  private:

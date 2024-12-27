@@ -8,12 +8,8 @@ class Player : public Camera {
   Player();
 
  private:
-  float velocity_x_;
-  float velocity_y_;
-  float velocity_z_;
-  float velocity_pitch_;
-  float velocity_yaw_;
-  float velocity_roll_;
+  float speed_;
+  Vector3 movement_direction_;
 };
 
 #endif
