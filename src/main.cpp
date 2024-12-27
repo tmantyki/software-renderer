@@ -12,7 +12,8 @@ int main() {
   user_interface.InitializeSdlObjects();
   Controller controller;
   GameState game_state;
-  WireframeRasterizer wireframe_rasterizer;
+  // WireframeRasterizer rasterizer;
+  FlatRasterizer rasterizer;
 
   while (true) {
     controller.UpdateState();
@@ -20,7 +21,7 @@ int main() {
       break;
     game_state.UpdatePlayerState(controller);
     game_state.ProcessTick();
-    wireframe_rasterizer.RasterizeGameState(game_state, user_interface);
+    rasterizer.RasterizeGameState(game_state, user_interface);
   }
   return 0;
 }

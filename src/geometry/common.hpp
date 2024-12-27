@@ -38,6 +38,7 @@ typedef Eigen::Array<int, kVerticesPerTriangle, Eigen::Dynamic> ClippingMask;
 typedef Eigen::Matrix<float, kDimensions, Eigen::Dynamic> NormalMatrix;
 typedef Eigen::Matrix<float, kDimensions, Eigen::Dynamic> VertexMatrix;
 
+enum class BoundaryType { kMin, kMax };
 enum class TriangleClipMode { kIncludeReference, kExcludeReference };
 enum TriangleEdge { kAB = 0, kAC = 1, kBC = 2 };
 enum Axis { kX = 0, kY = 1, kZ = 2 };
