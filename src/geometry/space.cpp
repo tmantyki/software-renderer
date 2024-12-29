@@ -41,13 +41,15 @@ size_t FindVertexIndexByClipMask(Eigen::Array<int, 3, 1> mask_column,
 // #TODO: refactor
 void AddSubstituteTriangles(const VertexMatrix& vertices,
                             const NormalMatrix& normals,
+                            const Triangle& triangle,
                             size_t triangle_index,
                             size_t single_vertex_index,
                             TriangleClipMode clip_mode,
                             TrianglePlaneIntersections& intersections,
                             std::vector<TriangleSharedPointer>& substitutes) {
   size_t column;
-  Direction normal(normals({0, 1, 2}, triangle_index));
+  (void) normals;
+  Direction normal(triangle.GetNormal());
   Vertex vertex_ab(intersections[TriangleEdge::kAB]);
   Vertex vertex_ac(intersections[TriangleEdge::kAC]);
   if (clip_mode == TriangleClipMode::kIncludeReference) {
@@ -68,9 +70,9 @@ void AddSubstituteTriangles(const VertexMatrix& vertices,
 }
 
 float HomogeneousInterpolation(Vector4 vector_a,
-                              Vector4 vector_b,
-                              Axis axis,
-                              AxisDirection axis_direction) {
+                               Vector4 vector_b,
+                               Axis axis,
+                               AxisDirection axis_direction) {
   float a_val = vector_a[axis];
   float b_val = vector_b[axis];
   float a_w = axis_direction * vector_a[3];
@@ -134,9 +136,9 @@ std::vector<TriangleSharedPointer> Space::GetHomogeneousClipSubstitutes(
       triangle_index, single_vertex_index, axis, axis_direction);
   std::vector<TriangleSharedPointer> substitutes;
   // #TODO: vertex attributes
-  ::AddSubstituteTriangles(vertices_, normals_, triangle_index,
-                           single_vertex_index, clip_mode, intersections,
-                           substitutes);
+  ::AddSubstituteTriangles(vertices_, normals_, *triangles_[triangle_index],
+                           triangle_index, single_vertex_index, clip_mode,
+                           intersections, substitutes);
   return substitutes;
 }
 
@@ -230,8 +232,9 @@ void Space::AddRemainingInQueue(struct UpdateSpaceParameters& parameters) {
   }
 }
 
-ClippingMask Space::HomogeneousClippingMask(Axis axis,
-                                           AxisDirection axis_direction) const {
+ClippingMask Space::HomogeneousClippingMask(
+    Axis axis,
+    AxisDirection axis_direction) const {
   return (axis_direction * vertices_.row(axis).array() <=
           (vertices_.row(3)).array())
       .reshaped(kVerticesPerTriangle, triangle_count_)
@@ -239,8 +242,8 @@ ClippingMask Space::HomogeneousClippingMask(Axis axis,
 }
 
 void Space::ProcessHomogeneousClippingMask(const ClippingMask& clipping_mask,
-                                          Axis axis,
-                                          AxisDirection axis_direction) {
+                                           Axis axis,
+                                           AxisDirection axis_direction) {
   Eigen::Array<int, 1, Eigen::Dynamic> mask_cols_sums =
       clipping_mask.colwise().sum();
   // #TODO: can be parallellized
