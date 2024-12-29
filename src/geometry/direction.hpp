@@ -9,6 +9,7 @@ class Direction : public Coordinate {
   Direction() = delete;
   Direction(float x, float y, float z);
   Direction(Vector3 vector);
+  Direction(Vector4 vector);
 };
 
 #endif

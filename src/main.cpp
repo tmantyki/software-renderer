@@ -12,8 +12,9 @@ int main() {
   user_interface.InitializeSdlObjects();
   Controller controller;
   GameState game_state;
-  // WireframeRasterizer rasterizer;
-  FlatRasterizer rasterizer;
+  WireframeRasterizer wirefreame_rasterizer;
+  FlatRasterizer flat_rasterizer({0.13, -1, 0.49});
+  Rasterizer* active_rasterizer = &flat_rasterizer;
 
   while (true) {
     controller.UpdateState();
@@ -21,9 +22,15 @@ int main() {
       std::cout << "Ticks: " << game_state.GetTick() << "\n";
       break;
     }
+    if (controller.ConsumeToggleRasterizerRequest()) {
+      if (active_rasterizer == &flat_rasterizer)
+        active_rasterizer = &wirefreame_rasterizer;
+      else
+        active_rasterizer = &flat_rasterizer;
+    }
     game_state.UpdatePlayerState(controller);
     game_state.ProcessTick();
-    rasterizer.RasterizeGameState(game_state, user_interface);
+    active_rasterizer->RasterizeGameState(game_state, user_interface);
     SDL_RenderPresent(user_interface.GetSdlRenderer());
   }
   return 0;

@@ -14,6 +14,6 @@ float Point::SignedDistanceFromPlane(const Plane& plane) const {
 }
 
 Direction Point::operator-(const Point& rhs) const {
-  return Direction((vector_ - rhs.vector_)({0, 1, 2}));
+  return Direction(Vector4(vector_ - rhs.vector_));
 }
 // #TODO: make operator part of coordinate.

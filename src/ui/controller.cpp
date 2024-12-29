@@ -39,10 +39,19 @@ void Controller::UpdateState() {
   UpdateDirectionByKeyPair(SDL_SCANCODE_Q, SDL_SCANCODE_E, roll_,
                            keyboard_state);
   quit_request_ = static_cast<bool>(keyboard_state[SDL_SCANCODE_ESCAPE]);
+  swap_rasterizer_ = static_cast<bool>(keyboard_state[SDL_SCANCODE_TAB]);
 }
 
 bool Controller::CheckQuitRequest() const {
   return quit_request_;
+}
+
+bool Controller::ConsumeToggleRasterizerRequest() noexcept {
+  if (swap_rasterizer_) {
+    swap_rasterizer_ = false;
+    return true;
+  }
+  return false;
 }
 
 AxisDirection Controller::GetX() const noexcept {

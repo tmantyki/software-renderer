@@ -9,6 +9,7 @@ class Controller {
   Controller();
   void UpdateState();
   bool CheckQuitRequest() const;
+  bool ConsumeToggleRasterizerRequest() noexcept;
   AxisDirection GetX() const noexcept;
   AxisDirection GetY() const noexcept;
   AxisDirection GetZ() const noexcept;
@@ -24,6 +25,7 @@ class Controller {
   AxisDirection yaw_;
   AxisDirection roll_;
   bool quit_request_;
+  bool swap_rasterizer_;
 };
 
 #endif
