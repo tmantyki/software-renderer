@@ -12,7 +12,8 @@ class Coordinate {
   Coordinate(Vector4 vector_4f);
   Vector4 GetVector() const;
   Vector4 cross3(const Coordinate& rhs) const;
-  float dot(const Coordinate& rhs) const;
+  float dot(const Coordinate& rhs) const noexcept;
+  float dot(const Vector4& rhs) const noexcept;
   bool operator==(const Coordinate& rhs) const;
   bool operator!=(const Coordinate& rhs) const;
 

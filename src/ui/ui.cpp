@@ -4,7 +4,9 @@
 #include "ui.hpp"
 
 UserInterface::UserInterface(uint16_t width, uint16_t height)
-    : width_(width), height_(height), sdl_objects_initialized_(false) {}
+    : width_(width), height_(height), sdl_objects_initialized_(false) {
+  // z_buffer_.resize(height, std::vector<float>(width));  // #TODO: Check order!!
+}
 
 UserInterface::~UserInterface() {
   DestroySdlObjects();
@@ -30,6 +32,16 @@ bool UserInterface::InitializeSdlObjects() {
     SDL_Quit();
     return false;
   }
+  sdl_texture_ =
+      SDL_CreateTexture(sdl_renderer_, SDL_PIXELFORMAT_ARGB8888,
+                        SDL_TEXTUREACCESS_STREAMING, width_, height_);
+  if (!sdl_texture_) {
+    SDL_DestroyRenderer(sdl_renderer_);
+    SDL_DestroyWindow(sdl_window_);
+    SDL_QuitSubSystem(SDL_INIT_VIDEO);
+    SDL_Quit();
+    return false;
+  }
   sdl_objects_initialized_ = true;
   return true;
 }
@@ -37,9 +49,10 @@ bool UserInterface::InitializeSdlObjects() {
 void UserInterface::DestroySdlObjects() {
   if (!sdl_objects_initialized_)
     return;
+  SDL_DestroyTexture(sdl_texture_);
   SDL_DestroyRenderer(sdl_renderer_);
   SDL_DestroyWindow(sdl_window_);
-  SDL_QuitSubSystem(SDL_INIT_VIDEO);
+  SDL_QuitSubSystem(SDL_INIT_VIDEO); // Segfault??
   SDL_Quit();
   sdl_objects_initialized_ = false;
 }
@@ -60,4 +73,9 @@ SDL_Window* UserInterface::GetSdlWindow() noexcept {
 SDL_Renderer* UserInterface::GetSdlRenderer() noexcept {
   assert(sdl_objects_initialized_);
   return sdl_renderer_;
+}
+
+SDL_Texture* UserInterface::GetSdlTexture() noexcept {
+  assert(sdl_objects_initialized_);
+  return sdl_texture_;
 }

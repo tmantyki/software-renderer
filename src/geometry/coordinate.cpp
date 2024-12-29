@@ -16,8 +16,12 @@ Vector4 Coordinate::cross3(const Coordinate& rhs) const {
   return vector_.cross3(rhs.vector_);
 }
 
-float Coordinate::dot(const Coordinate& rhs) const {
+float Coordinate::dot(const Coordinate& rhs) const noexcept {
   return vector_.dot(rhs.vector_);
+}
+
+float Coordinate::dot(const Vector4& rhs) const noexcept {
+  return vector_.dot(rhs);
 }
 
 bool Coordinate::operator==(const Coordinate& rhs) const {

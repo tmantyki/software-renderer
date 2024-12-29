@@ -39,3 +39,7 @@ void GameState::UpdatePlayerState(const Controller& controller) noexcept {
 const Space& GameState::GetOutputSpace() const noexcept {
   return pipeline_.GetOutputSpace();
 }
+
+uint64_t GameState::GetTick() const noexcept {
+  return tick_counter_;
+}

@@ -18,6 +18,7 @@ class UserInterface {
   uint16_t GetHeight() const noexcept;
   SDL_Window* GetSdlWindow() noexcept;
   SDL_Renderer* GetSdlRenderer() noexcept;
+  SDL_Texture* GetSdlTexture() noexcept;
 
  private:
   const uint16_t width_;
@@ -25,6 +26,9 @@ class UserInterface {
   bool sdl_objects_initialized_;
   SDL_Window* sdl_window_;
   SDL_Renderer* sdl_renderer_;
+  SDL_Texture* sdl_texture_;
+  // std::vector<std::vector<float>> z_buffer_;
+  float z_buffer_[800][800];
 };
 
 #endif

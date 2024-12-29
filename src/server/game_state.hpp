@@ -12,6 +12,7 @@ class GameState {
   void ProcessTick() noexcept;
   void UpdatePlayerState(const Controller& controller) noexcept;
   const Space& GetOutputSpace() const noexcept;
+  uint64_t GetTick() const noexcept;
 
  private:
   Player player_;

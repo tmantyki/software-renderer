@@ -17,11 +17,14 @@ int main() {
 
   while (true) {
     controller.UpdateState();
-    if (controller.CheckQuitRequest())
+    if (controller.CheckQuitRequest()) {
+      std::cout << "Ticks: " << game_state.GetTick() << "\n";
       break;
+    }
     game_state.UpdatePlayerState(controller);
     game_state.ProcessTick();
     rasterizer.RasterizeGameState(game_state, user_interface);
+    SDL_RenderPresent(user_interface.GetSdlRenderer());
   }
   return 0;
 }

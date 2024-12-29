@@ -7,41 +7,42 @@ using namespace std::chrono;
 
 Timer::Timer(const char* label) : label_(label) {}
 
-void Timer::Start() {
+void Timer::Start() noexcept {
   assert(!active_);
-  duration_us_ = 0;
+  duration_ns_ = 0;
   active_ = true;
   reference_ = high_resolution_clock::now();
 }
 
-void Timer::Pause() {
+void Timer::Pause() noexcept {
   auto end = high_resolution_clock::now();
-  duration_us_ += duration_cast<microseconds>(end - reference_).count();
+  duration_ns_ += duration_cast<nanoseconds>(end - reference_).count();
   assert(active_);
   active_ = false;
 }
 
-void Timer::Continue() {
+void Timer::Continue() noexcept {
   assert(!active_);
   active_ = true;
   reference_ = high_resolution_clock::now();
 }
 
-void Timer::Stop(bool print_results) {
-  auto end = high_resolution_clock::now();
-  duration_us_ += duration_cast<microseconds>(end - reference_).count();
-  assert(active_);
-  active_ = false;
+void Timer::Stop(bool print_results) noexcept {
+  if (active_) {
+    auto end = high_resolution_clock::now();
+    duration_ns_ += duration_cast<nanoseconds>(end - reference_).count();
+    active_ = false;
+  }
   if (print_results)
     Print();
 }
 
-void Timer::Print() const {
+void Timer::Print() const noexcept {
   assert(!active_);
   std::cout << label_ << ": " << GetDuration() << " ms\n";
 }
 
-float Timer::GetDuration() const {
+float Timer::GetDuration() const noexcept {
   assert(!active_);
-  return duration_us_ / 1000.0;
+  return duration_ns_ / 1000000.0;
 }
