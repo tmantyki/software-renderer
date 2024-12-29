@@ -64,6 +64,7 @@ void FlatRasterizer::RasterizeGameState(
   const Space& space = game_state.GetOutputSpace();
   SDL_Renderer* renderer = user_interface.GetSdlRenderer();
   SDL_Texture* texture = user_interface.GetSdlTexture();
+
   for (uint16_t x = 0; x < 800; x++)
     for (uint16_t y = 0; y < 800; y++)
       z_buffer_[x][y] = 1;
@@ -72,6 +73,11 @@ void FlatRasterizer::RasterizeGameState(
   int pitch;
   constexpr int kBytesPerPixel = 4;
   SDL_LockTexture(texture, NULL, reinterpret_cast<void**>(&pixels), &pitch);
+
+  for (uint16_t x = 0; x < 800; x++)
+    for (uint16_t y = 0; y < 800; y++)
+      for (uint16_t b : {0, 1, 2, 3})
+        pixels[y * pitch + x * kBytesPerPixel + b] = 0x80;
 
   for (size_t t = 0; t < space.GetTriangleCount(); t++) {
     // Triangle color
@@ -129,7 +135,9 @@ void FlatRasterizer::RasterizeGameState(
           horizontal_t = 1 - (static_cast<float>(scan_x - scan_x_left) /
                               (scan_x_right - scan_x_left));
         float top_low_z = top_z * (1 - top_low_t) + low_z * top_low_t;
-        float final_z = top_low_z * (1 - horizontal_t) + mid_z * horizontal_t;
+        float top_mid_z = top_z * (1 - top_mid_t) + mid_z * top_mid_t;
+        float final_z =
+            top_low_z * (1 - horizontal_t) + top_mid_z * horizontal_t;
         if (final_z < z_buffer_[scan_x][scan_y]) {  // #TODO:Check order !!
           if (scan_x == 800)
             continue;
@@ -164,7 +172,9 @@ void FlatRasterizer::RasterizeGameState(
           horizontal_t = 1 - (static_cast<float>(scan_x - scan_x_left) /
                               (scan_x_right - scan_x_left));
         float top_low_z = top_z * (1 - top_low_t) + low_z * top_low_t;
-        float final_z = top_low_z * (1 - horizontal_t) + mid_z * horizontal_t;
+        float mid_low_z = mid_z * (1 - mid_low_t) + low_z * mid_low_t;
+        float final_z =
+            top_low_z * (1 - horizontal_t) + mid_low_z * horizontal_t;
         if (final_z < z_buffer_[scan_x][scan_y]) {  // #TODO:Check order !!
           if (scan_x == 800)
             continue;
