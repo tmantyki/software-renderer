@@ -119,10 +119,16 @@ void FlatRasterizer::RasterizeGameState(
 
     // Scanlines for top section
     for (uint16_t scan_y = top_y; scan_y < mid_y; scan_y++) {
+      if (low_y == top_y || top_y == mid_y)
+        break;
       float top_low_t = static_cast<float>(scan_y - top_y) / (low_y - top_y);
       float top_mid_t = static_cast<float>(scan_y - top_y) / (mid_y - top_y);
-      uint16_t scan_x1 = top_x * (1 - top_low_t) + low_x * top_low_t;
-      uint16_t scan_x2 = top_x * (1 - top_mid_t) + mid_x * top_mid_t;
+      uint16_t scan_x1 =
+          (scan_y * low_x - top_x * scan_y - top_y * low_x + top_x * low_y) /
+          (low_y - top_y);
+      uint16_t scan_x2 =
+          (scan_y * mid_x - top_x * scan_y - top_y * mid_x + top_x * mid_y) /
+          (mid_y - top_y);
 
       uint16_t scan_x_left = scan_x1 < scan_x2 ? scan_x1 : scan_x2;
       uint16_t scan_x_right = scan_x1 < scan_x2 ? scan_x2 : scan_x1;
@@ -155,11 +161,17 @@ void FlatRasterizer::RasterizeGameState(
     }
 
     // Scanlines for bottom section
-    for (uint16_t scan_y = mid_y; scan_y < low_y; scan_y++) {
+    for (uint16_t scan_y = mid_y; scan_y <= low_y; scan_y++) {
+      if (low_y == top_y || low_y == mid_y)
+        break;
       float top_low_t = static_cast<float>(scan_y - top_y) / (low_y - top_y);
       float mid_low_t = static_cast<float>(scan_y - mid_y) / (low_y - mid_y);
-      uint16_t scan_x1 = top_x * (1 - top_low_t) + low_x * top_low_t;
-      uint16_t scan_x2 = mid_x * (1 - mid_low_t) + low_x * mid_low_t;
+      uint16_t scan_x1 =
+          (top_x * scan_y - top_x * low_y - scan_y * low_x + top_y * low_x) /
+          (top_y - low_y);
+      uint16_t scan_x2 =
+          (-scan_y * low_x + scan_y * mid_x - low_y * mid_x + low_x * mid_y) /
+          (-low_y + mid_y);
 
       uint16_t scan_x_left = scan_x1 < scan_x2 ? scan_x1 : scan_x2;
       uint16_t scan_x_right = scan_x1 < scan_x2 ? scan_x2 : scan_x1;
