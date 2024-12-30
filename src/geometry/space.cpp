@@ -48,7 +48,7 @@ void AddSubstituteTriangles(const VertexMatrix& vertices,
                             TrianglePlaneIntersections& intersections,
                             std::vector<TriangleSharedPointer>& substitutes) {
   size_t column;
-  (void) normals;
+  (void)normals; // #TODO: finish normal implementation!!
   Direction normal(triangle.GetNormal());
   Vertex vertex_ab(intersections[TriangleEdge::kAB]);
   Vertex vertex_ac(intersections[TriangleEdge::kAC]);
@@ -75,10 +75,23 @@ float HomogeneousInterpolation(Vector4 vector_a,
                                AxisDirection axis_direction) {
   float a_val = vector_a[axis];
   float b_val = vector_b[axis];
-  float a_w = axis_direction * vector_a[3];
-  float b_w = axis_direction * vector_b[3];
+  float a_w = axis_direction * vector_a[kW];
+  float b_w = axis_direction * vector_b[kW];
   assert(a_val - a_w - b_val + b_w != 0);
   return (a_val - a_w) / (a_val - a_w - b_val + b_w);
+}
+
+bool SortClipVertices(const Vector4& lhs, const Vector4& rhs) noexcept {
+  if (lhs(kX) == rhs(kX)) {
+    if (lhs(kY) == rhs(kY)) {
+      if (lhs(kZ) == rhs(kZ)) {
+        return lhs(kW) < rhs(kW);
+      }
+      return lhs(kZ) < rhs(kZ);
+    }
+    return lhs(kY) < rhs(kY);
+  }
+  return lhs(kX) < rhs(kX);
 }
 }  // namespace
 
@@ -236,7 +249,7 @@ ClippingMask Space::HomogeneousClippingMask(
     Axis axis,
     AxisDirection axis_direction) const {
   return (axis_direction * vertices_.row(axis).array() <=
-          (vertices_.row(3)).array())
+          (vertices_.row(kW)).array())
       .reshaped(kVerticesPerTriangle, triangle_count_)
       .cast<int>();
 }
@@ -278,12 +291,18 @@ TrianglePlaneIntersections Space::GetTrianglePlaneIntersections(
   Vector4 vector_a = vertices_.block(0, a, kDimensions, 1);
   Vector4 vector_b = vertices_.block(0, b, kDimensions, 1);
   Vector4 vector_c = vertices_.block(0, c, kDimensions, 1);
-  float ab_t =
-      ::HomogeneousInterpolation(vector_a, vector_b, axis, axis_direction);
-  float ac_t =
-      ::HomogeneousInterpolation(vector_a, vector_c, axis, axis_direction);
-  Vector4 interpolated_ab = vector_a * (1 - ab_t) + vector_b * ab_t;
-  Vector4 interpolated_ac = vector_a * (1 - ac_t) + vector_c * ac_t;
+  float ab_t = ::HomogeneousInterpolation(
+      std::min({vector_a, vector_b}, ::SortClipVertices),
+      std::max({vector_a, vector_b}, ::SortClipVertices), axis, axis_direction);
+  float ac_t = ::HomogeneousInterpolation(
+      std::min({vector_a, vector_c}, ::SortClipVertices),
+      std::max({vector_a, vector_c}, ::SortClipVertices), axis, axis_direction);
+  Vector4 interpolated_ab =
+      std::min({vector_a, vector_b}, ::SortClipVertices) * (1 - ab_t) +
+      std::max({vector_a, vector_b}, ::SortClipVertices) * ab_t;
+  Vector4 interpolated_ac =
+      std::min({vector_a, vector_c}, ::SortClipVertices) * (1 - ac_t) +
+      std::max({vector_a, vector_c}, ::SortClipVertices) * ac_t;
 
   Point point_interpolated_ab(interpolated_ab(0), interpolated_ab(1),
                               interpolated_ab(2), interpolated_ab(3));

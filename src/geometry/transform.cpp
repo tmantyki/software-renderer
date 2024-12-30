@@ -54,7 +54,7 @@ bool CameraTransform::UpdateTransform() noexcept {
       quaternion_roll * quaternion_pitch * quaternion_yaw;
   rotation_matrix_.block<3, 3>(0, 0) = quaternion_all.toRotationMatrix();
   matrix_ = rotation_matrix_ * translation_matrix_;
-  matrix_inverse_ = matrix_.inverse(); // #TODO: faster to compute manually?
+  matrix_inverse_ = matrix_.inverse();  // #TODO: faster to compute manually?
   return true;
 }
 

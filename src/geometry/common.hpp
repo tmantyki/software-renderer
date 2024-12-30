@@ -41,7 +41,7 @@ typedef Eigen::Matrix<float, kDimensions, Eigen::Dynamic> VertexMatrix;
 enum class BoundaryType { kMin, kMax };
 enum class TriangleClipMode { kIncludeReference, kExcludeReference };
 enum TriangleEdge { kAB = 0, kAC = 1, kBC = 2 };
-enum Axis { kX = 0, kY = 1, kZ = 2 };
+enum Axis { kX = 0, kY = 1, kZ = 2, kW = 3 };
 enum AxisDirection { kNegative = -1, kNeutral = 0, kPositive = 1 };
 
 #endif
