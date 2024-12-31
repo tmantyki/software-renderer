@@ -22,6 +22,7 @@ constexpr bool kClockwiseWinding = true;
 constexpr bool kCounterClockwiseWinding = !kClockwiseWinding;
 constexpr float kTranslationIncrement = 0.01;
 constexpr float kAngularIncrement = 0.01;
+constexpr float kViewportRoundingBias = 0.1;
 
 class Point;
 class Space;

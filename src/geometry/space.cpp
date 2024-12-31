@@ -48,7 +48,7 @@ void AddSubstituteTriangles(const VertexMatrix& vertices,
                             TrianglePlaneIntersections& intersections,
                             std::vector<TriangleSharedPointer>& substitutes) {
   size_t column;
-  (void)normals; // #TODO: finish normal implementation!!
+  (void)normals;  // #TODO: finish normal implementation!!
   Direction normal(triangle.GetNormal());
   Vertex vertex_ab(intersections[TriangleEdge::kAB]);
   Vertex vertex_ac(intersections[TriangleEdge::kAC]);
@@ -77,7 +77,7 @@ float HomogeneousInterpolation(Vector4 vector_a,
   float b_val = vector_b[axis];
   float a_w = axis_direction * vector_a[kW];
   float b_w = axis_direction * vector_b[kW];
-  assert(a_val - a_w - b_val + b_w != 0);
+  assert(a_val - a_w - b_val + b_w != 0); // #TODO: investigate
   return (a_val - a_w) / (a_val - a_w - b_val + b_w);
 }
 
@@ -304,10 +304,8 @@ TrianglePlaneIntersections Space::GetTrianglePlaneIntersections(
       std::min({vector_a, vector_c}, ::SortClipVertices) * (1 - ac_t) +
       std::max({vector_a, vector_c}, ::SortClipVertices) * ac_t;
 
-  Point point_interpolated_ab(interpolated_ab(0), interpolated_ab(1),
-                              interpolated_ab(2), interpolated_ab(3));
-  Point point_interpolated_ac(interpolated_ac(0), interpolated_ac(1),
-                              interpolated_ac(2), interpolated_ac(3));
+  Point point_interpolated_ab(interpolated_ab);
+  Point point_interpolated_ac(interpolated_ac);
   return std::array<Point, 2>{point_interpolated_ab, point_interpolated_ac};
 }
 

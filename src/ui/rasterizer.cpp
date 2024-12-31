@@ -43,10 +43,10 @@ void WireframeRasterizer::RasterizeGameState(
   for (size_t t = 0; t < space.GetTriangleCount(); t++) {
     for (size_t a : {0, 1, 2}) {
       size_t b = (a + 1) % 3;
-      int16_t a_x = space.GetVertices()(0, t * kVerticesPerTriangle + a);
-      int16_t a_y = space.GetVertices()(1, t * kVerticesPerTriangle + a);
-      int16_t b_x = space.GetVertices()(0, t * kVerticesPerTriangle + b);
-      int16_t b_y = space.GetVertices()(1, t * kVerticesPerTriangle + b);
+      uint16_t a_x = space.GetVertices()(kX, t * kVerticesPerTriangle + a);
+      uint16_t a_y = space.GetVertices()(kY, t * kVerticesPerTriangle + a);
+      uint16_t b_x = space.GetVertices()(kX, t * kVerticesPerTriangle + b);
+      uint16_t b_y = space.GetVertices()(kY, t * kVerticesPerTriangle + b);
       SDL_RenderDrawLine(renderer, a_x, a_y, b_x, b_y);
     }
   }
@@ -118,7 +118,7 @@ void FlatRasterizer::RasterizeGameState(
     float low_z = space.GetVertices()(kZ, low_y_index);
 
     // Scanlines for top section
-    for (uint16_t scan_y = top_y; scan_y < mid_y; scan_y++) {
+    for (uint16_t scan_y = top_y; scan_y <= mid_y; scan_y++) {
       if (low_y == top_y || top_y == mid_y)
         break;
       float top_low_t = static_cast<float>(scan_y - top_y) / (low_y - top_y);
@@ -145,7 +145,7 @@ void FlatRasterizer::RasterizeGameState(
         float final_z =
             top_low_z * (1 - horizontal_t) + top_mid_z * horizontal_t;
         if (final_z < z_buffer_[scan_x][scan_y]) {  // #TODO:Check order !!
-          if (scan_x == 800)
+          if (scan_x >= 800 || scan_y >= 800)
             continue;
           assert(scan_x >= 0);
           assert(scan_x < 800);
@@ -188,7 +188,7 @@ void FlatRasterizer::RasterizeGameState(
         float final_z =
             top_low_z * (1 - horizontal_t) + mid_low_z * horizontal_t;
         if (final_z < z_buffer_[scan_x][scan_y]) {  // #TODO:Check order !!
-          if (scan_x == 800)
+          if (scan_x >= 800 || scan_y >= 800)
             continue;
           assert(scan_x >= 0);
           assert(scan_x < 800);

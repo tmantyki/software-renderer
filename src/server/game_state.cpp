@@ -10,6 +10,7 @@ GameState::GameState()
   ObjGeometryImporter obj_importer(world_space_);
   obj_importer.ImportGeometryFromFile("assets/cube.obj");
   // obj_importer.ImportGeometryFromFile("assets/teapot.obj");
+  // obj_importer.ImportGeometryFromFile("assets/suzanne.obj");
 }
 
 void GameState::ProcessTick() noexcept {
