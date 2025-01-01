@@ -55,9 +55,11 @@ env_debug.AppendUnique(
         "-Og",
     ]
 )
-env_debug["LINKFLAGS"] = [
-    # "-fsanitize=address,undefined",
-]
+env_debug.AppendUnique(
+    LINKFLAGS=[
+        # "-fsanitize=address,undefined",
+    ]
+)
 env_release = env.Clone()
 env_release.AppendUnique(
     CXXFLAGS=[

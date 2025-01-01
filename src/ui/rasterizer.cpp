@@ -118,90 +118,88 @@ void FlatRasterizer::RasterizeGameState(
     float low_z = space.GetVertices()(kZ, low_y_index);
 
     // Scanlines for top section
-    for (uint16_t scan_y = top_y; scan_y <= mid_y; scan_y++) {
-      if (low_y == top_y || top_y == mid_y)
-        break;
-      float top_low_t = static_cast<float>(scan_y - top_y) / (low_y - top_y);
-      float top_mid_t = static_cast<float>(scan_y - top_y) / (mid_y - top_y);
-      uint16_t scan_x1 =
-          (scan_y * low_x - top_x * scan_y - top_y * low_x + top_x * low_y) /
-          (low_y - top_y);
-      uint16_t scan_x2 =
-          (scan_y * mid_x - top_x * scan_y - top_y * mid_x + top_x * mid_y) /
-          (mid_y - top_y);
+    if (low_y != top_y && top_y != mid_y)
+      for (uint16_t scan_y = top_y; scan_y <= mid_y; scan_y++) {
+        float top_low_t = static_cast<float>(scan_y - top_y) / (low_y - top_y);
+        float top_mid_t = static_cast<float>(scan_y - top_y) / (mid_y - top_y);
+        uint16_t scan_x1 =
+            (scan_y * low_x - top_x * scan_y - top_y * low_x + top_x * low_y) /
+            (low_y - top_y);
+        uint16_t scan_x2 =
+            (scan_y * mid_x - top_x * scan_y - top_y * mid_x + top_x * mid_y) /
+            (mid_y - top_y);
 
-      uint16_t scan_x_left = scan_x1 < scan_x2 ? scan_x1 : scan_x2;
-      uint16_t scan_x_right = scan_x1 < scan_x2 ? scan_x2 : scan_x1;
-      for (uint16_t scan_x = scan_x_left; scan_x <= scan_x_right; scan_x++) {
-        float horizontal_t;
-        if (scan_x1 < scan_x2)
-          horizontal_t = static_cast<float>(scan_x - scan_x_left) /
-                         (scan_x_right - scan_x_left);
-        else
-          horizontal_t = 1 - (static_cast<float>(scan_x - scan_x_left) /
-                              (scan_x_right - scan_x_left));
-        float top_low_z = top_z * (1 - top_low_t) + low_z * top_low_t;
-        float top_mid_z = top_z * (1 - top_mid_t) + mid_z * top_mid_t;
-        float final_z =
-            top_low_z * (1 - horizontal_t) + top_mid_z * horizontal_t;
-        if (final_z < z_buffer_[scan_x][scan_y]) {  // #TODO:Check order !!
-          if (scan_x >= 800 || scan_y >= 800)
-            continue;
-          assert(scan_x >= 0);
-          assert(scan_x < 800);
-          assert(scan_y >= 0);
-          assert(scan_y < 800);
-          z_buffer_[scan_x][scan_y] = final_z;
-          pixels[scan_y * pitch + scan_x * kBytesPerPixel] = blue;
-          pixels[scan_y * pitch + scan_x * kBytesPerPixel + 1] = green;
-          pixels[scan_y * pitch + scan_x * kBytesPerPixel + 2] = red;
-          pixels[scan_y * pitch + scan_x * kBytesPerPixel + 3] = alpha;
+        uint16_t scan_x_left = scan_x1 < scan_x2 ? scan_x1 : scan_x2;
+        uint16_t scan_x_right = scan_x1 < scan_x2 ? scan_x2 : scan_x1;
+        for (uint16_t scan_x = scan_x_left; scan_x <= scan_x_right; scan_x++) {
+          float horizontal_t;
+          if (scan_x1 < scan_x2)
+            horizontal_t = static_cast<float>(scan_x - scan_x_left) /
+                           (scan_x_right - scan_x_left);
+          else
+            horizontal_t = 1 - (static_cast<float>(scan_x - scan_x_left) /
+                                (scan_x_right - scan_x_left));
+          float top_low_z = top_z * (1 - top_low_t) + low_z * top_low_t;
+          float top_mid_z = top_z * (1 - top_mid_t) + mid_z * top_mid_t;
+          float final_z =
+              top_low_z * (1 - horizontal_t) + top_mid_z * horizontal_t;
+          if (final_z < z_buffer_[scan_x][scan_y]) {  // #TODO:Check order !!
+            if (scan_x >= 800 || scan_y >= 800)
+              continue;
+            assert(scan_x >= 0);
+            assert(scan_x < 800);
+            assert(scan_y >= 0);
+            assert(scan_y < 800);
+            z_buffer_[scan_x][scan_y] = final_z;
+            pixels[scan_y * pitch + scan_x * kBytesPerPixel] = blue;
+            pixels[scan_y * pitch + scan_x * kBytesPerPixel + 1] = green;
+            pixels[scan_y * pitch + scan_x * kBytesPerPixel + 2] = red;
+            pixels[scan_y * pitch + scan_x * kBytesPerPixel + 3] = alpha;
+          }
         }
       }
-    }
 
     // Scanlines for bottom section
-    for (uint16_t scan_y = mid_y; scan_y <= low_y; scan_y++) {
-      if (low_y == top_y || low_y == mid_y)
-        break;
-      float top_low_t = static_cast<float>(scan_y - top_y) / (low_y - top_y);
-      float mid_low_t = static_cast<float>(scan_y - mid_y) / (low_y - mid_y);
-      uint16_t scan_x1 =
-          (top_x * scan_y - top_x * low_y - scan_y * low_x + top_y * low_x) /
-          (top_y - low_y);
-      uint16_t scan_x2 =
-          (-scan_y * low_x + scan_y * mid_x - low_y * mid_x + low_x * mid_y) /
-          (-low_y + mid_y);
+    if (low_y != top_y && low_y != mid_y)
+      for (uint16_t scan_y = mid_y; scan_y <= low_y; scan_y++) {
+        float top_low_t = static_cast<float>(scan_y - top_y) / (low_y - top_y);
+        float mid_low_t = static_cast<float>(scan_y - mid_y) / (low_y - mid_y);
+        uint16_t scan_x1 =
+            (top_x * scan_y - top_x * low_y - scan_y * low_x + top_y * low_x) /
+            (top_y - low_y);
+        uint16_t scan_x2 =
+            (-scan_y * low_x + scan_y * mid_x - low_y * mid_x + low_x * mid_y) /
+            (-low_y + mid_y);
 
-      uint16_t scan_x_left = scan_x1 < scan_x2 ? scan_x1 : scan_x2;
-      uint16_t scan_x_right = scan_x1 < scan_x2 ? scan_x2 : scan_x1;
-      for (uint16_t scan_x = scan_x_left; scan_x <= scan_x_right; scan_x++) {
-        float horizontal_t;
-        if (scan_x1 < scan_x2)
-          horizontal_t = static_cast<float>(scan_x - scan_x_left) /
-                         (scan_x_right - scan_x_left);
-        else
-          horizontal_t = 1 - (static_cast<float>(scan_x - scan_x_left) /
-                              (scan_x_right - scan_x_left));
-        float top_low_z = top_z * (1 - top_low_t) + low_z * top_low_t;
-        float mid_low_z = mid_z * (1 - mid_low_t) + low_z * mid_low_t;
-        float final_z =
-            top_low_z * (1 - horizontal_t) + mid_low_z * horizontal_t;
-        if (final_z < z_buffer_[scan_x][scan_y]) {  // #TODO:Check order !!
-          if (scan_x >= 800 || scan_y >= 800)
-            continue;
-          assert(scan_x >= 0);
-          assert(scan_x < 800);
-          assert(scan_y >= 0);
-          assert(scan_y < 800);
-          z_buffer_[scan_x][scan_y] = final_z;
-          pixels[scan_y * pitch + scan_x * kBytesPerPixel] = blue;
-          pixels[scan_y * pitch + scan_x * kBytesPerPixel + 1] = green;
-          pixels[scan_y * pitch + scan_x * kBytesPerPixel + 2] = red;
-          pixels[scan_y * pitch + scan_x * kBytesPerPixel + 3] = alpha;
+        uint16_t scan_x_left = scan_x1 < scan_x2 ? scan_x1 : scan_x2;
+        uint16_t scan_x_right = scan_x1 < scan_x2 ? scan_x2 : scan_x1;
+        for (uint16_t scan_x = scan_x_left; scan_x <= scan_x_right; scan_x++) {
+          float horizontal_t;
+          if (scan_x1 < scan_x2)
+            horizontal_t = static_cast<float>(scan_x - scan_x_left) /
+                           (scan_x_right - scan_x_left);
+          else
+            horizontal_t = 1 - (static_cast<float>(scan_x - scan_x_left) /
+                                (scan_x_right - scan_x_left));
+          float top_low_z = top_z * (1 - top_low_t) + low_z * top_low_t;
+          float mid_low_z = mid_z * (1 - mid_low_t) + low_z * mid_low_t;
+          float final_z =
+              top_low_z * (1 - horizontal_t) + mid_low_z * horizontal_t;
+          if (final_z < z_buffer_[scan_x][scan_y]) {  // #TODO:Check order !!
+            if (scan_x >= 800 || scan_y >= 800)
+              continue;
+            assert(scan_x >= 0);
+            assert(scan_x < 800);
+            assert(scan_y >= 0);
+            assert(scan_y < 800);
+            z_buffer_[scan_x][scan_y] = final_z;
+            pixels[scan_y * pitch + scan_x * kBytesPerPixel] = blue;
+            pixels[scan_y * pitch + scan_x * kBytesPerPixel + 1] = green;
+            pixels[scan_y * pitch + scan_x * kBytesPerPixel + 2] = red;
+            pixels[scan_y * pitch + scan_x * kBytesPerPixel + 3] = alpha;
+          }
         }
       }
-    }
   }
   SDL_RenderCopy(renderer, texture, NULL, NULL);
   SDL_UnlockTexture(texture);
