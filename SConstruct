@@ -22,6 +22,7 @@ application_sources = [
     "ui/controller.cpp",
     "ui/rasterizer.cpp",
     "ui/ui.cpp",
+    "utility/timer.cpp",
 ]
 geometry_sources = [
     "geometry/camera.cpp",

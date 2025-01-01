@@ -4,6 +4,7 @@
 #include "ui/controller.hpp"
 #include "ui/rasterizer.hpp"
 #include "ui/ui.hpp"
+#include "utility/timer.hpp"
 
 int main() {
   std::cout << "Hello, this is Software Renderer.\n\n";
@@ -15,6 +16,8 @@ int main() {
   WireframeRasterizer wirefreame_rasterizer;
   FlatRasterizer flat_rasterizer({0.13, -1, 0.49});
   Rasterizer* active_rasterizer = &flat_rasterizer;
+  Timer timer("main()");
+  timer.Start();
 
   while (true) {
     controller.UpdateState();
@@ -33,5 +36,9 @@ int main() {
     active_rasterizer->RasterizeGameState(game_state, user_interface);
     SDL_RenderPresent(user_interface.GetSdlRenderer());
   }
+
+  timer.Stop(false);
+  std::cout << "Mean FPS: " << game_state.GetTick() * 1000 / timer.GetDuration()
+            << "\n";
   return 0;
 }

@@ -76,7 +76,7 @@ void FlatRasterizer::RasterizeGameState(
 
   for (uint16_t x = 0; x < 800; x++)
     for (uint16_t y = 0; y < 800; y++)
-      for (uint16_t b : {0, 1, 2, 3})
+      for (uint16_t b = 0; b <= 3; b++)
         pixels[y * pitch + x * kBytesPerPixel + b] = 0x80;
 
   for (size_t t = 0; t < space.GetTriangleCount(); t++) {
