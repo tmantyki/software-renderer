@@ -202,10 +202,20 @@ ViewportTransform& TransformPipeline::GetViewportTransform() {
 
 void TransformPipeline::RunPipeline(const Space& input_space) {
   output_space_ = input_space;
+
+  // Back-face culling
+  const Vector4 location = camera_.GetCamera().GetLocation().GetVector();
+  for (size_t t = 0; t < output_space_.GetTriangleCount(); t++) {
+    const Vertex& vertex = output_space_.GetTriangles()[t]->GetVertex(0);
+    const Vector4& normal = output_space_.GetTriangles()[t]->GetNormal();
+    if ((vertex - location).dot(normal) <= 0)
+      output_space_.EnqueueRemoveTriangle(t);
+  }
+  output_space_.UpdateSpace();
+
   // #TODO: optimize by giving as two arguments rather than ready product
   output_space_.TransformVertices(perspective_.GetMatrix() *
                                   camera_.GetMatrix());
-  output_space_.TransformNormals(camera_.GetMatrix());  // check for correctness
   for (Axis axis : {Axis::kX, Axis::kY, Axis::kZ}) {
     for (AxisDirection axis_direction :
          {AxisDirection::kNegative, AxisDirection::kPositive}) {

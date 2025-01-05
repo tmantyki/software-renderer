@@ -25,7 +25,7 @@ bool UserInterface::InitializeSdlObjects() {
     return false;
   }
   sdl_renderer_ = SDL_CreateRenderer(
-      sdl_window_, -1, SDL_RENDERER_SOFTWARE | SDL_RENDERER_PRESENTVSYNC);
+      sdl_window_, -1, SDL_RENDERER_SOFTWARE);
   if (!sdl_renderer_) {
     SDL_DestroyWindow(sdl_window_);
     SDL_QuitSubSystem(SDL_INIT_VIDEO);
