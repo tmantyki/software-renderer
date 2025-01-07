@@ -613,6 +613,9 @@ class ViewportTransformTest : public testing::Test {
   float v_x, v_y, v_z, v_w;
   Vector4 vector_;
   Vector4 GetTransformedVector() const { return vt_.GetMatrix() * vector_; }
+  void ExpectFloorRoundedEquality(float lhs, float rhs) {
+    EXPECT_EQ(static_cast<int>(lhs), static_cast<int>(rhs));
+  }
 };
 
 TEST_F(ViewportTransformTest, GetFunctions) {
@@ -635,51 +638,65 @@ TEST_F(ViewportTransformTest, CoordinateWIsUnaffected) {
 TEST_F(ViewportTransformTest, TransformAxisX) {
   uint16_t width = 512;
   SetViewportParameters(width, 0, 0, 0);
-  EXPECT_EQ((v_x + 1) * width / 2.0, GetTransformedVector()[0]);
+  ExpectFloorRoundedEquality((v_x + 1) * (width - kViewportRoundingBias) / 2.0,
+                             GetTransformedVector()[kX]);
 }
 
 TEST_F(ViewportTransformTest, TransformAxisY) {
   uint16_t height = 240;
   SetViewportParameters(0, height, 0, 0);
-  EXPECT_EQ((1 - v_y) * height / 2.0, GetTransformedVector()[1]);
+  ExpectFloorRoundedEquality((1 - v_y) * (height - kViewportRoundingBias) / 2.0,
+                             GetTransformedVector()[kY]);
 }
 
 TEST_F(ViewportTransformTest, AddPositiveOffsetX) {
   uint16_t width = 480;
   int16_t x_offset = 100;
   SetViewportParameters(width, 0, x_offset, 0);
-  EXPECT_EQ(((v_x + 1) * width / 2.0) + x_offset, GetTransformedVector()[0]);
+  ExpectFloorRoundedEquality(
+      ((v_x + 1) * (width - kViewportRoundingBias) / 2.0) + x_offset,
+      GetTransformedVector()[kX]);
 }
 
 TEST_F(ViewportTransformTest, AddNegativeOffsetX) {
   uint16_t width = 1024;
   int16_t x_offset = -110;
   SetViewportParameters(width, 0, x_offset, 0);
-  EXPECT_EQ(((v_x + 1) * width / 2.0) + x_offset, GetTransformedVector()[0]);
+  ExpectFloorRoundedEquality(
+      ((v_x + 1) * (width - kViewportRoundingBias) / 2.0) + x_offset,
+      GetTransformedVector()[kX]);
 }
 
 TEST_F(ViewportTransformTest, AddPositiveOffsetY) {
   uint16_t height = 240;
   int16_t y_offset = 300;
   SetViewportParameters(0, height, 0, y_offset);
-  EXPECT_EQ(((1 - v_y) * height / 2.0) + y_offset, GetTransformedVector()[1]);
+  ExpectFloorRoundedEquality(
+      ((1 - v_y) * (height - kViewportRoundingBias) / 2.0) + y_offset,
+      GetTransformedVector()[kY]);
 }
 
 TEST_F(ViewportTransformTest, AddNegativeOffsetY) {
   uint16_t height = 480;
   int16_t y_offset = -150;
   SetViewportParameters(0, height, 0, y_offset);
-  EXPECT_EQ(((1 - v_y) * height / 2.0) + y_offset, GetTransformedVector()[1]);
+  ExpectFloorRoundedEquality(
+      ((1 - v_y) * (height - kViewportRoundingBias) / 2.0) + y_offset,
+      GetTransformedVector()[kY]);
 }
 
 TEST_F(ViewportTransformTest, FullTransform) {
   uint16_t width = 800, height = 600;
   int16_t x_offset = 10, y_offset = -20;
   SetViewportParameters(width, height, x_offset, y_offset);
-  EXPECT_EQ(((v_x + 1) * width / 2.0) + x_offset, GetTransformedVector()[0]);
-  EXPECT_EQ(((1 - v_y) * height / 2.0) + y_offset, GetTransformedVector()[1]);
-  EXPECT_EQ(v_z, GetTransformedVector()[2]);
-  EXPECT_EQ(v_w, GetTransformedVector()[3]);
+  ExpectFloorRoundedEquality(
+      ((v_x + 1) * (width - kViewportRoundingBias) / 2.0) + x_offset,
+      GetTransformedVector()[kX]);
+  ExpectFloorRoundedEquality(
+      ((1 - v_y) * (height - kViewportRoundingBias) / 2.0) + y_offset,
+      GetTransformedVector()[kY]);
+  EXPECT_EQ(v_z, GetTransformedVector()[kZ]);
+  EXPECT_EQ(v_w, GetTransformedVector()[kW]);
 }
 
 TEST(TransformPipeline, ConstructorObjects) {
@@ -710,15 +727,17 @@ class TransformPipelineTest : public testing ::Test {
     camera_.UpdateTransform();
     pipeline_.RunPipeline(world_space_);
   }
-  void ExpectVertices(const Triangle& expected_triangle,
-                      size_t triangle_index) {
+  void ExpectFloorRoundedVertices(const Triangle& expected_triangle,
+                                  size_t triangle_index) {
     size_t i = triangle_index;
     for (size_t k = 0; k < kVerticesPerTriangle; k++)
-      for (size_t d : {0, 1, 2, 3})
-        EXPECT_NEAR(expected_triangle.GetVertex(k).GetVector()[d],
-                    pipeline_.GetOutputSpace().GetVertices().col(
-                        i * kVerticesPerTriangle + k)[d],
-                    kFloatTolerance);
+      for (size_t d : {0, 1, 2, 3}) {
+        int lhs =
+            static_cast<int>(expected_triangle.GetVertex(k).GetVector()[d]);
+        int rhs = static_cast<int>(pipeline_.GetOutputSpace().GetVertices().col(
+            i * kVerticesPerTriangle + k)[d]);
+        EXPECT_EQ(lhs, rhs);
+      }
   }
   Space world_space_;
   Vertex v1_, v2_, v3_;
@@ -732,9 +751,9 @@ class TransformPipelineTest : public testing ::Test {
 TEST_F(TransformPipelineTest, SingleFullyVisibleTriangle) {
   SetAndUpdateCameraLocation({3, 2, 1});
   EXPECT_EQ(1, pipeline_.GetOutputSpace().GetTriangleCount());
-  Triangle tr({600, 600, expected_z_}, {200, 600, expected_z_},
+  Triangle tr({599, 599, expected_z_}, {200, 599, expected_z_},
               {200, 200, expected_z_});
-  ExpectVertices(tr, 0);
+  ExpectFloorRoundedVertices(tr, 0);
 }
 
 TEST_F(TransformPipelineTest, SingleFullyClippedTriangle) {
@@ -745,18 +764,18 @@ TEST_F(TransformPipelineTest, SingleFullyClippedTriangle) {
 TEST_F(TransformPipelineTest, SingleTriangleClippedIntoOne) {
   SetAndUpdateCameraLocation({3, 2, 3});
   EXPECT_EQ(1, pipeline_.GetOutputSpace().GetTriangleCount());
-  Triangle tr({200, 600, expected_z_}, {400, 800, expected_z_},
-              {200, 800, expected_z_});
-  ExpectVertices(tr, 0);
+  Triangle tr({200, 599, expected_z_}, {400, 799, expected_z_},
+              {200, 799, expected_z_});
+  ExpectFloorRoundedVertices(tr, 0);
 }
 
 TEST_F(TransformPipelineTest, SingleTriangleClippedIntoTwo) {
   SetAndUpdateCameraLocation({3, 2, -1});
   EXPECT_EQ(2, pipeline_.GetOutputSpace().GetTriangleCount());
-  Triangle tr_1({400, 0, expected_z_}, {600, 200, expected_z_},
+  Triangle tr_1({400, 0, expected_z_}, {599, 200, expected_z_},
                 {200, 0, expected_z_});
-  Triangle tr_2({200, 0, expected_z_}, {600, 200, expected_z_},
+  Triangle tr_2({200, 0, expected_z_}, {599, 200, expected_z_},
                 {200, 200, expected_z_});
-  ExpectVertices(tr_1, 0);
-  ExpectVertices(tr_2, 1);
+  ExpectFloorRoundedVertices(tr_1, 0);
+  ExpectFloorRoundedVertices(tr_2, 1);
 }
