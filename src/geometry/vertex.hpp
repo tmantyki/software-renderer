@@ -11,10 +11,14 @@ class Vertex : public Point {
   Vertex(Vector3 vector);
   Vertex(Vector4 vector);
   Vertex(Point& point);
-  // Vector3 GetAttributeColor() const;
+  Vertex(const Vertex& vertex_a, const Vertex& vertex_b, float t) noexcept;
+  float GetCoordinateU() const noexcept;
+  float GetCoordinateV() const noexcept;
 
-  //  private:
-  //   Vector3 attribute_color_;
+   private:
+    float u_;
+    float v_;
+
 };
 
 #endif

@@ -12,17 +12,20 @@
 
 constexpr float kPi = 3.14159265358979323846264338;
 constexpr float kFloatTolerance = 1.0E-3;
+constexpr size_t kBytesPerPixel = 4;
 constexpr size_t kDimensions = 4;
 constexpr size_t kVerticesPerTriangle = 3;
 constexpr size_t kViewportDimensions = 3;
 constexpr size_t kMaxTriangles = 10000;
 constexpr size_t kMaxVertices = kMaxTriangles;
 constexpr size_t kNumberOfClippingPlanes = 6;
+constexpr size_t kNumberOfPixelChannels = 4;
 constexpr bool kClockwiseWinding = true;
 constexpr bool kCounterClockwiseWinding = !kClockwiseWinding;
 constexpr float kTranslationIncrement = 0.01;
 constexpr float kAngularIncrement = 0.01;
 constexpr float kViewportRoundingBias = 0.1;
+constexpr SDL_PixelFormatEnum kDefaultPixelFormat = SDL_PIXELFORMAT_ARGB8888;
 
 class Point;
 class Space;
@@ -41,6 +44,7 @@ typedef Eigen::Matrix<float, kDimensions, Eigen::Dynamic> VertexMatrix;
 
 enum class BoundaryType { kMin, kMax };
 enum class TriangleClipMode { kIncludeReference, kExcludeReference };
+enum class TriangleHalf { kUpper, kLower };
 enum TriangleEdge { kAB = 0, kAC = 1, kBC = 2 };
 enum Axis { kX = 0, kY = 1, kZ = 2, kW = 3 };
 enum AxisDirection { kNegative = -1, kNeutral = 0, kPositive = 1 };

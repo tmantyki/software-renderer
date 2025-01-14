@@ -1,11 +1,13 @@
 #include <SDL2/SDL.h>
+#include <SDL2/SDL_image.h>
 #include <cassert>
 
 #include "ui.hpp"
 
 UserInterface::UserInterface(uint16_t width, uint16_t height)
     : width_(width), height_(height), sdl_objects_initialized_(false) {
-  // z_buffer_.resize(height, std::vector<float>(width));  // #TODO: Check order!!
+  // z_buffer_.resize(height, std::vector<float>(width));  // #TODO: Check
+  // order!!
 }
 
 UserInterface::~UserInterface() {
@@ -24,8 +26,7 @@ bool UserInterface::InitializeSdlObjects() {
     SDL_Quit();
     return false;
   }
-  sdl_renderer_ = SDL_CreateRenderer(
-      sdl_window_, -1, SDL_RENDERER_SOFTWARE);
+  sdl_renderer_ = SDL_CreateRenderer(sdl_window_, -1, SDL_RENDERER_SOFTWARE);
   if (!sdl_renderer_) {
     SDL_DestroyWindow(sdl_window_);
     SDL_QuitSubSystem(SDL_INIT_VIDEO);
@@ -33,7 +34,7 @@ bool UserInterface::InitializeSdlObjects() {
     return false;
   }
   sdl_texture_ =
-      SDL_CreateTexture(sdl_renderer_, SDL_PIXELFORMAT_ARGB8888,
+      SDL_CreateTexture(sdl_renderer_, kDefaultPixelFormat,
                         SDL_TEXTUREACCESS_STREAMING, width_, height_);
   if (!sdl_texture_) {
     SDL_DestroyRenderer(sdl_renderer_);
@@ -42,6 +43,16 @@ bool UserInterface::InitializeSdlObjects() {
     SDL_Quit();
     return false;
   }
+  int img_init_flags = IMG_INIT_PNG;
+  if (!(IMG_Init(img_init_flags) & img_init_flags)) {
+    SDL_DestroyTexture(sdl_texture_);
+    SDL_DestroyRenderer(sdl_renderer_);
+    SDL_DestroyWindow(sdl_window_);
+    SDL_QuitSubSystem(SDL_INIT_VIDEO);
+    SDL_Quit();
+    return false;
+  }
+
   sdl_objects_initialized_ = true;
   return true;
 }
@@ -49,10 +60,11 @@ bool UserInterface::InitializeSdlObjects() {
 void UserInterface::DestroySdlObjects() {
   if (!sdl_objects_initialized_)
     return;
+  IMG_Quit();
   SDL_DestroyTexture(sdl_texture_);
   SDL_DestroyRenderer(sdl_renderer_);
   SDL_DestroyWindow(sdl_window_);
-  SDL_QuitSubSystem(SDL_INIT_VIDEO); // Segfault??
+  SDL_QuitSubSystem(SDL_INIT_VIDEO);
   SDL_Quit();
   sdl_objects_initialized_ = false;
 }

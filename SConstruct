@@ -14,6 +14,7 @@ env["LIBS"] = [
     "gtest",
     "gtest_main",
     "SDL2",
+    "SDL2_image",
 ]
 application_sources = [
     "main.cpp",
@@ -32,6 +33,7 @@ geometry_sources = [
     "geometry/plane.cpp",
     "geometry/point.cpp",
     "geometry/space.cpp",
+    "geometry/texture.cpp",
     "geometry/transform.cpp",
     "geometry/triangle.cpp",
     "geometry/vertex.cpp",

@@ -14,7 +14,7 @@ int main() {
   Controller controller;
   GameState game_state;
   WireframeRasterizer wirefreame_rasterizer;
-  FlatRasterizer flat_rasterizer({0.13, -1, 0.49});
+  FlatRasterizer flat_rasterizer;
   Rasterizer* active_rasterizer = &flat_rasterizer;
   Timer timer("main()");
   timer.Start();
@@ -26,6 +26,7 @@ int main() {
       break;
     }
     if (controller.ConsumeToggleRasterizerRequest()) {
+      SDL_Delay(100);
       if (active_rasterizer == &flat_rasterizer)
         active_rasterizer = &wirefreame_rasterizer;
       else
