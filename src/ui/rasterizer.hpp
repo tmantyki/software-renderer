@@ -14,15 +14,15 @@ typedef struct RasterizerContext {
 } RasterizerContext;
 
 typedef struct PixelCoordinates {
-  uint16_t apex_x;
-  uint16_t apex_y;
-  float apex_z;
+  uint16_t top_x;
+  uint16_t top_y;
+  float top_z;
   uint16_t mid_x;
   uint16_t mid_y;
   float mid_z;
-  uint16_t base_x;
-  uint16_t base_y;
-  float base_z;
+  uint16_t low_x;
+  uint16_t low_y;
+  float low_z;
 } PixelCoordinates;
 
 class Rasterizer {
@@ -40,7 +40,7 @@ class WireframeRasterizer : public Rasterizer {
 
 class ScanlineRasterizer : public Rasterizer {
  public:
-  ScanlineRasterizer() = delete;
+  ScanlineRasterizer() noexcept;
   virtual void RasterizeGameState(
       const GameState& game_state,
       UserInterface& user_interface) noexcept override;
@@ -48,18 +48,20 @@ class ScanlineRasterizer : public Rasterizer {
  private:
   void ResetZBuffer() noexcept;
   void ClearRenderer(uint8_t* pixels, int pitch) noexcept;
-  void CalculateTrianglePixelCoordinates(PixelCoordinates& pixel_coordinates,
+  void CalculateTrianglePixelCoordinates(PixelCoordinates& pc,
                                          const Space& space,
                                          size_t triangle_index) const noexcept;
   // void RasterizeTriangle(size_t triangle_index);
   void RasterizeTriangleHalf(size_t triangle_index,
                              PixelCoordinates& pixel_coordinates,
-                             TriangleHalf triangle_half) noexcept;
-  virtual void RasterizeTirangleScanline(uint16_t x, uint16_t y) = 0;
+                             TriangleHalf triangle_half,
+                             float brightness) noexcept;
   std::array<std::array<float, 800>, 800> z_buffer_;
+  uint8_t* pixels_;
+  int pitch_;
 };
 
-class FlatRasterizer : public Rasterizer {
+/* class FlatRasterizer : public Rasterizer {
  public:
   FlatRasterizer() noexcept;
   FlatRasterizer(Direction light_direction) noexcept;
@@ -70,6 +72,15 @@ class FlatRasterizer : public Rasterizer {
  private:
   Direction light_direction_;
   std::array<std::array<float, 800>, 800> z_buffer_;
+}; */
+
+class FlatRasterizer : public ScanlineRasterizer {
+ public:
+  FlatRasterizer() noexcept;
+  FlatRasterizer(Direction light_direction) noexcept;
+
+ private:
+  Direction light_direction_;
 };
 
 #endif
