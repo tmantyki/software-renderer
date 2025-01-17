@@ -47,7 +47,7 @@ class ScanlineRasterizer : public Rasterizer {
 
  private:
   void ResetZBuffer() noexcept;
-  void ClearRenderer(uint8_t* pixels, int pitch) noexcept;
+  void ClearRenderer() noexcept;
   void CalculateTrianglePixelCoordinates(PixelCoordinates& pc,
                                          const Space& space,
                                          size_t triangle_index) const noexcept;

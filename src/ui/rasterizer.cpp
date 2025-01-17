@@ -230,13 +230,16 @@ void ScanlineRasterizer::ResetZBuffer() noexcept {
       z_buffer_[x][y] = 1;
 }
 
-void ScanlineRasterizer::ClearRenderer(uint8_t* pixels, int pitch) noexcept {
+void ScanlineRasterizer::ClearRenderer() noexcept {
+  uint8_t* pixels = pixels_;
+  int pitch = pitch_;
   constexpr static uint16_t width = 800;  // #TODO: find better way to define
   constexpr static uint16_t height = 800;
-  for (uint16_t x = 0; x < width; x++)
-    for (uint16_t y = 0; y < height; y++)
-      for (uint16_t b = 0; b <= kNumberOfPixelChannels; b++)
-        pixels[y * pitch + x * kBytesPerPixel + b] = 0x80;
+  uint32_t pixel_value = 0xff008080;
+  for (uint16_t y = 0; y < height; y++)
+    for (uint16_t x = 0; x < width * kBytesPerPixel; x += kBytesPerPixel) {
+      *reinterpret_cast<uint32_t*>(pixels + y * pitch + x) = pixel_value;
+    }
 }
 
 void ScanlineRasterizer::CalculateTrianglePixelCoordinates(
