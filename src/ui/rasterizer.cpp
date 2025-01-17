@@ -71,163 +71,13 @@ FlatRasterizer::FlatRasterizer() noexcept : FlatRasterizer({1, 1, 1}) {}
 FlatRasterizer::FlatRasterizer(Direction light_direction) noexcept
     : light_direction_(light_direction) {}
 
-/* void FlatRasterizer::RasterizeGameState(
-    const GameState& game_state,
-    UserInterface& user_interface) noexcept {
-  const Space& space = game_state.GetOutputSpace();
-  SDL_Renderer* renderer = user_interface.GetSdlRenderer();
-  SDL_Texture* texture = user_interface.GetSdlTexture();
-
-  for (uint16_t x = 0; x < 800; x++)
-    for (uint16_t y = 0; y < 800; y++)
-      z_buffer_[x][y] = 1;
-
-  uint8_t* pixels;
-  int pitch;
-  constexpr int kBytesPerPixel = 4;
-  SDL_LockTexture(texture, NULL, reinterpret_cast<void**>(&pixels), &pitch);
-
-  for (uint16_t x = 0; x < 800; x++)
-    for (uint16_t y = 0; y < 800; y++)
-      for (uint16_t b = 0; b <= 3; b++)
-        pixels[y * pitch + x * kBytesPerPixel + b] = 0x80;
-
-  for (size_t t = 0; t < space.GetTriangleCount(); t++) {
-    // Triangle color
-    float brightness =
-        light_direction_.dot(space.GetTriangles()[t]->GetNormal());
-    brightness /= (light_direction_.GetVector().norm() *
-                   space.GetTriangles()[t]->GetNormal().norm());
-    brightness = (brightness + 1) / 2;
-    uint8_t alpha = 0xff;
-    uint8_t red = brightness * 0xff;
-    uint8_t green = brightness * 0xff;
-    uint8_t blue = brightness * 0xff;
-
-    size_t a_index = t * kVerticesPerTriangle;
-    size_t b_index = t * kVerticesPerTriangle + 1;
-    size_t c_index = t * kVerticesPerTriangle + 2;
-
-    size_t top_y_index = ::GetBoundaryVertexIndexByDimension(
-        a_index, b_index, c_index, kY, BoundaryType::kMin, space.GetVertices());
-    size_t low_y_index = ::GetBoundaryVertexIndexByDimension(
-        a_index, b_index, c_index, kY, BoundaryType::kMax, space.GetVertices());
-    size_t mid_y_index;
-    if ((a_index != top_y_index) && (a_index != low_y_index))
-      mid_y_index = a_index;
-    else if ((b_index != top_y_index) && (b_index != low_y_index))
-      mid_y_index = b_index;
-    else
-      mid_y_index = c_index;
-
-    uint16_t top_x = space.GetVertices()(kX, top_y_index);
-    uint16_t top_y = space.GetVertices()(kY, top_y_index);
-    float top_z = space.GetVertices()(kZ, top_y_index);
-    uint16_t mid_x = space.GetVertices()(kX, mid_y_index);
-    uint16_t mid_y = space.GetVertices()(kY, mid_y_index);
-    float mid_z = space.GetVertices()(kZ, mid_y_index);
-    uint16_t low_x = space.GetVertices()(kX, low_y_index);
-    uint16_t low_y = space.GetVertices()(kY, low_y_index);
-    float low_z = space.GetVertices()(kZ, low_y_index);
-
-    // Scanlines for top section
-    if (low_y != top_y && top_y != mid_y)
-      for (uint16_t scan_y = top_y; scan_y <= mid_y; scan_y++) {
-        float top_low_t = static_cast<float>(scan_y - top_y) / (low_y - top_y);
-        float top_mid_t = static_cast<float>(scan_y - top_y) / (mid_y - top_y);
-        uint16_t scan_x1 =
-            (scan_y * low_x - top_x * scan_y - top_y * low_x + top_x * low_y) /
-            (low_y - top_y);
-        uint16_t scan_x2 =
-            (scan_y * mid_x - top_x * scan_y - top_y * mid_x + top_x * mid_y) /
-            (mid_y - top_y);
-
-        uint16_t scan_x_left = scan_x1 < scan_x2 ? scan_x1 : scan_x2;
-        uint16_t scan_x_right = scan_x1 < scan_x2 ? scan_x2 : scan_x1;
-        for (uint16_t scan_x = scan_x_left; scan_x <= scan_x_right; scan_x++) {
-          float horizontal_t;
-          if (scan_x1 < scan_x2)
-            horizontal_t = static_cast<float>(scan_x - scan_x_left) /
-                           (scan_x_right - scan_x_left);
-          else
-            horizontal_t = 1 - (static_cast<float>(scan_x - scan_x_left) /
-                                (scan_x_right - scan_x_left));
-          float top_low_z = top_z * (1 - top_low_t) + low_z * top_low_t;
-          float top_mid_z = top_z * (1 - top_mid_t) + mid_z * top_mid_t;
-          float final_z =
-              top_low_z * (1 - horizontal_t) + top_mid_z * horizontal_t;
-          if (final_z < z_buffer_[scan_x][scan_y]) {  // #TODO:Check order !!
-            if (scan_x >= 800 || scan_y >= 800)
-              continue;
-            assert(scan_x >= 0);
-            assert(scan_x < 800);
-            assert(scan_y >= 0);
-            assert(scan_y < 800);
-            z_buffer_[scan_x][scan_y] = final_z;
-            pixels[scan_y * pitch + scan_x * kBytesPerPixel] = blue;
-            pixels[scan_y * pitch + scan_x * kBytesPerPixel + 1] = green;
-            pixels[scan_y * pitch + scan_x * kBytesPerPixel + 2] = red;
-            pixels[scan_y * pitch + scan_x * kBytesPerPixel + 3] = alpha;
-          }
-        }
-      }
-
-    // Scanlines for bottom section
-    if (low_y != top_y && low_y != mid_y)
-      for (uint16_t scan_y = mid_y; scan_y <= low_y; scan_y++) {
-        float top_low_t = static_cast<float>(scan_y - top_y) / (low_y - top_y);
-        float mid_low_t = static_cast<float>(scan_y - mid_y) / (low_y - mid_y);
-        uint16_t scan_x1 =
-            (top_x * scan_y - top_x * low_y - scan_y * low_x + top_y * low_x) /
-            (top_y - low_y);
-        uint16_t scan_x2 =
-            (-scan_y * low_x + scan_y * mid_x - low_y * mid_x + low_x * mid_y) /
-            (-low_y + mid_y);
-
-        uint16_t scan_x_left = scan_x1 < scan_x2 ? scan_x1 : scan_x2;
-        uint16_t scan_x_right = scan_x1 < scan_x2 ? scan_x2 : scan_x1;
-        for (uint16_t scan_x = scan_x_left; scan_x <= scan_x_right; scan_x++) {
-          float horizontal_t;
-          if (scan_x1 < scan_x2)
-            horizontal_t = static_cast<float>(scan_x - scan_x_left) /
-                           (scan_x_right - scan_x_left);
-          else
-            horizontal_t = 1 - (static_cast<float>(scan_x - scan_x_left) /
-                                (scan_x_right - scan_x_left));
-          float top_low_z = top_z * (1 - top_low_t) + low_z * top_low_t;
-          float mid_low_z = mid_z * (1 - mid_low_t) + low_z * mid_low_t;
-          float final_z =
-              top_low_z * (1 - horizontal_t) + mid_low_z * horizontal_t;
-          if (final_z < z_buffer_[scan_x][scan_y]) {  // #TODO:Check order !!
-            if (scan_x >= 800 || scan_y >= 800)
-              continue;
-            assert(scan_x >= 0);
-            assert(scan_x < 800);
-            assert(scan_y >= 0);
-            assert(scan_y < 800);
-            z_buffer_[scan_x][scan_y] = final_z;
-            pixels[scan_y * pitch + scan_x * kBytesPerPixel] = blue;
-            pixels[scan_y * pitch + scan_x * kBytesPerPixel + 1] = green;
-            pixels[scan_y * pitch + scan_x * kBytesPerPixel + 2] = red;
-            pixels[scan_y * pitch + scan_x * kBytesPerPixel + 3] = alpha;
-          }
-        }
-      }
-  }
-  SDL_RenderCopy(renderer, texture, NULL, NULL);
-  SDL_UnlockTexture(texture);
-
-  // SDL_RenderPresent(renderer);
-} */
-
 ScanlineRasterizer::ScanlineRasterizer() noexcept {}
 
 void ScanlineRasterizer::ResetZBuffer() noexcept {
   constexpr static uint16_t width = 800;  // #TODO: find better way to define
   constexpr static uint16_t height = 800;
-  for (uint16_t x = 0; x < width; x++)
-    for (uint16_t y = 0; y < height; y++)
-      z_buffer_[x][y] = 1;
+  for (uint32_t i = 0; i < height * width; i++)
+    z_buffer_[i] = 1;
 }
 
 void ScanlineRasterizer::ClearRenderer() noexcept {
@@ -240,6 +90,16 @@ void ScanlineRasterizer::ClearRenderer() noexcept {
     for (uint16_t x = 0; x < width * kBytesPerPixel; x += kBytesPerPixel) {
       *reinterpret_cast<uint32_t*>(pixels + y * pitch + x) = pixel_value;
     }
+}
+
+bool ScanlineRasterizer::ZBufferCheckAndReplace(
+    float new_value,
+    uint32_t z_buffer_index) noexcept {
+  if (new_value < z_buffer_[z_buffer_index]) {
+    z_buffer_[z_buffer_index] = new_value;
+    return true;
+  } else
+    return false;
 }
 
 void ScanlineRasterizer::CalculateTrianglePixelCoordinates(
@@ -277,7 +137,11 @@ void ScanlineRasterizer::RasterizeTriangleHalf(size_t triangle_index,
                                                PixelCoordinates& pc,
                                                TriangleHalf triangle_half,
                                                float brightness) noexcept {
+  constexpr uint16_t width = 800; // #TODO: find better alternative
   (void)triangle_index;
+  uint8_t* pixels = pixels_;
+  int pitch = pitch_;
+
   if (triangle_half == TriangleHalf::kLower)
     ::SwapTopAndLowPixelCoordinates(pc);
 
@@ -312,14 +176,13 @@ void ScanlineRasterizer::RasterizeTriangleHalf(size_t triangle_index,
       float top_low_z = pc.top_z * (1 - top_low_t) + pc.low_z * top_low_t;
       float top_mid_z = pc.top_z * (1 - top_mid_t) + pc.mid_z * top_mid_t;
       float final_z = top_low_z * (1 - horizontal_t) + top_mid_z * horizontal_t;
-      if (final_z < z_buffer_[scan_x][scan_y]) {  // #TODO:Check order !!
-        z_buffer_[scan_x][scan_y] = final_z;
-        pixels_[scan_y * pitch_ + scan_x * kBytesPerPixel] = brightness * 0xff;
-        pixels_[scan_y * pitch_ + scan_x * kBytesPerPixel + 1] =
+      if (ZBufferCheckAndReplace(final_z, scan_y * width + scan_x)) {
+        pixels[scan_y * pitch + scan_x * kBytesPerPixel] = brightness * 0xff;
+        pixels[scan_y * pitch + scan_x * kBytesPerPixel + 1] =
             brightness * 0xff;
-        pixels_[scan_y * pitch_ + scan_x * kBytesPerPixel + 2] =
+        pixels[scan_y * pitch + scan_x * kBytesPerPixel + 2] =
             brightness * 0xff;
-        pixels_[scan_y * pitch_ + scan_x * kBytesPerPixel + 3] = 0xff;
+        pixels[scan_y * pitch + scan_x * kBytesPerPixel + 3] = 0xff;
       }
     }
     if (scan_y == pc.mid_y)
@@ -338,7 +201,7 @@ void ScanlineRasterizer::RasterizeGameState(
 
   ResetZBuffer();
   SDL_LockTexture(texture, NULL, reinterpret_cast<void**>(&pixels_), &pitch_);
-  ClearRenderer(pixels_, pitch_);
+  ClearRenderer();
 
   for (size_t t = 0; t < space.GetTriangleCount(); t++) {
     // Triangle color
