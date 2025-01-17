@@ -28,7 +28,6 @@ class UserInterface {
   SDL_Renderer* sdl_renderer_;
   SDL_Texture* sdl_texture_;
   // std::vector<std::vector<float>> z_buffer_;
-  float z_buffer_[800][800];
 };
 
 #endif

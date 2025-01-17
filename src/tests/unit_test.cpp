@@ -469,7 +469,7 @@ TEST_F(CameraTransformTest, ConstructorWithPitch) {
   constructed_camera_ = {{0, 0, 0}, pitch, 0, 0};
   camera_.SetPitch(pitch);
   input_ = {0, 0, -1, 1};
-  ExpectOutput({0, std::sin(1), -std::cos(1), 1});
+  ExpectOutput({0, std::sinf(1), -std::cosf(1), 1});
 }
 
 TEST_F(CameraTransformTest, ConstructorWithYaw) {
@@ -477,7 +477,7 @@ TEST_F(CameraTransformTest, ConstructorWithYaw) {
   constructed_camera_ = {{0, 0, 0}, 0, yaw, 0};
   camera_.SetYaw(yaw);
   input_ = {0, 0, -1, 1};
-  ExpectOutput({-std::sin(1), 0, -std::cos(1), 1});
+  ExpectOutput({-std::sinf(1), 0, -std::cosf(1), 1});
 }
 
 TEST_F(CameraTransformTest, ConstructorWithRoll) {
@@ -485,12 +485,12 @@ TEST_F(CameraTransformTest, ConstructorWithRoll) {
   constructed_camera_ = {{0, 0, 0}, 0, 0, roll};
   camera_.SetRoll(roll);
   input_ = {1, 0, 0, 1};
-  ExpectOutput({std::cos(1), std::sin(1), 0, 1});
+  ExpectOutput({std::cosf(1), std::sinf(1), 0, 1});
 }
 
 TEST_F(CameraTransformTest, ConstructorWithLocationPitchYawRoll) {
-  float pitch = std::acos(1 / std::sqrt(2));
-  float yaw = std::acos(1 / std::sqrt(3));
+  float pitch = std::acos(1 / std::sqrtf(2));
+  float yaw = std::acos(1 / std::sqrtf(3));
   float roll = -kPi * 3 / 4;
   float x_offset = 3, y_offset = -7, z_offset = 13;
   constructed_camera_ = {{x_offset, y_offset, z_offset}, pitch, yaw, roll};
@@ -499,7 +499,7 @@ TEST_F(CameraTransformTest, ConstructorWithLocationPitchYawRoll) {
   camera_.SetYaw(yaw);
   camera_.SetRoll(roll);
   input_ = {1 + x_offset, y_offset, z_offset, 1};
-  ExpectOutput({0, -std::sqrt(2.0 / 3), -1 / std::sqrt(3), 1});
+  ExpectOutput({0, -std::sqrtf(2.0 / 3), -1 / std::sqrtf(3), 1});
 }
 
 TEST(PespectiveProjection, ConstructorArguments) {

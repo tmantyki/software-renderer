@@ -1,4 +1,5 @@
 env = Environment()
+env["CXX"] = "clang++"
 env["CXXFLAGS"] = [
     "-std=c++17",
     "-Wall",
