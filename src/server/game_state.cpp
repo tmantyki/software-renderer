@@ -4,13 +4,11 @@
 GameState::GameState()
     : camera_transform_(player_),
       perspective_(1, 10, -1, 1, 1, -1),
-      viewport_(800, 800),
+      viewport_(kWindowWidth, kWindowHeight),
       pipeline_(camera_transform_, perspective_, viewport_),
       tick_counter_(0) {
   ObjGeometryImporter obj_importer(world_space_);
-  obj_importer.ImportGeometryFromFile("assets/cube.obj");
-  // obj_importer.ImportGeometryFromFile("assets/teapot.obj");
-  // obj_importer.ImportGeometryFromFile("assets/suzanne.obj");
+  obj_importer.ImportGeometryFromFile("assets/scenes/teapot.obj");
 }
 
 void GameState::ProcessTick() noexcept {

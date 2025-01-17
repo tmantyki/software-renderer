@@ -4,11 +4,10 @@
 
 #include "ui.hpp"
 
-UserInterface::UserInterface(uint16_t width, uint16_t height)
-    : width_(width), height_(height), sdl_objects_initialized_(false) {
-  // z_buffer_.resize(height, std::vector<float>(width));  // #TODO: Check
-  // order!!
-}
+UserInterface::UserInterface()
+    : width_(kWindowWidth),
+      height_(kWindowHeight),
+      sdl_objects_initialized_(false) {}
 
 UserInterface::~UserInterface() {
   DestroySdlObjects();

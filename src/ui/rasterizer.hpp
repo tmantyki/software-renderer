@@ -48,7 +48,8 @@ class ScanlineRasterizer : public Rasterizer {
  private:
   void ResetZBuffer() noexcept;
   void ClearRenderer() noexcept;
-  bool ZBufferCheckAndReplace(float new_value, uint32_t z_buffer_index) noexcept;
+  bool ZBufferCheckAndReplace(float new_value,
+                              uint32_t z_buffer_index) noexcept;
   void CalculateTrianglePixelCoordinates(PixelCoordinates& pc,
                                          const Space& space,
                                          size_t triangle_index) const noexcept;
@@ -57,7 +58,7 @@ class ScanlineRasterizer : public Rasterizer {
                              PixelCoordinates& pixel_coordinates,
                              TriangleHalf triangle_half,
                              float brightness) noexcept;
-  std::array<float, 800 * 800> z_buffer_; // #TODO: refactor magic numbers
+  std::array<float, kWindowWidth * kWindowHeight> z_buffer_;
   uint8_t* pixels_;
   int pitch_;
 };

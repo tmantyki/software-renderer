@@ -8,7 +8,7 @@
 
 class UserInterface {
  public:
-  UserInterface(uint16_t width = 800, uint16_t height = 800);
+  UserInterface();
   ~UserInterface();
   UserInterface(const UserInterface&) = delete;
   UserInterface& operator=(UserInterface&) = delete;

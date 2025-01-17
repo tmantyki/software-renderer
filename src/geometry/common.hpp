@@ -12,6 +12,7 @@
 
 constexpr float kPi = 3.14159265358979323846264338;
 constexpr float kFloatTolerance = 1.0E-3;
+constexpr float kAntiZFighting = 1.0E-5;
 constexpr size_t kBytesPerPixel = 4;
 constexpr size_t kDimensions = 4;
 constexpr size_t kVerticesPerTriangle = 3;
@@ -20,6 +21,8 @@ constexpr size_t kMaxTriangles = 10000;
 constexpr size_t kMaxVertices = kMaxTriangles;
 constexpr size_t kNumberOfClippingPlanes = 6;
 constexpr size_t kNumberOfPixelChannels = 4;
+constexpr uint16_t kWindowWidth = 800;
+constexpr uint16_t kWindowHeight = 800;
 constexpr bool kClockwiseWinding = true;
 constexpr bool kCounterClockwiseWinding = !kClockwiseWinding;
 constexpr float kTranslationIncrement = 0.01;

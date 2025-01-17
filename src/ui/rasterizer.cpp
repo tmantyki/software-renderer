@@ -74,20 +74,17 @@ FlatRasterizer::FlatRasterizer(Direction light_direction) noexcept
 ScanlineRasterizer::ScanlineRasterizer() noexcept {}
 
 void ScanlineRasterizer::ResetZBuffer() noexcept {
-  constexpr static uint16_t width = 800;  // #TODO: find better way to define
-  constexpr static uint16_t height = 800;
-  for (uint32_t i = 0; i < height * width; i++)
+  for (uint32_t i = 0; i < kWindowWidth * kWindowHeight; i++)
     z_buffer_[i] = 1;
 }
 
 void ScanlineRasterizer::ClearRenderer() noexcept {
   uint8_t* pixels = pixels_;
   int pitch = pitch_;
-  constexpr static uint16_t width = 800;  // #TODO: find better way to define
-  constexpr static uint16_t height = 800;
   uint32_t pixel_value = 0xff008080;
-  for (uint16_t y = 0; y < height; y++)
-    for (uint16_t x = 0; x < width * kBytesPerPixel; x += kBytesPerPixel) {
+  for (uint16_t y = 0; y < kWindowHeight; y++)
+    for (uint16_t x = 0; x < kWindowWidth * kBytesPerPixel;
+         x += kBytesPerPixel) {
       *reinterpret_cast<uint32_t*>(pixels + y * pitch + x) = pixel_value;
     }
 }
@@ -95,7 +92,7 @@ void ScanlineRasterizer::ClearRenderer() noexcept {
 bool ScanlineRasterizer::ZBufferCheckAndReplace(
     float new_value,
     uint32_t z_buffer_index) noexcept {
-  if (new_value < z_buffer_[z_buffer_index]) {
+  if (new_value - 0.001 < z_buffer_[z_buffer_index]) {
     z_buffer_[z_buffer_index] = new_value;
     return true;
   } else
@@ -137,7 +134,6 @@ void ScanlineRasterizer::RasterizeTriangleHalf(size_t triangle_index,
                                                PixelCoordinates& pc,
                                                TriangleHalf triangle_half,
                                                float brightness) noexcept {
-  constexpr uint16_t width = 800; // #TODO: find better alternative
   (void)triangle_index;
   uint8_t* pixels = pixels_;
   int pitch = pitch_;
@@ -148,35 +144,29 @@ void ScanlineRasterizer::RasterizeTriangleHalf(size_t triangle_index,
   if (pc.low_y == pc.top_y || pc.top_y == pc.mid_y)
     return;
 
-  int8_t increment = triangle_half == TriangleHalf::kLower ? -1 : 1;
+  int8_t scan_y_increment = triangle_half == TriangleHalf::kLower ? -1 : 1;
   for (uint16_t scan_y = pc.top_y;;) {
-    assert(scan_y < 800);
+    assert(scan_y < kWindowHeight);
     float top_low_t =
         static_cast<float>(scan_y - pc.top_y) / (pc.low_y - pc.top_y);
     float top_mid_t =
         static_cast<float>(scan_y - pc.top_y) / (pc.mid_y - pc.top_y);
-    uint16_t scan_x1 = (scan_y * pc.low_x - pc.top_x * scan_y -
-                        pc.top_y * pc.low_x + pc.top_x * pc.low_y) /
-                       (pc.low_y - pc.top_y);
-    uint16_t scan_x2 = (scan_y * pc.mid_x - pc.top_x * scan_y -
-                        pc.top_y * pc.mid_x + pc.top_x * pc.mid_y) /
-                       (pc.mid_y - pc.top_y);
-
-    uint16_t scan_x_left = scan_x1 < scan_x2 ? scan_x1 : scan_x2;
-    uint16_t scan_x_right = scan_x1 < scan_x2 ? scan_x2 : scan_x1;
-    for (uint16_t scan_x = scan_x_left; scan_x <= scan_x_right; scan_x++) {
-      assert(scan_x < 800);
+    uint16_t scan_x_left = (scan_y * pc.low_x - pc.top_x * scan_y -
+                            pc.top_y * pc.low_x + pc.top_x * pc.low_y) /
+                           (pc.low_y - pc.top_y);
+    uint16_t scan_x_right = (scan_y * pc.mid_x - pc.top_x * scan_y -
+                             pc.top_y * pc.mid_x + pc.top_x * pc.mid_y) /
+                            (pc.mid_y - pc.top_y);
+    int8_t scan_x_increment = scan_x_right < scan_x_left ? -1 : 1;
+    for (uint16_t scan_x = scan_x_left;;) {
+      assert(scan_x < kWindowWidth);
       float horizontal_t;
-      if (scan_x1 < scan_x2)
-        horizontal_t = static_cast<float>(scan_x - scan_x_left) /
-                       (scan_x_right - scan_x_left);
-      else
-        horizontal_t = 1 - (static_cast<float>(scan_x - scan_x_left) /
-                            (scan_x_right - scan_x_left));
+      horizontal_t = static_cast<float>(scan_x - scan_x_left) /
+                     (scan_x_right - scan_x_left);
       float top_low_z = pc.top_z * (1 - top_low_t) + pc.low_z * top_low_t;
       float top_mid_z = pc.top_z * (1 - top_mid_t) + pc.mid_z * top_mid_t;
       float final_z = top_low_z * (1 - horizontal_t) + top_mid_z * horizontal_t;
-      if (ZBufferCheckAndReplace(final_z, scan_y * width + scan_x)) {
+      if (ZBufferCheckAndReplace(final_z, scan_y * kWindowWidth + scan_x)) {
         pixels[scan_y * pitch + scan_x * kBytesPerPixel] = brightness * 0xff;
         pixels[scan_y * pitch + scan_x * kBytesPerPixel + 1] =
             brightness * 0xff;
@@ -184,10 +174,13 @@ void ScanlineRasterizer::RasterizeTriangleHalf(size_t triangle_index,
             brightness * 0xff;
         pixels[scan_y * pitch + scan_x * kBytesPerPixel + 3] = 0xff;
       }
+      if (scan_x == scan_x_right)
+        break;
+      scan_x += scan_x_increment;
     }
     if (scan_y == pc.mid_y)
       break;
-    scan_y += increment;
+    scan_y += scan_y_increment;
   }
 }
 
