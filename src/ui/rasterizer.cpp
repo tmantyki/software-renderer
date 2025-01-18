@@ -130,6 +130,30 @@ void ScanlineRasterizer::CalculateTrianglePixelCoordinates(
   pc.low_z = space.GetVertices()(kZ, low_y_index);
 }
 
+void ScanlineRasterizer::CalculateXScanlineBoundaries(
+    const uint16_t scan_y,
+    const PixelCoordinates pc,
+    uint16_t& scan_x_left,
+    uint16_t& scan_x_right) const noexcept {
+  scan_x_left = (scan_y * pc.low_x - pc.top_x * scan_y - pc.top_y * pc.low_x +
+                 pc.top_x * pc.low_y) /
+                (pc.low_y - pc.top_y);
+  scan_x_right = (scan_y * pc.mid_x - pc.top_x * scan_y - pc.top_y * pc.mid_x +
+                  pc.top_x * pc.mid_y) /
+                 (pc.mid_y - pc.top_y);
+}
+
+void ScanlineRasterizer::CalculateInterpolationParametersForY(
+    const uint16_t scan_y,
+    InterpolationParameters& ip,
+    const PixelCoordinates& pc) const noexcept {
+  float numerator = static_cast<float>(scan_y - pc.top_y);
+  ip.top_low_t = numerator / (pc.low_y - pc.top_y);
+  ip.top_mid_t = numerator / (pc.mid_y - pc.top_y);
+  ip.top_low_z = pc.top_z * (1 - ip.top_low_t) + pc.low_z * ip.top_low_t;
+  ip.top_mid_z = pc.top_z * (1 - ip.top_mid_t) + pc.mid_z * ip.top_mid_t;
+}
+
 void ScanlineRasterizer::RasterizeTriangleHalf(size_t triangle_index,
                                                PixelCoordinates& pc,
                                                TriangleHalf triangle_half,
@@ -147,25 +171,17 @@ void ScanlineRasterizer::RasterizeTriangleHalf(size_t triangle_index,
   int8_t scan_y_increment = triangle_half == TriangleHalf::kLower ? -1 : 1;
   for (uint16_t scan_y = pc.top_y;;) {
     assert(scan_y < kWindowHeight);
-    float top_low_t =
-        static_cast<float>(scan_y - pc.top_y) / (pc.low_y - pc.top_y);
-    float top_mid_t =
-        static_cast<float>(scan_y - pc.top_y) / (pc.mid_y - pc.top_y);
-    uint16_t scan_x_left = (scan_y * pc.low_x - pc.top_x * scan_y -
-                            pc.top_y * pc.low_x + pc.top_x * pc.low_y) /
-                           (pc.low_y - pc.top_y);
-    uint16_t scan_x_right = (scan_y * pc.mid_x - pc.top_x * scan_y -
-                             pc.top_y * pc.mid_x + pc.top_x * pc.mid_y) /
-                            (pc.mid_y - pc.top_y);
+    InterpolationParameters ip;
+    CalculateInterpolationParametersForY(scan_y, ip, pc);
+    uint16_t scan_x_left, scan_x_right;
+    CalculateXScanlineBoundaries(scan_y, pc, scan_x_left, scan_x_right);
     int8_t scan_x_increment = scan_x_right < scan_x_left ? -1 : 1;
     for (uint16_t scan_x = scan_x_left;;) {
       assert(scan_x < kWindowWidth);
-      float horizontal_t;
-      horizontal_t = static_cast<float>(scan_x - scan_x_left) /
-                     (scan_x_right - scan_x_left);
-      float top_low_z = pc.top_z * (1 - top_low_t) + pc.low_z * top_low_t;
-      float top_mid_z = pc.top_z * (1 - top_mid_t) + pc.mid_z * top_mid_t;
-      float final_z = top_low_z * (1 - horizontal_t) + top_mid_z * horizontal_t;
+      float horizontal_t = static_cast<float>(scan_x - scan_x_left) /
+                           (scan_x_right - scan_x_left);
+      float final_z =
+          ip.top_low_z * (1 - horizontal_t) + ip.top_mid_z * horizontal_t;
       if (ZBufferCheckAndReplace(final_z, scan_y * kWindowWidth + scan_x)) {
         pixels[scan_y * pitch + scan_x * kBytesPerPixel] = brightness * 0xff;
         pixels[scan_y * pitch + scan_x * kBytesPerPixel + 1] =

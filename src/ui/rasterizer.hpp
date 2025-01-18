@@ -25,6 +25,14 @@ typedef struct PixelCoordinates {
   float low_z;
 } PixelCoordinates;
 
+typedef struct InterpolationParameters {
+  float horizontal_t;
+  float top_mid_t;
+  float top_mid_z;
+  float top_low_t;
+  float top_low_z;
+} InterpolationParameters;
+
 class Rasterizer {
  public:
   virtual void RasterizeGameState(const GameState& game_state,
@@ -53,6 +61,14 @@ class ScanlineRasterizer : public Rasterizer {
   void CalculateTrianglePixelCoordinates(PixelCoordinates& pc,
                                          const Space& space,
                                          size_t triangle_index) const noexcept;
+  void CalculateXScanlineBoundaries(const uint16_t scan_y,
+                                    const PixelCoordinates pc,
+                                    uint16_t& scan_x_left,
+                                    uint16_t& scan_x_right) const noexcept;
+  void CalculateInterpolationParametersForY(
+      const uint16_t scan_y,
+      InterpolationParameters& ip,
+      const PixelCoordinates& pc) const noexcept;
   // void RasterizeTriangle(size_t triangle_index);
   void RasterizeTriangleHalf(size_t triangle_index,
                              PixelCoordinates& pixel_coordinates,
