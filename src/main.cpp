@@ -6,8 +6,13 @@
 #include "ui/ui.hpp"
 #include "utility/timer.hpp"
 
-int main() {
+int main(int argc, char** argv) {
   std::cout << "Hello, this is Software Renderer.\n\n";
+
+  int max_ticks = -1;
+  if (argc > 2)
+    if (!std::strcmp(argv[1], "--maxticks"))
+      std::sscanf(argv[2], "%d", &max_ticks);
 
   UserInterface user_interface;
   user_interface.InitializeSdlObjects();
@@ -36,6 +41,9 @@ int main() {
     game_state.ProcessTick();
     active_rasterizer->RasterizeGameState(game_state, user_interface);
     SDL_RenderPresent(user_interface.GetSdlRenderer());
+    if (max_ticks > 0 &&
+        game_state.GetTick() > static_cast<uint64_t>(max_ticks))
+      break;
   }
 
   timer.Stop(false);
