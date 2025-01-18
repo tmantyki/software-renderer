@@ -7,12 +7,6 @@
 #include "server/game_state.hpp"
 #include "ui/ui.hpp"
 
-typedef struct RasterizerContext {
-  const Space& space;
-  SDL_Renderer* renderer;
-  SDL_Texture* texture;
-} RasterizerContext;
-
 typedef struct PixelCoordinates {
   uint16_t top_x;
   uint16_t top_y;
@@ -26,12 +20,22 @@ typedef struct PixelCoordinates {
 } PixelCoordinates;
 
 typedef struct InterpolationParameters {
+  float final_z;
   float horizontal_t;
   float top_mid_t;
   float top_mid_z;
   float top_low_t;
   float top_low_z;
 } InterpolationParameters;
+
+typedef struct ScanlineParameters {
+  uint16_t scan_x;
+  uint16_t scan_y;
+  uint16_t scan_x_left;
+  uint16_t scan_x_right;
+  int8_t scan_x_increment;
+  int8_t scan_y_increment;
+} ScanlineParameters;
 
 class Rasterizer {
  public:
@@ -61,19 +65,14 @@ class ScanlineRasterizer : public Rasterizer {
   void CalculateTrianglePixelCoordinates(PixelCoordinates& pc,
                                          const Space& space,
                                          size_t triangle_index) const noexcept;
-  void CalculateXScanlineBoundaries(const uint16_t scan_y,
-                                    const PixelCoordinates pc,
-                                    uint16_t& scan_x_left,
-                                    uint16_t& scan_x_right) const noexcept;
-  void CalculateInterpolationParametersForY(
-      const uint16_t scan_y,
-      InterpolationParameters& ip,
-      const PixelCoordinates& pc) const noexcept;
-  // void RasterizeTriangle(size_t triangle_index);
   void RasterizeTriangleHalf(size_t triangle_index,
                              PixelCoordinates& pixel_coordinates,
                              TriangleHalf triangle_half,
-                             float brightness) noexcept;
+                             uint8_t color_value) noexcept;
+  void WritePixel(uint8_t color_value,
+                  const ScanlineParameters& sp,
+                  uint8_t* pixels,
+                  int pitch) noexcept;
   std::array<float, kWindowWidth * kWindowHeight> z_buffer_;
   uint8_t* pixels_;
   int pitch_;
