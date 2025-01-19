@@ -4,6 +4,7 @@
 #include <SDL2/SDL.h>
 
 #include "geometry/direction.hpp"
+#include "geometry/texture.hpp"
 #include "server/game_state.hpp"
 #include "ui/ui.hpp"
 
@@ -57,25 +58,27 @@ class ScanlineRasterizer : public Rasterizer {
       const GameState& game_state,
       UserInterface& user_interface) noexcept override;
 
- private:
+ protected:
   void ResetZBuffer() noexcept;
   void ClearRenderer() noexcept;
   bool ZBufferCheckAndReplace(float new_value,
                               uint32_t z_buffer_index) noexcept;
+  std::array<float, kWindowWidth * kWindowHeight> z_buffer_;
+  uint8_t* pixels_;
+  int pitch_;
+
+ private:
   void CalculateTrianglePixelCoordinates(PixelCoordinates& pc,
                                          const Space& space,
                                          size_t triangle_index) const noexcept;
-  void RasterizeTriangleHalf(size_t triangle_index,
-                             PixelCoordinates& pixel_coordinates,
-                             TriangleHalf triangle_half,
-                             uint8_t color_value) noexcept;
+  virtual void RasterizeTriangleHalf(size_t triangle_index,
+                                     PixelCoordinates& pc,
+                                     TriangleHalf triangle_half,
+                                     uint8_t color_value) noexcept;
   void WritePixel(uint8_t color_value,
                   const ScanlineParameters& sp,
                   uint8_t* pixels,
                   int pitch) noexcept;
-  std::array<float, kWindowWidth * kWindowHeight> z_buffer_;
-  uint8_t* pixels_;
-  int pitch_;
 };
 
 class FlatRasterizer : public ScanlineRasterizer {
@@ -85,6 +88,22 @@ class FlatRasterizer : public ScanlineRasterizer {
 
  private:
   Direction light_direction_;
+};
+
+class TexturedRasterizer : public ScanlineRasterizer {
+ public:
+  TexturedRasterizer() noexcept;
+
+ private:
+  virtual void RasterizeTriangleHalf(size_t triangle_index,
+                                     PixelCoordinates& pc,
+                                     TriangleHalf triangle_half,
+                                     uint8_t color_value) noexcept override;
+  void WritePixel(const ScanlineParameters& sp,
+                  uint8_t* pixels,
+                  int pitch) noexcept;
+
+  Texture texture_;
 };
 
 #endif

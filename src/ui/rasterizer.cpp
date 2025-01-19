@@ -75,7 +75,6 @@ void SetScanlineIncrementY(ScanlineParameters& sp,
                            const TriangleHalf triangle_half) noexcept {
   sp.scan_y_increment = triangle_half == TriangleHalf::kLower ? -1 : 1;
 }
-
 }  // namespace
 
 void WireframeRasterizer::RasterizeGameState(
@@ -101,12 +100,40 @@ void WireframeRasterizer::RasterizeGameState(
   SDL_RenderPresent(renderer);
 }
 
-FlatRasterizer::FlatRasterizer() noexcept : FlatRasterizer({1, 1, 1}) {}
-
-FlatRasterizer::FlatRasterizer(Direction light_direction) noexcept
-    : light_direction_(light_direction) {}
-
 ScanlineRasterizer::ScanlineRasterizer() noexcept {}
+
+void ScanlineRasterizer::RasterizeGameState(
+    const GameState& game_state,
+    UserInterface& user_interface) noexcept {
+  const Space& space = game_state.GetOutputSpace();
+  SDL_Renderer* renderer = user_interface.GetSdlRenderer();
+  SDL_Texture* texture = user_interface.GetSdlTexture();
+
+  ResetZBuffer();
+  SDL_LockTexture(texture, NULL, reinterpret_cast<void**>(&pixels_), &pitch_);
+  ClearRenderer();
+
+  for (size_t t = 0; t < space.GetTriangleCount(); t++) {
+    // Triangle color
+    Direction light_direction = {1, 2, 3};
+    float brightness = light_direction.GetVector().normalized().dot(
+        space.GetTriangles()[t]->GetNormal().normalized());
+    brightness = (brightness + 1) / 2;
+    uint8_t color_value = brightness * 0xff;
+
+    PixelCoordinates pixel_coordinates;
+    CalculateTrianglePixelCoordinates(pixel_coordinates, space, t);
+
+    // Scanlines for top section
+    RasterizeTriangleHalf(t, pixel_coordinates, TriangleHalf::kUpper,
+                          color_value);
+    // Scanlines for bottom section
+    RasterizeTriangleHalf(t, pixel_coordinates, TriangleHalf::kLower,
+                          color_value);
+  }
+  SDL_RenderCopy(renderer, texture, NULL, NULL);
+  SDL_UnlockTexture(texture);
+}
 
 void ScanlineRasterizer::ResetZBuffer() noexcept {
   for (uint32_t i = 0; i < kWindowWidth * kWindowHeight; i++)
@@ -212,36 +239,57 @@ void ScanlineRasterizer::WritePixel(uint8_t color_value,
   pixels[index + 3] = 0xff;
 }
 
-void ScanlineRasterizer::RasterizeGameState(
-    const GameState& game_state,
-    UserInterface& user_interface) noexcept {
-  const Space& space = game_state.GetOutputSpace();
-  SDL_Renderer* renderer = user_interface.GetSdlRenderer();
-  SDL_Texture* texture = user_interface.GetSdlTexture();
+FlatRasterizer::FlatRasterizer() noexcept : FlatRasterizer({1, 1, 1}) {}
 
-  ResetZBuffer();
-  SDL_LockTexture(texture, NULL, reinterpret_cast<void**>(&pixels_), &pitch_);
-  ClearRenderer();
+FlatRasterizer::FlatRasterizer(Direction light_direction) noexcept
+    : light_direction_(light_direction) {}
 
-  for (size_t t = 0; t < space.GetTriangleCount(); t++) {
-    
-    // Triangle color
-    Direction light_direction = {1, 2, 3};
-    float brightness = light_direction.GetVector().normalized().dot(
-        space.GetTriangles()[t]->GetNormal().normalized());
-    brightness = (brightness + 1) / 2;
-    uint8_t color_value = brightness * 0xff;
+TexturedRasterizer::TexturedRasterizer() noexcept
+    : texture_("assets/images/nova.png") {}
 
-    PixelCoordinates pixel_coordinates;
-    CalculateTrianglePixelCoordinates(pixel_coordinates, space, t);
+void TexturedRasterizer::RasterizeTriangleHalf(size_t triangle_index,
+                                               PixelCoordinates& pc,
+                                               TriangleHalf triangle_half,
+                                               uint8_t color_value) noexcept {
+  (void)color_value;
+  (void)triangle_index;
+  uint8_t* pixels = pixels_;
+  int pitch = pitch_;
+  InterpolationParameters ip;
+  ScanlineParameters sp;
 
-    // Scanlines for top section
-    RasterizeTriangleHalf(t, pixel_coordinates, TriangleHalf::kUpper,
-                          color_value);
-    // Scanlines for bottom section
-    RasterizeTriangleHalf(t, pixel_coordinates, TriangleHalf::kLower,
-                          color_value);
+  if (triangle_half == TriangleHalf::kLower)
+    ::SwapTopAndLowPixelCoordinates(pc);
+
+  if (pc.low_y == pc.top_y || pc.top_y == pc.mid_y)  // #TODO: Best timing?
+    return;
+
+  ::SetScanlineIncrementY(sp, triangle_half);
+  for (sp.scan_y = pc.top_y;; sp.scan_y += sp.scan_y_increment) {
+    assert(sp.scan_y < kWindowHeight);
+    ::CalculateXScanlineBoundaries(sp, pc);
+    ::CalculateInterpolationParametersForY(ip, sp, pc);
+    for (sp.scan_x = sp.scan_x_left;; sp.scan_x += sp.scan_x_increment) {
+      assert(sp.scan_x < kWindowWidth);
+      ::CalculateInterpolationParametersForX(ip, sp);
+      if (ZBufferCheckAndReplace(ip.final_z,
+                                 sp.scan_y * kWindowWidth + sp.scan_x)) {
+        WritePixel(sp, pixels, pitch);
+      }
+      if (sp.scan_x == sp.scan_x_right)
+        break;
+    }
+    if (sp.scan_y == pc.mid_y)
+      break;
   }
-  SDL_RenderCopy(renderer, texture, NULL, NULL);
-  SDL_UnlockTexture(texture);
+}
+
+void TexturedRasterizer::WritePixel(const ScanlineParameters& sp,
+                                    uint8_t* pixels,
+                                    int pitch) noexcept {
+  size_t index = sp.scan_y * pitch + sp.scan_x * kBytesPerPixel;
+  pixels[index] = 0x00;
+  pixels[index + 1] = 0x00;
+  pixels[index + 2] = 0xff;
+  pixels[index + 3] = 0xff;
 }
