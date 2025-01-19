@@ -19,8 +19,10 @@ int main(int argc, char** argv) {
   Controller controller;
   GameState game_state;
   WireframeRasterizer wirefreame_rasterizer;
-  FlatRasterizer flat_rasterizer;
-  Rasterizer* active_rasterizer = &flat_rasterizer;
+  FlatRasterizer rasterizer;
+  Rasterizer* active_rasterizer = &rasterizer;
+  // TexturedRasterizer rasterizer;
+  // Rasterizer* active_rasterizer = &rasterizer;
   Timer timer("main()");
   timer.Start();
 
@@ -32,10 +34,10 @@ int main(int argc, char** argv) {
     }
     if (controller.ConsumeToggleRasterizerRequest()) {
       SDL_Delay(100);
-      if (active_rasterizer == &flat_rasterizer)
+      if (active_rasterizer == &rasterizer)
         active_rasterizer = &wirefreame_rasterizer;
       else
-        active_rasterizer = &flat_rasterizer;
+        active_rasterizer = &rasterizer;
     }
     game_state.UpdatePlayerState(controller);
     game_state.ProcessTick();

@@ -37,6 +37,7 @@ geometry_sources = [
     "geometry/texture.cpp",
     "geometry/transform.cpp",
     "geometry/triangle.cpp",
+    "geometry/uv_coordinate.cpp",
     "geometry/vertex.cpp",
     "utility/geometry_importer.cpp",
 ]

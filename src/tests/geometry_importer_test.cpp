@@ -42,6 +42,32 @@ TEST_F(ObjGeometryImporterTest, NontriangularFacesAreNotSupported) {
   EXPECT_THROW(LoadObjFromInputStream(ss_), MalformedParametersException);
 }
 
+TEST_F(ObjGeometryImporterTest, TooFewVertexCoordinates) {
+  ss_ << "# This OBJ file contains a vertex which contains too few"
+         "# coordinates.\n"
+      << "\n"
+      << "v 0.0 1.1 2.2\n"
+      << "v 3.3 4.4 5.5\n"
+      << "v 6.6 7.7\n"
+      << "v 9.1 9.2 9.3\n"
+      << "\n"
+      << "f 1 2 3 4\n";
+  EXPECT_THROW(LoadObjFromInputStream(ss_), MalformedParametersException);
+}
+
+TEST_F(ObjGeometryImporterTest, TooManyVertexCoordinates) {
+  ss_ << "# This OBJ file contains a vertex which contains too many"
+         "# coordinates.\n"
+      << "\n"
+      << "v 0.0 1.1 2.2\n"
+      << "v 3.3 4.4 5.5\n"
+      << "v 6.6 7.7 1.1 2.2 7.7\n"
+      << "v 9.1 9.2 9.3\n"
+      << "\n"
+      << "f 1 2 3 4\n";
+  EXPECT_THROW(LoadObjFromInputStream(ss_), MalformedParametersException);
+}
+
 TEST_F(ObjGeometryImporterTest, UnknownCommand) {
   ss_ << "# This invalid OBJ file contains an unsupported command 'xyz'.\n"
       << "\n"

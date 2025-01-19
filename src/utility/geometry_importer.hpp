@@ -47,9 +47,11 @@ class GeometryImporter {
 
  protected:
   std::array<Vertex, kMaxVertices> vertices_;
+  std::array<UVCoordinate, kMaxVertices> uv_coordinates_;
   Space& space_;
   size_t triangle_counter_;
   size_t vertex_counter_;
+  size_t uv_counter_;
 };
 
 class ObjGeometryImporter : public GeometryImporter {
@@ -62,6 +64,7 @@ class ObjGeometryImporter : public GeometryImporter {
   void ParseLine(const std::string& line);
   void ParseVertex(std::stringstream& vertex_params);
   void ParseFace(std::stringstream& face_params);
+  void ParseUVCoordinate(std::stringstream& uv_params);
 };
 
 #endif
