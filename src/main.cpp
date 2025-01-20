@@ -19,10 +19,10 @@ int main(int argc, char** argv) {
   Controller controller;
   GameState game_state;
   WireframeRasterizer wirefreame_rasterizer;
-  FlatRasterizer rasterizer;
-  Rasterizer* active_rasterizer = &rasterizer;
-  // TexturedRasterizer rasterizer;
+  // FlatRasterizer rasterizer;
   // Rasterizer* active_rasterizer = &rasterizer;
+  TexturedRasterizer rasterizer;
+  Rasterizer* active_rasterizer = &rasterizer;
   Timer timer("main()");
   timer.Start();
 

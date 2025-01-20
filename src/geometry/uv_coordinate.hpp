@@ -10,6 +10,7 @@ class UVCoordinate {
   UVCoordinate(const Vector2& vector) noexcept;
   Vector2 GetVector() const noexcept;
   Vector2 operator*(const float& float_val) const noexcept;
+  Vector2 operator/(const float& float_val) const noexcept;
 
  private:
   Vector2 uv_;

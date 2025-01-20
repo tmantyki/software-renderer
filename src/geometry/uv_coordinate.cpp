@@ -12,5 +12,9 @@ Vector2 UVCoordinate::GetVector() const noexcept {
 }
 
 Vector2 UVCoordinate::operator*(const float& float_val) const noexcept {
-  return float_val * uv_;
+  return uv_ * float_val;
+}
+
+Vector2 UVCoordinate::operator/(const float& float_val) const noexcept {
+  return uv_ / float_val;
 }

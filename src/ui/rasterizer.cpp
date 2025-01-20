@@ -78,6 +78,12 @@ void SetScanlineIncrementY(ScanlineParameters& sp,
                            const TriangleHalf triangle_half) noexcept {
   sp.scan_y_increment = triangle_half == TriangleHalf::kLower ? -1 : 1;
 }
+
+float TrueZ(float reciprocal_z) noexcept {
+  constexpr float A = 20 / 9.0;
+  constexpr float B = 11 / 9.0;
+  return A / (reciprocal_z - B);
+}
 }  // namespace
 
 void WireframeRasterizer::RasterizeGameState(
@@ -288,21 +294,21 @@ void TexturedRasterizer::RasterizeTriangleHalf(
     ::CalculateXScanlineBoundaries(sp, pc);
     ::CalculateInterpolationParametersForY(ip, sp, pc);
 
-    Vector2 top_low_uv = top_uv * pc.top_z * (1 - ip.top_low_t) +
-                         low_uv * pc.low_z * (ip.top_low_t);
-    top_low_uv /= ip.top_low_z;
+    Vector2 top_low_uv = (top_uv / ::TrueZ(pc.top_z)) * (1 - ip.top_low_t) +
+                         (low_uv / ::TrueZ(pc.low_z)) * (ip.top_low_t);
+    top_low_uv *= ::TrueZ(ip.top_low_z);
 
-    Vector2 top_mid_uv = top_uv * pc.top_z * (1 - ip.top_mid_t) +
-                         mid_uv * pc.mid_z * (ip.top_mid_t);
-    top_mid_uv /= ip.top_mid_z;
+    Vector2 top_mid_uv = (top_uv / ::TrueZ(pc.top_z)) * (1 - ip.top_mid_t) +
+                         (mid_uv / ::TrueZ(pc.mid_z)) * (ip.top_mid_t);
+    top_mid_uv *= ::TrueZ(ip.top_mid_z);
 
     for (sp.scan_x = sp.scan_x_left;; sp.scan_x += sp.scan_x_increment) {
       assert(sp.scan_x < kWindowWidth);
       ::CalculateInterpolationParametersForX(ip, sp);
 
-      Vector2 final_uv = top_low_uv * ip.top_low_z * (1 - ip.horizontal_t) +
-                         top_mid_uv * ip.top_mid_z * (ip.horizontal_t);
-      final_uv /= ip.final_z;
+      Vector2 final_uv = (top_low_uv / ::TrueZ(ip.top_low_z)) * (1 - ip.horizontal_t) +
+                         (top_mid_uv / ::TrueZ(ip.top_mid_z)) * (ip.horizontal_t);
+      final_uv *= ::TrueZ(ip.final_z);
 
       if (ZBufferCheckAndReplace(ip.final_z,
                                  sp.scan_y * kWindowWidth + sp.scan_x)) {
@@ -315,14 +321,37 @@ void TexturedRasterizer::RasterizeTriangleHalf(
       break;
   }
 }
-
+#include <algorithm>
 void TexturedRasterizer::WritePixel(const ScanlineParameters& sp,
                                     uint8_t* pixels,
                                     int pitch,
                                     const Vector2& uv) noexcept {
-  size_t index = sp.scan_y * pitch + sp.scan_x * kBytesPerPixel;
-  pixels[index] = 0x00;
-  pixels[index + 1] = 0xff * uv[1];
-  pixels[index + 2] = 0xff * uv[0];
-  pixels[index + 3] = 0xff;
+  // uint16_t u =
+  //     static_cast<uint32_t>(texture_.GetWidth() * uv[kU]) %
+  //     texture_.GetWidth();
+  // uint16_t v = static_cast<uint32_t>(texture_.GetHeight() * uv[kV]) %
+  //              texture_.GetHeight();
+
+  uint16_t u = static_cast<uint16_t>(uv[kU] * (texture_.GetWidth() - 1)) %
+               texture_.GetWidth();
+  uint16_t v = static_cast<uint16_t>(uv[kV] * (texture_.GetHeight() - 1)) %
+               texture_.GetHeight();
+
+  // std::cout << "v: " << v << ",   height: " << texture_.GetHeight() << "\n";
+  assert(u < texture_.GetWidth());
+  assert(v < texture_.GetHeight());
+
+  int texture_pitch = texture_.GetSurface()->pitch;
+  // uint32_t* texture_pixel = reinterpret_cast<uint32_t*>(
+  //     static_cast<uint8_t*>(texture_.GetSurface()->pixels) + v *
+  //     texture_pitch + u * kBytesPerPixel);
+  // uint32_t* target_pixel = reinterpret_cast<uint32_t*>(
+  //     pixels + sp.scan_y * pitch + sp.scan_x * kBytesPerPixel);
+
+  uint32_t texture_offset = v * texture_pitch + u * kBytesPerPixel;
+  uint32_t* texture_pixel = reinterpret_cast<uint32_t*>(
+      static_cast<uint8_t*>(texture_.GetSurface()->pixels) + texture_offset);
+  uint32_t target_offset = sp.scan_y * pitch + sp.scan_x * kBytesPerPixel;
+  uint32_t* target_pixel = reinterpret_cast<uint32_t*>(pixels + target_offset);
+  *target_pixel = *texture_pixel;
 }
