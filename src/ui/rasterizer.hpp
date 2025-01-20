@@ -8,6 +8,12 @@
 #include "server/game_state.hpp"
 #include "ui/ui.hpp"
 
+typedef struct OrderedVertexIndices {
+  size_t top;
+  size_t mid;
+  size_t low;
+} OrderedVertexIndices;
+
 typedef struct PixelCoordinates {
   uint16_t top_x;
   uint16_t top_y;
@@ -68,11 +74,15 @@ class ScanlineRasterizer : public Rasterizer {
   int pitch_;
 
  private:
-  void CalculateTrianglePixelCoordinates(PixelCoordinates& pc,
-                                         const Space& space,
-                                         size_t triangle_index) const noexcept;
-  virtual void RasterizeTriangleHalf(size_t triangle_index,
-                                     PixelCoordinates& pc,
+  void SetSortedVertexIndices(OrderedVertexIndices& vi,
+                              const size_t triangle_index,
+                              const Space& space) const noexcept;
+  void SetPixelCoordinates(PixelCoordinates& pc,
+                           const OrderedVertexIndices& vertex_indices,
+                           const Space& space) const noexcept;
+  virtual void RasterizeTriangleHalf(PixelCoordinates& pc,
+                                     OrderedVertexIndices& vi,
+                                     const TriangleSharedPointer& triangle,
                                      TriangleHalf triangle_half,
                                      uint8_t color_value) noexcept;
   void WritePixel(uint8_t color_value,
@@ -95,13 +105,15 @@ class TexturedRasterizer : public ScanlineRasterizer {
   TexturedRasterizer() noexcept;
 
  private:
-  virtual void RasterizeTriangleHalf(size_t triangle_index,
-                                     PixelCoordinates& pc,
+  virtual void RasterizeTriangleHalf(PixelCoordinates& pc,
+                                     OrderedVertexIndices& vi,
+                                     const TriangleSharedPointer& triangle,
                                      TriangleHalf triangle_half,
                                      uint8_t color_value) noexcept override;
   void WritePixel(const ScanlineParameters& sp,
                   uint8_t* pixels,
-                  int pitch) noexcept;
+                  int pitch,
+                  const Vector2& uv) noexcept;
 
   Texture texture_;
 };
