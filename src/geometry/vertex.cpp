@@ -14,10 +14,8 @@ Vertex::Vertex(Point& point) : Point(point) {}
 // #TODO: apply sorting logic?
 Vertex::Vertex(const Vertex& vertex_a, const Vertex& vertex_b, float t) noexcept
     : Point((vertex_a.vector_ * (1 - t) + vertex_b.vector_ * t).eval()),
-      uv_coordinate_((vertex_a.GetUVCoordinate().GetCoordinateU() * (1 - t) +
-                      vertex_b.GetUVCoordinate().GetCoordinateU() * t),
-                     (vertex_a.GetUVCoordinate().GetCoordinateV() * (1 - t) +
-                      vertex_b.GetUVCoordinate().GetCoordinateV() * t)) {
+      uv_coordinate_(vertex_a.GetUVCoordinate() * (1 - t) +
+                     vertex_b.GetUVCoordinate() * t) {
   assert(t >= 0 && t <= 1);
 }
 

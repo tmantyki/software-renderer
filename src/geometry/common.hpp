@@ -39,6 +39,7 @@ class Triangle;
 typedef std::array<Point, 2> TrianglePlaneIntersections;
 typedef std::shared_ptr<Space> SpaceSharedPointer;
 typedef std::shared_ptr<Triangle> TriangleSharedPointer;
+typedef Eigen::Vector2f Vector2;
 typedef Eigen::Vector3f Vector3;
 typedef Eigen::Vector4f Vector4;
 typedef Eigen::Matrix4f Matrix4;
