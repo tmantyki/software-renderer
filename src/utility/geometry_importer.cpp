@@ -17,8 +17,6 @@ void RearrangeIndicesByWindingDirection(size_t* indices) noexcept {
     indices[1] = indices[2];
     indices[2] = tmp;
   }
-  for (size_t i = 0; i < kVerticesPerTriangle; i++)
-    indices[i]--;
 }
 }  // namespace
 
@@ -152,10 +150,10 @@ void ObjGeometryImporter::ParseFace(std::stringstream& face_params) {
   std::array<Vertex, kVerticesPerTriangle> uv_vertices;
   for (size_t i = 0; i < kVerticesPerTriangle; i++) {
     if (uv_indices[i])
-      uv_vertices[i] =
-          Vertex(vertices_[vertex_indices[i]], uv_coordinates_[uv_indices[i]]);
+      uv_vertices[i] = Vertex(vertices_[vertex_indices[i] - 1],
+                              uv_coordinates_[uv_indices[i] - 1]);
     else
-      uv_vertices[i] = vertices_[vertex_indices[i]];
+      uv_vertices[i] = vertices_[vertex_indices[i] - 1];
   }
   TriangleSharedPointer triangle = std::make_shared<Triangle>(
       uv_vertices[0], uv_vertices[1], uv_vertices[2]);

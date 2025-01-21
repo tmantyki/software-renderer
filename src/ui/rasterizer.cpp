@@ -321,33 +321,17 @@ void TexturedRasterizer::RasterizeTriangleHalf(
       break;
   }
 }
-#include <algorithm>
 void TexturedRasterizer::WritePixel(const ScanlineParameters& sp,
                                     uint8_t* pixels,
                                     int pitch,
                                     const Vector2& uv) noexcept {
-  // uint16_t u =
-  //     static_cast<uint32_t>(texture_.GetWidth() * uv[kU]) %
-  //     texture_.GetWidth();
-  // uint16_t v = static_cast<uint32_t>(texture_.GetHeight() * uv[kV]) %
-  //              texture_.GetHeight();
-
   uint16_t u = static_cast<uint16_t>(uv[kU] * (texture_.GetWidth() - 1)) %
                texture_.GetWidth();
   uint16_t v = static_cast<uint16_t>(uv[kV] * (texture_.GetHeight() - 1)) %
                texture_.GetHeight();
-
-  // std::cout << "v: " << v << ",   height: " << texture_.GetHeight() << "\n";
   assert(u < texture_.GetWidth());
   assert(v < texture_.GetHeight());
-
   int texture_pitch = texture_.GetSurface()->pitch;
-  // uint32_t* texture_pixel = reinterpret_cast<uint32_t*>(
-  //     static_cast<uint8_t*>(texture_.GetSurface()->pixels) + v *
-  //     texture_pitch + u * kBytesPerPixel);
-  // uint32_t* target_pixel = reinterpret_cast<uint32_t*>(
-  //     pixels + sp.scan_y * pitch + sp.scan_x * kBytesPerPixel);
-
   uint32_t texture_offset = v * texture_pitch + u * kBytesPerPixel;
   uint32_t* texture_pixel = reinterpret_cast<uint32_t*>(
       static_cast<uint8_t*>(texture_.GetSurface()->pixels) + texture_offset);
