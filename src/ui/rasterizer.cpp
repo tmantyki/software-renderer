@@ -80,8 +80,10 @@ void SetScanlineIncrementY(ScanlineParameters& sp,
 }
 
 float TrueZ(float reciprocal_z) noexcept {
-  constexpr float A = 20 / 9.0;
-  constexpr float B = 11 / 9.0;
+  constexpr float A = 2 * kNearPlaneDistance * kFarPlaneDistance /
+                      (kFarPlaneDistance - kNearPlaneDistance);
+  constexpr float B = (kFarPlaneDistance + kNearPlaneDistance) /
+                      (kFarPlaneDistance - kNearPlaneDistance);
   return A / (reciprocal_z - B);
 }
 }  // namespace
@@ -306,8 +308,9 @@ void TexturedRasterizer::RasterizeTriangleHalf(
       assert(sp.scan_x < kWindowWidth);
       ::CalculateInterpolationParametersForX(ip, sp);
 
-      Vector2 final_uv = (top_low_uv / ::TrueZ(ip.top_low_z)) * (1 - ip.horizontal_t) +
-                         (top_mid_uv / ::TrueZ(ip.top_mid_z)) * (ip.horizontal_t);
+      Vector2 final_uv =
+          (top_low_uv / ::TrueZ(ip.top_low_z)) * (1 - ip.horizontal_t) +
+          (top_mid_uv / ::TrueZ(ip.top_mid_z)) * (ip.horizontal_t);
       final_uv *= ::TrueZ(ip.final_z);
 
       if (ZBufferCheckAndReplace(ip.final_z,
@@ -327,8 +330,9 @@ void TexturedRasterizer::WritePixel(const ScanlineParameters& sp,
                                     const Vector2& uv) noexcept {
   uint16_t u = static_cast<uint16_t>(uv[kU] * (texture_.GetWidth() - 1)) %
                texture_.GetWidth();
-  uint16_t v = static_cast<uint16_t>(uv[kV] * (texture_.GetHeight() - 1)) %
-               texture_.GetHeight();
+  uint16_t v =
+      static_cast<uint16_t>((1 - uv[kV]) * (texture_.GetHeight() - 1)) %
+      texture_.GetHeight();
   assert(u < texture_.GetWidth());
   assert(v < texture_.GetHeight());
   int texture_pitch = texture_.GetSurface()->pitch;
