@@ -11,13 +11,15 @@ Vertex::Vertex(Vector4 vector) : Point(vector) {}
 
 Vertex::Vertex(Point& point) : Point(point) {}
 
-// #TODO: apply sorting logic?
-Vertex::Vertex(const Vertex& vertex_a, const Vertex& vertex_b, float t) noexcept
-    : Point((vertex_a.vector_ * (1 - t) + vertex_b.vector_ * t).eval()),
-      uv_coordinate_(vertex_a.GetUVCoordinate() * (1 - t) +
-                     vertex_b.GetUVCoordinate() * t) {
-  assert(t >= 0 && t <= 1);
+Vertex::Vertex(const InterpolatedVertex& iv) noexcept
+    : Point(Vector4(iv.vectors[0] * (1 - iv.t) + iv.vectors[1] * iv.t)),
+      uv_coordinate_(iv.uv[0] * (1 - iv.t) + iv.uv[1] * iv.t) {
+  assert(iv.t >= 0 && iv.t <= 1);
 }
+
+Vertex::Vertex(const Vector4& vector,
+               const UVCoordinate& uv_coordinate) noexcept
+    : Point(vector), uv_coordinate_(uv_coordinate) {}
 
 Vertex::Vertex(const Vertex& vertex, const UVCoordinate& uv_coordinate) noexcept
     : Point(vertex), uv_coordinate_(uv_coordinate) {}

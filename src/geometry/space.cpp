@@ -43,29 +43,38 @@ void AddSubstituteTriangles(const VertexMatrix& vertices,
                             const NormalMatrix& normals,
                             const Triangle& triangle,
                             size_t triangle_index,
-                            size_t single_vertex_index,
+                            size_t ref_vertex_index,
                             TriangleClipMode clip_mode,
-                            TrianglePlaneIntersections& intersections,
+                            const InterpolatedVertex& iv_ab,
+                            const InterpolatedVertex& iv_ac,
                             std::vector<TriangleSharedPointer>& substitutes) {
   size_t column;
   (void)normals;  // #TODO: finish normal implementation!!
   Direction normal(triangle.GetNormal());
-  Vertex vertex_ab(intersections[TriangleEdge::kAB]);
-  Vertex vertex_ac(intersections[TriangleEdge::kAC]);
+  Vertex vertex_ab(iv_ab);
+  Vertex vertex_ac(iv_ac);
   if (clip_mode == TriangleClipMode::kIncludeReference) {
-    column = triangle_index * 3 + single_vertex_index;
-    Vertex vertex_0 = Vertex(Vector4(vertices.col(column)));
+    column = triangle_index * kVerticesPerTriangle + ref_vertex_index;
+    Vertex vertex_1 =
+        Vertex(Vector4(vertices.col(column)),
+               triangle.GetVertex(ref_vertex_index).GetUVCoordinate());
     substitutes.push_back(
-        std::make_shared<Triangle>(vertex_0, vertex_ab, vertex_ac, normal));
+        std::make_shared<Triangle>(vertex_1, vertex_ab, vertex_ac, normal));
   } else if (clip_mode == TriangleClipMode::kExcludeReference) {
-    column = triangle_index * 3 + ((single_vertex_index + 1) % 3);
-    Vertex vertex_1 = Vertex(Vector4(vertices.col(column)));
-    column = triangle_index * 3 + ((single_vertex_index + 2) % 3);
-    Vertex vertex_2 = Vertex(Vector4(vertices.col(column)));
+    column = triangle_index * kVerticesPerTriangle +
+             ((ref_vertex_index + 1) % kVerticesPerTriangle);
+    Vertex vertex_2 = Vertex(
+        Vector4(vertices.col(column)),
+        triangle.GetVertex(column % kVerticesPerTriangle).GetUVCoordinate());
+    column = triangle_index * kVerticesPerTriangle +
+             ((ref_vertex_index + 2) % kVerticesPerTriangle);
+    Vertex vertex_3 = Vertex(
+        Vector4(vertices.col(column)),
+        triangle.GetVertex(column % kVerticesPerTriangle).GetUVCoordinate());
     substitutes.push_back(
-        std::make_shared<Triangle>(vertex_ab, vertex_1, vertex_ac, normal));
+        std::make_shared<Triangle>(vertex_ab, vertex_2, vertex_ac, normal));
     substitutes.push_back(
-        std::make_shared<Triangle>(vertex_ac, vertex_1, vertex_2, normal));
+        std::make_shared<Triangle>(vertex_ac, vertex_2, vertex_3, normal));
   }
 }
 
@@ -77,7 +86,7 @@ float HomogeneousInterpolation(Vector4 vector_a,
   float b_val = vector_b[axis];
   float a_w = axis_direction * vector_a[kW];
   float b_w = axis_direction * vector_b[kW];
-  assert(a_val - a_w - b_val + b_w != 0); // #TODO: investigate
+  assert(a_val - a_w - b_val + b_w != 0);  // #TODO: investigate
   return (a_val - a_w) / (a_val - a_w - b_val + b_w);
 }
 
@@ -145,13 +154,14 @@ std::vector<TriangleSharedPointer> Space::GetHomogeneousClipSubstitutes(
     Axis axis,
     AxisDirection axis_direction,
     TriangleClipMode clip_mode) const {
-  TrianglePlaneIntersections intersections = GetTrianglePlaneIntersections(
-      triangle_index, single_vertex_index, axis, axis_direction);
+  InterpolatedVertex iv_ab, iv_ac;
+  GetInterpolatedVertices(triangle_index, single_vertex_index, axis,
+                          axis_direction, iv_ab, iv_ac);
   std::vector<TriangleSharedPointer> substitutes;
   // #TODO: vertex attributes
   ::AddSubstituteTriangles(vertices_, normals_, *triangles_[triangle_index],
                            triangle_index, single_vertex_index, clip_mode,
-                           intersections, substitutes);
+                           iv_ab, iv_ac, substitutes);
   return substitutes;
 }
 
@@ -280,33 +290,40 @@ void Space::ProcessHomogeneousClippingMask(const ClippingMask& clipping_mask,
 }
 
 // #TODO: refactor!
-TrianglePlaneIntersections Space::GetTrianglePlaneIntersections(
-    size_t triangle_index,
-    size_t single_vertex_index,
-    Axis axis,
-    AxisDirection axis_direction) const {
-  size_t a = single_vertex_index + triangle_index * 3;
-  size_t b = (a + 1) % 3 + triangle_index * 3;
-  size_t c = (a + 2) % 3 + triangle_index * 3;
+void Space::GetInterpolatedVertices(size_t triangle_index,
+                                    size_t single_vertex_index,
+                                    Axis axis,
+                                    AxisDirection axis_direction,
+                                    InterpolatedVertex& iv_ab,
+                                    InterpolatedVertex& iv_ac) const {
+  size_t a, b, c, sorted_a, sorted_b, sorted_c;
+  a = single_vertex_index + triangle_index * kVerticesPerTriangle;
+  b = (a + 1) % kVerticesPerTriangle + triangle_index * kVerticesPerTriangle;
+  c = (a + 2) % kVerticesPerTriangle + triangle_index * kVerticesPerTriangle;
   Vector4 vector_a = vertices_.block(0, a, kDimensions, 1);
   Vector4 vector_b = vertices_.block(0, b, kDimensions, 1);
   Vector4 vector_c = vertices_.block(0, c, kDimensions, 1);
-  float ab_t = ::HomogeneousInterpolation(
-      std::min({vector_a, vector_b}, ::SortClipVertices),
-      std::max({vector_a, vector_b}, ::SortClipVertices), axis, axis_direction);
-  float ac_t = ::HomogeneousInterpolation(
-      std::min({vector_a, vector_c}, ::SortClipVertices),
-      std::max({vector_a, vector_c}, ::SortClipVertices), axis, axis_direction);
-  Vector4 interpolated_ab =
-      std::min({vector_a, vector_b}, ::SortClipVertices) * (1 - ab_t) +
-      std::max({vector_a, vector_b}, ::SortClipVertices) * ab_t;
-  Vector4 interpolated_ac =
-      std::min({vector_a, vector_c}, ::SortClipVertices) * (1 - ac_t) +
-      std::max({vector_a, vector_c}, ::SortClipVertices) * ac_t;
-
-  Point point_interpolated_ab(interpolated_ab);
-  Point point_interpolated_ac(interpolated_ac);
-  return std::array<Point, 2>{point_interpolated_ab, point_interpolated_ac};
+  iv_ab.vectors = {vector_a, vector_b};
+  iv_ac.vectors = {vector_a, vector_c};
+  std::sort(iv_ab.vectors.begin(), iv_ab.vectors.end(), ::SortClipVertices);
+  std::sort(iv_ac.vectors.begin(), iv_ac.vectors.end(), ::SortClipVertices);
+  TriangleSharedPointer triangle = triangles_[triangle_index];
+  iv_ab.t = ::HomogeneousInterpolation(iv_ab.vectors[0], iv_ab.vectors[1], axis,
+                                       axis_direction);
+  iv_ac.t = ::HomogeneousInterpolation(iv_ac.vectors[0], iv_ac.vectors[1], axis,
+                                       axis_direction);
+  sorted_a = vector_a == iv_ab.vectors[0] ? a % kVerticesPerTriangle
+                                          : b % kVerticesPerTriangle;
+  sorted_b = vector_a == iv_ab.vectors[0] ? b % kVerticesPerTriangle
+                                          : a % kVerticesPerTriangle;
+  iv_ab.uv[0] = triangle->GetVertex(sorted_a).GetUVCoordinate();
+  iv_ab.uv[1] = triangle->GetVertex(sorted_b).GetUVCoordinate();
+  sorted_a = vector_a == iv_ac.vectors[0] ? a % kVerticesPerTriangle
+                                          : c % kVerticesPerTriangle;
+  sorted_c = vector_a == iv_ac.vectors[0] ? c % kVerticesPerTriangle
+                                          : a % kVerticesPerTriangle;
+  iv_ac.uv[0] = triangle->GetVertex(sorted_a).GetUVCoordinate();
+  iv_ac.uv[1] = triangle->GetVertex(sorted_c).GetUVCoordinate();
 }
 
 void Space::Dehomogenize() {
