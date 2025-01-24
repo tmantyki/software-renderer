@@ -3,10 +3,6 @@
 #include "ui/rasterizer.hpp"
 
 namespace {
-void SetColor(SDL_Renderer* renderer, const SDL_Color color) noexcept {
-  SDL_SetRenderDrawColor(renderer, color.r, color.b, color.g, 0xff);
-}
-
 size_t GetBoundaryVertexIndexByDimension(size_t a_index,
                                          size_t b_index,
                                          size_t c_index,
@@ -91,13 +87,8 @@ float TrueZ(float reciprocal_z) noexcept {
 void WireframeRasterizer::RasterizeGameState(
     const GameState& game_state,
     UserInterface& user_interface) noexcept {
-  SDL_Color kBackgroundColor = {0x40, 0x40, 0x40, 0xff};
-  SDL_Color kForegroundColor = {0xff, 0xff, 0xff, 0xff};
   const Space& space = game_state.GetOutputSpace();
-  SDL_Renderer* renderer = user_interface.GetSdlRenderer();
-  ::SetColor(renderer, kBackgroundColor);
-  SDL_RenderClear(renderer);
-  ::SetColor(renderer, kForegroundColor);
+  user_interface.ClearWithBackgroundColor();
   for (size_t t = 0; t < space.GetTriangleCount(); t++) {
     for (size_t a : {0, 1, 2}) {
       size_t b = (a + 1) % 3;
@@ -105,10 +96,9 @@ void WireframeRasterizer::RasterizeGameState(
       uint16_t a_y = space.GetVertices()(kY, t * kVerticesPerTriangle + a);
       uint16_t b_x = space.GetVertices()(kX, t * kVerticesPerTriangle + b);
       uint16_t b_y = space.GetVertices()(kY, t * kVerticesPerTriangle + b);
-      SDL_RenderDrawLine(renderer, a_x, a_y, b_x, b_y);
+      user_interface.DrawLine(a_x, a_y, b_x, b_y);
     }
   }
-  SDL_RenderPresent(renderer);
 }
 
 ScanlineRasterizer::ScanlineRasterizer() noexcept {}
@@ -117,11 +107,9 @@ void ScanlineRasterizer::RasterizeGameState(
     const GameState& game_state,
     UserInterface& user_interface) noexcept {
   const Space& space = game_state.GetOutputSpace();
-  SDL_Renderer* renderer = user_interface.GetSdlRenderer();
-  SDL_Texture* texture = user_interface.GetSdlTexture();
 
   ResetZBuffer();
-  SDL_LockTexture(texture, NULL, reinterpret_cast<void**>(&pixels_), &pitch_);
+  user_interface.StartFrameRasterization(&pixels_, &pitch_);
   ClearRenderer();
 
   for (size_t t = 0; t < space.GetTriangleCount(); t++) {
@@ -144,8 +132,7 @@ void ScanlineRasterizer::RasterizeGameState(
     // Scanlines for bottom section
     RasterizeTriangleHalf(pc, vi, triangle, TriangleHalf::kLower, color_value);
   }
-  SDL_RenderCopy(renderer, texture, NULL, NULL);
-  SDL_UnlockTexture(texture);
+  user_interface.EndFrameRasterization();
 }
 
 void ScanlineRasterizer::ResetZBuffer() noexcept {
@@ -263,7 +250,7 @@ FlatRasterizer::FlatRasterizer(Direction light_direction) noexcept
     : light_direction_(light_direction) {}
 
 TexturedRasterizer::TexturedRasterizer() noexcept
-    : texture_("assets/images/nova.png") {}
+    : texture_("assets/blender/porcelain.png") {}
 
 void TexturedRasterizer::RasterizeTriangleHalf(
     PixelCoordinates& pc,
