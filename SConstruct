@@ -1,5 +1,6 @@
 env = Environment()
-env["CXX"] = "clang++"
+# env["CXX"] = "clang++" #TODO: add build param for compiler selection
+env["CXX"] = "g++"
 env["CXXFLAGS"] = [
     "-std=c++17",
     "-Wall",
@@ -63,15 +64,20 @@ env_debug.AppendUnique(
 env_debug.AppendUnique(
     LINKFLAGS=[
         # "-fsanitize=address,undefined",
+        "-flto=auto",
     ]
 )
 env_release = env.Clone()
 env_release.AppendUnique(
     CXXFLAGS=[
-        "-O2",
+        "-O3",
+        "-g",
+        "-flto=auto",
     ]
 )
-env_release["CPPDEFINES"] = ["NDEBUG"]
+env_release["CPPDEFINES"] = [
+    "NDEBUG",
+]
 
 VariantDir("build/Debug/src", "src", duplicate=0)
 debug_application_sources = ["build/Debug/src/" + s for s in application_sources]

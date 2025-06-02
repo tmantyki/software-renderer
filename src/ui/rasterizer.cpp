@@ -1,5 +1,6 @@
 #include <SDL2/SDL.h>
 
+#include <algorithm>
 #include "ui/rasterizer.hpp"
 
 namespace {
@@ -136,8 +137,7 @@ void ScanlineRasterizer::RasterizeGameState(
 }
 
 void ScanlineRasterizer::ResetZBuffer() noexcept {
-  for (uint32_t i = 0; i < kWindowWidth * kWindowHeight; i++)
-    z_buffer_[i] = 1;
+  std::fill(z_buffer_.begin(), z_buffer_.end(), 1);
 }
 
 void ScanlineRasterizer::ClearRenderer() noexcept {
@@ -252,7 +252,7 @@ FlatRasterizer::FlatRasterizer(Direction light_direction) noexcept
 TexturedRasterizer::TexturedRasterizer() noexcept
     : texture_("assets/blender/porcelain.png") {}
 
-void TexturedRasterizer::RasterizeTriangleHalf(
+inline void TexturedRasterizer::RasterizeTriangleHalf(
     PixelCoordinates& pc,
     OrderedVertexIndices& vi,
     const TriangleSharedPointer& triangle,
@@ -311,10 +311,10 @@ void TexturedRasterizer::RasterizeTriangleHalf(
       break;
   }
 }
-void TexturedRasterizer::WritePixel(const ScanlineParameters& sp,
-                                    uint8_t* pixels,
-                                    int pitch,
-                                    const Vector2& uv) noexcept {
+inline void TexturedRasterizer::WritePixel(const ScanlineParameters& sp,
+                                           uint8_t* pixels,
+                                           int pitch,
+                                           const Vector2& uv) noexcept {
   uint16_t u = static_cast<uint16_t>(uv[kU] * (texture_.GetWidth() - 1)) %
                texture_.GetWidth();
   uint16_t v =

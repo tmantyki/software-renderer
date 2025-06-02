@@ -14,8 +14,8 @@ int main(int argc, char** argv) {
     if (!std::strcmp(argv[1], "--maxticks"))
       std::sscanf(argv[2], "%d", &max_ticks);
 
-  // UserInterface user_interface;
-  BenchmarkInterface user_interface;
+  UserInterface user_interface;
+  // BenchmarkInterface user_interface;
   Controller controller;
   GameState game_state;
   WireframeRasterizer wirefreame_rasterizer;

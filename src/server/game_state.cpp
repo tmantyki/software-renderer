@@ -8,7 +8,7 @@ GameState::GameState()
       pipeline_(camera_transform_, perspective_, viewport_),
       tick_counter_(0) {
   ObjGeometryImporter obj_importer(world_space_);
-  obj_importer.ImportGeometryFromFile("assets/scenes/teapot.obj");
+  obj_importer.ImportGeometryFromFile("assets/scenes/uv_teapot.obj");
 }
 
 void GameState::ProcessTick() noexcept {
