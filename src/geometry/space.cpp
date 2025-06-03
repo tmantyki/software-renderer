@@ -104,23 +104,6 @@ bool SortClipVertices(const Vector4& lhs, const Vector4& rhs) noexcept {
 }
 }  // namespace
 
-Space::Space() : triangles_{0} {}
-
-void Space::EnqueueAddTriangle(TriangleSharedPointer triangle_ptr) {
-  triangle_add_queue_.push(triangle_ptr);
-}
-
-void Space::EnqueueAddMultipleTriangles(
-    std::vector<TriangleSharedPointer> triangles) {
-  for (TriangleSharedPointer tr : triangles)
-    triangle_add_queue_.push(tr);
-}
-
-void Space::EnqueueRemoveTriangle(size_t index) {
-  assert(index < kMaxTriangles);
-  triangle_remove_queue_.push(index);
-}
-
 void Space::UpdateSpace() {
   struct UpdateSpaceParameters update_parameters;
   InitializeUpdateSpaceParameters(update_parameters);
@@ -129,23 +112,6 @@ void Space::UpdateSpace() {
   ResizeVectorAndMatrices(update_parameters);
   AddRemainingInQueue(update_parameters);
   triangle_count_ = update_parameters.final_triangle_count;
-}
-
-size_t Space::GetTriangleCount() const {
-  return triangle_count_;
-}
-
-const std::array<TriangleSharedPointer, kMaxTriangles>& Space::GetTriangles()
-    const {
-  return triangles_;
-}
-
-const VertexMatrix& Space::GetVertices() const {
-  return vertices_;
-}
-
-const NormalMatrix& Space::GetNormals() const {
-  return normals_;
 }
 
 std::vector<TriangleSharedPointer> Space::GetHomogeneousClipSubstitutes(
@@ -169,14 +135,6 @@ void Space::ClipAllTriangles(Axis axis, AxisDirection axis_direction) {
   ClippingMask clipping_mask = HomogeneousClippingMask(axis, axis_direction);
   ProcessHomogeneousClippingMask(clipping_mask, axis, axis_direction);
   UpdateSpace();
-}
-
-void Space::TransformVertices(const Matrix4& transformation) {
-  vertices_ = transformation * vertices_;
-}
-
-void Space::TransformNormals(const Matrix4& transformation) {
-  normals_ = transformation * normals_;
 }
 
 void Space::InitializeUpdateSpaceParameters(
@@ -324,8 +282,4 @@ void Space::GetInterpolatedVertices(size_t triangle_index,
                                           : a % kVerticesPerTriangle;
   iv_ac.uv[0] = triangle->GetVertex(sorted_a).GetUVCoordinate();
   iv_ac.uv[1] = triangle->GetVertex(sorted_c).GetUVCoordinate();
-}
-
-void Space::Dehomogenize() {
-  vertices_ = (vertices_.array().rowwise() / vertices_.row(3).array()).matrix();
 }

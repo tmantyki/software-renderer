@@ -1,21 +1,32 @@
-#ifndef CONTROLLER_HPP
-#define CONTROLLER_HPP
+#pragma once
 
-#include "geometry/camera.hpp"
 #include "geometry/common.hpp"
 
 class Controller {
  public:
-  Controller();
-  void UpdateState();
-  bool CheckQuitRequest() const;
-  bool ConsumeToggleRasterizerRequest() noexcept;
-  AxisDirection GetX() const noexcept;
-  AxisDirection GetY() const noexcept;
-  AxisDirection GetZ() const noexcept;
-  AxisDirection GetPitch() const noexcept;
-  AxisDirection GetYaw() const noexcept;
-  AxisDirection GetRoll() const noexcept;
+  Controller() noexcept
+      : x_(AxisDirection::kNeutral),
+        y_(AxisDirection::kNeutral),
+        z_(AxisDirection::kNeutral),
+        pitch_(AxisDirection::kNeutral),
+        yaw_(AxisDirection::kNeutral),
+        roll_(AxisDirection::kNeutral),
+        quit_request_(false) {}
+  void UpdateState() noexcept;
+  bool CheckQuitRequest() const noexcept { return quit_request_; }
+  bool ConsumeRasterizerToggleRequest() noexcept {
+    if (swap_rasterizer_) {
+      swap_rasterizer_ = false;
+      return true;
+    }
+    return false;
+  }
+  AxisDirection GetX() const noexcept { return x_; }
+  AxisDirection GetY() const noexcept { return y_; }
+  AxisDirection GetZ() const noexcept { return z_; }
+  AxisDirection GetPitch() const noexcept { return pitch_; }
+  AxisDirection GetYaw() const noexcept { return yaw_; }
+  AxisDirection GetRoll() const noexcept { return roll_; }
 
  private:
   AxisDirection x_;
@@ -27,5 +38,3 @@ class Controller {
   bool quit_request_;
   bool swap_rasterizer_;
 };
-
-#endif

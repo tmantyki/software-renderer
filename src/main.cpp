@@ -31,7 +31,7 @@ int main(int argc, char** argv) {
       std::cout << "Ticks: " << game_state.GetTick() << "\n";
       break;
     }
-    if (controller.ConsumeToggleRasterizerRequest()) {
+    if (controller.ConsumeRasterizerToggleRequest()) {
       SDL_Delay(100);
       if (active_rasterizer == &rasterizer)
         active_rasterizer = &wirefreame_rasterizer;

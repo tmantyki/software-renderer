@@ -35,11 +35,3 @@ void GameState::UpdatePlayerState(const Controller& controller) noexcept {
   camera.SetRoll(camera.GetRoll() + roll * kAngularIncrement);
   camera_transform_.UpdateTransform();
 }
-
-const Space& GameState::GetOutputSpace() const noexcept {
-  return pipeline_.GetOutputSpace();
-}
-
-uint64_t GameState::GetTick() const noexcept {
-  return tick_counter_;
-}

@@ -1,6 +1,7 @@
 #include <SDL2/SDL.h>
 
 #include <algorithm>
+#include "geometry/common.hpp"
 #include "ui/rasterizer.hpp"
 
 namespace {
@@ -90,19 +91,18 @@ void WireframeRasterizer::RasterizeGameState(
     UserInterface& user_interface) noexcept {
   const Space& space = game_state.GetOutputSpace();
   user_interface.ClearWithBackgroundColor();
+  const VertexMatrix& vertices = space.GetVertices();
   for (size_t t = 0; t < space.GetTriangleCount(); t++) {
     for (size_t a : {0, 1, 2}) {
       size_t b = (a + 1) % 3;
-      uint16_t a_x = space.GetVertices()(kX, t * kVerticesPerTriangle + a);
-      uint16_t a_y = space.GetVertices()(kY, t * kVerticesPerTriangle + a);
-      uint16_t b_x = space.GetVertices()(kX, t * kVerticesPerTriangle + b);
-      uint16_t b_y = space.GetVertices()(kY, t * kVerticesPerTriangle + b);
+      uint16_t a_x = vertices(kX, t * kVerticesPerTriangle + a);
+      uint16_t a_y = vertices(kY, t * kVerticesPerTriangle + a);
+      uint16_t b_x = vertices(kX, t * kVerticesPerTriangle + b);
+      uint16_t b_y = vertices(kY, t * kVerticesPerTriangle + b);
       user_interface.DrawLine(a_x, a_y, b_x, b_y);
     }
   }
 }
-
-ScanlineRasterizer::ScanlineRasterizer() noexcept {}
 
 void ScanlineRasterizer::RasterizeGameState(
     const GameState& game_state,
@@ -136,10 +136,6 @@ void ScanlineRasterizer::RasterizeGameState(
   user_interface.EndFrameRasterization();
 }
 
-void ScanlineRasterizer::ResetZBuffer() noexcept {
-  std::fill(z_buffer_.begin(), z_buffer_.end(), 1);
-}
-
 void ScanlineRasterizer::ClearRenderer() noexcept {
   uint8_t* pixels = pixels_;
   int pitch = pitch_;
@@ -149,16 +145,6 @@ void ScanlineRasterizer::ClearRenderer() noexcept {
          x += kBytesPerPixel) {
       *reinterpret_cast<uint32_t*>(pixels + y * pitch + x) = pixel_value;
     }
-}
-
-bool ScanlineRasterizer::ZBufferCheckAndReplace(
-    float new_value,
-    uint32_t z_buffer_index) noexcept {
-  if (new_value - 0.001 < z_buffer_[z_buffer_index]) {
-    z_buffer_[z_buffer_index] = new_value;
-    return true;
-  } else
-    return false;
 }
 
 void ScanlineRasterizer::SetSortedVertexIndices(
@@ -184,15 +170,16 @@ void ScanlineRasterizer::SetPixelCoordinates(
     PixelCoordinates& pc,
     const OrderedVertexIndices& vertex_indices,
     const Space& space) const noexcept {
-  pc.top_x = space.GetVertices()(kX, vertex_indices.top);
-  pc.top_y = space.GetVertices()(kY, vertex_indices.top);
-  pc.top_z = space.GetVertices()(kZ, vertex_indices.top);
-  pc.mid_x = space.GetVertices()(kX, vertex_indices.mid);
-  pc.mid_y = space.GetVertices()(kY, vertex_indices.mid);
-  pc.mid_z = space.GetVertices()(kZ, vertex_indices.mid);
-  pc.low_x = space.GetVertices()(kX, vertex_indices.low);
-  pc.low_y = space.GetVertices()(kY, vertex_indices.low);
-  pc.low_z = space.GetVertices()(kZ, vertex_indices.low);
+  const VertexMatrix& vertices = space.GetVertices();
+  pc.top_x = vertices(kX, vertex_indices.top);
+  pc.top_y = vertices(kY, vertex_indices.top);
+  pc.top_z = vertices(kZ, vertex_indices.top);
+  pc.mid_x = vertices(kX, vertex_indices.mid);
+  pc.mid_y = vertices(kY, vertex_indices.mid);
+  pc.mid_z = vertices(kZ, vertex_indices.mid);
+  pc.low_x = vertices(kX, vertex_indices.low);
+  pc.low_y = vertices(kY, vertex_indices.low);
+  pc.low_z = vertices(kZ, vertex_indices.low);
 }
 
 void ScanlineRasterizer::RasterizeTriangleHalf(
@@ -243,14 +230,6 @@ void ScanlineRasterizer::WritePixel(uint8_t color_value,
   pixels[index + 2] = color_value;
   pixels[index + 3] = 0xff;
 }
-
-FlatRasterizer::FlatRasterizer() noexcept : FlatRasterizer({1, 1, 1}) {}
-
-FlatRasterizer::FlatRasterizer(Direction light_direction) noexcept
-    : light_direction_(light_direction) {}
-
-TexturedRasterizer::TexturedRasterizer() noexcept
-    : texture_("assets/blender/porcelain.png") {}
 
 inline void TexturedRasterizer::RasterizeTriangleHalf(
     PixelCoordinates& pc,

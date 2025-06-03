@@ -15,19 +15,3 @@ Texture::Texture(const std::string& image_file_path)
   }
   SDL_FreeSurface(loaded_surface);
 }
-
-Texture::~Texture() noexcept {
-  SDL_FreeSurface(surface_);
-}
-
-uint16_t Texture::GetWidth() const noexcept {
-  return surface_->w;
-}
-
-uint16_t Texture::GetHeight() const noexcept {
-  return surface_->h;
-}
-
-SDL_Surface* Texture::GetSurface() const noexcept {
-  return surface_;
-}

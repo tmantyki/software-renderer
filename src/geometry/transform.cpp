@@ -1,25 +1,6 @@
 #include "transform.hpp"
 #include <Eigen/Geometry>
 
-Transform::Transform() : matrix_(Matrix4::Zero()) {};
-
-Transform::Transform(Matrix4 matrix) : matrix_(matrix) {}
-
-Matrix4 Transform::GetMatrix() const noexcept {
-  return matrix_;
-}
-
-CameraTransform::CameraTransform() : CameraTransform(Camera()) {}
-
-CameraTransform::CameraTransform(Camera camera)
-    : Transform(Matrix4::Identity()), camera_(camera) {
-  UpdateTransform();
-}
-
-Camera& CameraTransform::GetCamera() {
-  return camera_;
-}
-
 // #TODO: use word mapping instead of transform or matrix
 // #TODO: refactor!
 bool CameraTransform::UpdateTransform() noexcept {
@@ -58,62 +39,6 @@ bool CameraTransform::UpdateTransform() noexcept {
   return true;
 }
 
-Matrix4 CameraTransform::GetMatrixInverse() const noexcept {
-  return matrix_inverse_;
-}
-
-const Camera& CameraTransform::GetCamera() const noexcept {
-  return camera_;
-}
-
-bool CameraTransform::operator==(const CameraTransform& rhs) const {
-  return this->GetCamera() == rhs.GetCamera();
-}
-
-PerspectiveProjection::PerspectiveProjection(float near,
-                                             float far,
-                                             float left,
-                                             float right,
-                                             float top,
-                                             float bottom)
-    : Transform(),
-      near_(near),
-      far_(far),
-      left_(left),
-      right_(right),
-      top_(top),
-      bottom_(bottom) {
-  assert(near >= 0 && far > 0);
-  assert(near < far);
-  assert(left < right);
-  assert(top > bottom);
-  UpdateTransform();
-}
-
-float PerspectiveProjection::GetNear() const {
-  return near_;
-}
-
-float PerspectiveProjection::GetFar() const {
-  return far_;
-}
-
-float PerspectiveProjection::GetLeft() const {
-  return left_;
-}
-
-float PerspectiveProjection::GetRight() const {
-  return right_;
-}
-
-float PerspectiveProjection::GetTop() const {
-  return top_;
-}
-
-float PerspectiveProjection::GetBottom() const {
-  return bottom_;
-}
-
 bool PerspectiveProjection::UpdateTransform() noexcept {
   matrix_(0, 0) = 2 * near_ / (right_ - left_);
   matrix_(0, 2) = (right_ + left_) / (right_ - left_);
@@ -141,33 +66,13 @@ bool PerspectiveProjection::operator==(const PerspectiveProjection& rhs) const {
   return true;
 }
 
-ViewportTransform::ViewportTransform(uint16_t width,
-                                     uint16_t height,
-                                     int16_t x_offset,
-                                     int16_t y_offset)
-    : width_(width), height_(height), x_offset_(x_offset), y_offset_(y_offset) {
-  UpdateTransform();
-}
-
-uint16_t ViewportTransform::GetWidth() const {
-  return width_;
-}
-uint16_t ViewportTransform::GetHeight() const {
-  return height_;
-}
-int16_t ViewportTransform::GetOffsetX() const {
-  return x_offset_;
-}
-int16_t ViewportTransform::GetOffsetY() const {
-  return y_offset_;
-}
-
 bool ViewportTransform::UpdateTransform() noexcept {
   matrix_ = Matrix4::Identity();
-  matrix_(0, 0) = (width_ / 2) - kViewportRoundingBias;
-  matrix_(0, 3) = (width_ / 2) + x_offset_;
-  matrix_(1, 1) = -(height_ / 2) + kViewportRoundingBias;
-  matrix_(1, 3) = (height_ / 2) + y_offset_;
+  // bit shift instead of division by 2
+  matrix_(0, 0) = (width_ >> 1) - kViewportRoundingBias;
+  matrix_(0, 3) = (width_ >> 1) + x_offset_;
+  matrix_(1, 1) = -(height_ >> 1) + kViewportRoundingBias;
+  matrix_(1, 3) = (height_ >> 1) + y_offset_;
   return true;
 }
 
@@ -181,23 +86,6 @@ bool ViewportTransform::operator==(const ViewportTransform& rhs) const {
   if (this->GetOffsetY() != rhs.GetOffsetY())
     return false;
   return true;
-}
-
-TransformPipeline::TransformPipeline(CameraTransform& camera,
-                                     PerspectiveProjection& perspective,
-                                     ViewportTransform& viewport)
-    : camera_(camera), perspective_(perspective), viewport_(viewport) {}
-
-CameraTransform& TransformPipeline::GetCameraTransform() {
-  return camera_;
-}
-
-PerspectiveProjection& TransformPipeline::GetPerspectiveProjection() {
-  return perspective_;
-}
-
-ViewportTransform& TransformPipeline::GetViewportTransform() {
-  return viewport_;
 }
 
 void TransformPipeline::RunPipeline(const Space& input_space) {
@@ -224,8 +112,4 @@ void TransformPipeline::RunPipeline(const Space& input_space) {
   }
   output_space_.Dehomogenize();
   output_space_.TransformVertices(viewport_.GetMatrix());
-}
-
-const Space& TransformPipeline::GetOutputSpace() const {
-  return output_space_;
 }

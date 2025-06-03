@@ -1,5 +1,4 @@
-#ifndef TRIANGLE_HPP
-#define TRIANGLE_HPP
+#pragma once
 
 #include <array>
 #include "common.hpp"
@@ -9,17 +8,26 @@
 
 class Triangle {
  public:
-  Triangle(Vertex vertex_1, Vertex vertex_2, Vertex vertex_3);
-  Triangle(Vertex vertex_1,
-           Vertex vertex_2,
-           Vertex vertex_3,
-           Direction normal);
-  Vertex GetVertex(size_t index) const;
-  const Vector4& GetNormal() const;
+  Triangle(Vertex vertex_1, Vertex vertex_2, Vertex vertex_3)
+      : vertices_{vertex_1, vertex_2, vertex_3},
+        normal_((vertex_2 - vertex_1).cross3(vertex_3 - vertex_1)) {
+    assert(normal_[3] == 0);
+    assert(fabs((vertex_1 - vertex_2).dot(normal_)) < kFloatTolerance);
+    assert(fabs((vertex_1 - vertex_3).dot(normal_)) < kFloatTolerance);
+  }
+  Triangle(Vertex vertex_1, Vertex vertex_2, Vertex vertex_3, Direction normal)
+      : vertices_{vertex_1, vertex_2, vertex_3}, normal_(normal.GetVector()) {}
+  // #TODO: when to handle normals as vectors versus Directions
+
+  /* #TODO: Constructing Triangle with zero area
+     -> could be dealt by setting normal to null */
+  Vertex GetVertex(size_t index) const {
+    assert(index < 3);
+    return vertices_[index];
+  }
+  const Vector4& GetNormal() const { return normal_; }
 
  private:
-  Vertex vertices_[3];
+  std::array<Vertex, kVerticesPerTriangle> vertices_;
   Vector4 normal_;
 };
-
-#endif

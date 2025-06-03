@@ -1,21 +1,30 @@
-#ifndef SPACE_HPP
-#define SPACE_HPP
+#pragma once
 
 #include <queue>
 #include "triangle.hpp"
 
 class Space {
  public:
-  Space();
-  void EnqueueAddTriangle(TriangleSharedPointer triangle_ptr);
+  Space() : triangles_{0} {}
+  void EnqueueAddTriangle(TriangleSharedPointer triangle_ptr) {
+    triangle_add_queue_.push(triangle_ptr);
+  }
   void EnqueueAddMultipleTriangles(
-      std::vector<TriangleSharedPointer> triangles);
-  void EnqueueRemoveTriangle(size_t index);
+      std::vector<TriangleSharedPointer> triangles) {
+    for (TriangleSharedPointer tr : triangles)
+      triangle_add_queue_.push(tr);
+  }
+  void EnqueueRemoveTriangle(size_t index) {
+    assert(index < kMaxTriangles);
+    triangle_remove_queue_.push(index);
+  }
   void UpdateSpace();
-  size_t GetTriangleCount() const;
-  const std::array<TriangleSharedPointer, kMaxTriangles>& GetTriangles() const;
-  const VertexMatrix& GetVertices() const;
-  const NormalMatrix& GetNormals() const;
+  size_t GetTriangleCount() const { return triangle_count_; }
+  const std::array<TriangleSharedPointer, kMaxTriangles>& GetTriangles() const {
+    return triangles_;
+  }
+  const VertexMatrix& GetVertices() const { return vertices_; }
+  const NormalMatrix& GetNormals() const { return normals_; }
   std::vector<TriangleSharedPointer> GetHomogeneousClipSubstitutes(
       size_t triangle_index,
       size_t solo_vertex,
@@ -23,9 +32,16 @@ class Space {
       AxisDirection axis_direction,
       TriangleClipMode clip_mode) const;
   void ClipAllTriangles(Axis axis, AxisDirection axis_direction);
-  void TransformVertices(const Matrix4& transformation);
-  void TransformNormals(const Matrix4& transformation);
-  void Dehomogenize();
+  void TransformVertices(const Matrix4& transformation) {
+    vertices_ = transformation * vertices_;
+  }
+  void TransformNormals(const Matrix4& transformation) {
+    normals_ = transformation * normals_;
+  }
+  void Dehomogenize() {
+    vertices_ =
+        (vertices_.array().rowwise() / vertices_.row(3).array()).matrix();
+  }
 
  private:
   std::array<TriangleSharedPointer, kMaxTriangles> triangles_;
@@ -60,5 +76,3 @@ class Space {
                                InterpolatedVertex& iv_ab,
                                InterpolatedVertex& iv_ac) const;
 };
-
-#endif

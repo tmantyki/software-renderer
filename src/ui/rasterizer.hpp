@@ -1,5 +1,4 @@
-#ifndef RASTERIZER_HPP
-#define RASTERIZER_HPP
+#pragma once
 
 #include <SDL2/SDL.h>
 
@@ -59,16 +58,24 @@ class WireframeRasterizer : public Rasterizer {
 
 class ScanlineRasterizer : public Rasterizer {
  public:
-  ScanlineRasterizer() noexcept;
+  ScanlineRasterizer() noexcept {}
   virtual void RasterizeGameState(
       const GameState& game_state,
       UserInterface& user_interface) noexcept override;
 
  protected:
-  void ResetZBuffer() noexcept;
+  void ResetZBuffer() noexcept {
+    std::fill(z_buffer_.begin(), z_buffer_.end(), 1);
+  }
   void ClearRenderer() noexcept;
   bool ZBufferCheckAndReplace(float new_value,
-                              uint32_t z_buffer_index) noexcept;
+                              uint32_t z_buffer_index) noexcept {
+    if (new_value - 0.001 < z_buffer_[z_buffer_index]) {
+      z_buffer_[z_buffer_index] = new_value;
+      return true;
+    } else
+      return false;
+  }
   std::array<float, kWindowWidth * kWindowHeight> z_buffer_;
   uint8_t* pixels_;
   int pitch_;
@@ -93,8 +100,9 @@ class ScanlineRasterizer : public Rasterizer {
 
 class FlatRasterizer : public ScanlineRasterizer {
  public:
-  FlatRasterizer() noexcept;
-  FlatRasterizer(Direction light_direction) noexcept;
+  FlatRasterizer() noexcept : FlatRasterizer({1, 1, 1}) {}
+  FlatRasterizer(Direction light_direction) noexcept
+      : light_direction_(light_direction) {}
 
  private:
   Direction light_direction_;
@@ -102,7 +110,8 @@ class FlatRasterizer : public ScanlineRasterizer {
 
 class TexturedRasterizer : public ScanlineRasterizer {
  public:
-  TexturedRasterizer() noexcept;
+  // #TODO: exception handling?
+  TexturedRasterizer() : texture_("assets/blender/porcelain.png") {}
 
  private:
   virtual void RasterizeTriangleHalf(PixelCoordinates& pc,
@@ -117,5 +126,3 @@ class TexturedRasterizer : public ScanlineRasterizer {
 
   Texture texture_;
 };
-
-#endif

@@ -1,5 +1,4 @@
-#ifndef GAME_STATE_HPP
-#define GAME_STATE_HPP
+#pragma once
 
 #include "geometry/space.hpp"
 #include "geometry/transform.hpp"
@@ -11,8 +10,10 @@ class GameState {
   GameState();
   void ProcessTick() noexcept;
   void UpdatePlayerState(const Controller& controller) noexcept;
-  const Space& GetOutputSpace() const noexcept;
-  uint64_t GetTick() const noexcept;
+  const Space& GetOutputSpace() const noexcept {
+    return pipeline_.GetOutputSpace();
+  }
+  uint64_t GetTick() const noexcept { return tick_counter_; }
 
  private:
   Player player_;
@@ -23,5 +24,3 @@ class GameState {
   Space world_space_;
   uint64_t tick_counter_;
 };
-
-#endif

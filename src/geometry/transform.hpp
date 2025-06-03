@@ -1,17 +1,15 @@
-#ifndef TRANSFORM_HPP
-#define TRANSFORM_HPP
+#pragma once
 
 #include <Eigen/Core>
 #include "camera.hpp"
 #include "common.hpp"
-#include "point.hpp"
 #include "space.hpp"
 
 class Transform {
  public:
-  Transform();
-  Transform(Matrix4 matrix);
-  Matrix4 GetMatrix() const noexcept;
+  Transform() : matrix_(Matrix4::Zero()) {}
+  Transform(Matrix4 matrix) : matrix_(matrix) {}
+  Matrix4 GetMatrix() const noexcept { return matrix_; }
   virtual bool UpdateTransform() = 0;
 
  protected:
@@ -20,13 +18,18 @@ class Transform {
 
 class CameraTransform : public Transform {
  public:
-  CameraTransform();
-  CameraTransform(Camera camera);
-  Camera& GetCamera();
+  CameraTransform() : CameraTransform(Camera()) {}
+  // reference arg instead?
+  CameraTransform(Camera camera)
+      : Transform(Matrix4::Identity()), camera_(camera) {
+    UpdateTransform();
+  }
+  Camera& GetCamera() { return camera_; }
   bool UpdateTransform() noexcept override;
-  Matrix4 GetMatrixInverse() const noexcept;
-  const Camera& GetCamera() const noexcept;
-  bool operator==(const CameraTransform& rhs) const;
+  Matrix4 GetMatrixInverse() const noexcept { return matrix_inverse_; }
+  bool operator==(const CameraTransform& rhs) const {
+    return this->camera_ == rhs.camera_;
+  }
 
  private:
   Matrix4 matrix_inverse_;
@@ -43,13 +46,26 @@ class PerspectiveProjection : public Transform {
                         float left,
                         float right,
                         float top,
-                        float bottom);
-  float GetNear() const;
-  float GetFar() const;
-  float GetLeft() const;
-  float GetRight() const;
-  float GetTop() const;
-  float GetBottom() const;
+                        float bottom)
+      : Transform(),
+        near_(near),
+        far_(far),
+        left_(left),
+        right_(right),
+        top_(top),
+        bottom_(bottom) {
+    assert(near >= 0 && far > 0);
+    assert(near < far);
+    assert(left < right);
+    assert(top > bottom);
+    UpdateTransform();
+  }
+  float GetNear() const noexcept { return near_; }
+  float GetFar() const noexcept { return far_; }
+  float GetLeft() const noexcept { return left_; }
+  float GetRight() const noexcept { return right_; }
+  float GetTop() const noexcept { return top_; }
+  float GetBottom() const noexcept { return bottom_; }
   bool UpdateTransform() noexcept override;
   bool operator==(const PerspectiveProjection& rhs) const;
 
@@ -63,11 +79,17 @@ class ViewportTransform : public Transform {
   ViewportTransform(uint16_t width,
                     uint16_t height,
                     int16_t x_offset = 0,
-                    int16_t y_offset = 0);
-  uint16_t GetWidth() const;
-  uint16_t GetHeight() const;
-  int16_t GetOffsetX() const;
-  int16_t GetOffsetY() const;
+                    int16_t y_offset = 0)
+      : width_(width),
+        height_(height),
+        x_offset_(x_offset),
+        y_offset_(y_offset) {
+    UpdateTransform();
+  }
+  uint16_t GetWidth() const noexcept { return width_; }
+  uint16_t GetHeight() const noexcept { return height_; }
+  int16_t GetOffsetX() const noexcept { return x_offset_; }
+  int16_t GetOffsetY() const noexcept { return y_offset_; }
   bool UpdateTransform() noexcept override;
   bool operator==(const ViewportTransform& rhs) const;
 
@@ -81,12 +103,13 @@ class TransformPipeline {
   TransformPipeline() = delete;
   TransformPipeline(CameraTransform& camera,
                     PerspectiveProjection& perspective,
-                    ViewportTransform& viewport);
-  CameraTransform& GetCameraTransform();
-  PerspectiveProjection& GetPerspectiveProjection();
-  ViewportTransform& GetViewportTransform();
+                    ViewportTransform& viewport)
+      : camera_(camera), perspective_(perspective), viewport_(viewport) {}
+  CameraTransform& GetCameraTransform() { return camera_; }
+  PerspectiveProjection& GetPerspectiveProjection() { return perspective_; }
+  ViewportTransform& GetViewportTransform() { return viewport_; }
   void RunPipeline(const Space& input_space);
-  const Space& GetOutputSpace() const;
+  const Space& GetOutputSpace() const { return output_space_; }
 
  private:
   CameraTransform& camera_;
@@ -94,5 +117,3 @@ class TransformPipeline {
   ViewportTransform& viewport_;
   Space output_space_;
 };
-
-#endif

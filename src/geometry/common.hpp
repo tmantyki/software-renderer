@@ -1,9 +1,7 @@
-#ifndef COMMON_HPP
-#define COMMON_HPP
+#pragma once
 
 #include <cassert>
 #include <cstddef>
-#include <iostream>
 #include <memory>
 
 #include <SDL2/SDL.h>
@@ -57,5 +55,3 @@ enum TriangleEdge { kAB = 0, kAC = 1, kBC = 2 };
 enum Axis { kX = 0, kY = 1, kZ = 2, kW = 3 };
 enum UVDimension { kU = 0, kV = 1 };
 enum AxisDirection { kNegative = -1, kNeutral = 0, kPositive = 1 };
-
-#endif

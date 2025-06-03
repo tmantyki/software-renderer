@@ -20,34 +20,6 @@ void RearrangeIndicesByWindingDirection(size_t* indices) noexcept {
 }
 }  // namespace
 
-GeometryImportException::GeometryImportException(const char* error_message)
-    : error_message_(error_message) {}
-
-const char* GeometryImportException::what() const noexcept {
-  return error_message_;
-}
-
-InvalidFileException::InvalidFileException(const char* error_message)
-    : GeometryImportException(error_message) {}
-
-UnknownCommandException::UnknownCommandException(const char* error_message)
-    : GeometryImportException(error_message) {}
-
-WorldLimitsExceededException::WorldLimitsExceededException(
-    const char* error_message)
-    : GeometryImportException(error_message) {}
-
-MalformedParametersException::MalformedParametersException(
-    const char* error_message)
-    : GeometryImportException(error_message) {}
-
-UnsupportedPrimitiveException::UnsupportedPrimitiveException(
-    const char* error_message)
-    : GeometryImportException(error_message) {}
-
-GeometryImporter::GeometryImporter(Space& space)
-    : space_(space), triangle_counter_(0), vertex_counter_(0), uv_counter_(0) {}
-
 void GeometryImporter::ImportGeometryFromFile(const char* filename) {
   std::ifstream input_file_stream;
   input_file_stream.open(filename);
@@ -58,17 +30,6 @@ void GeometryImporter::ImportGeometryFromFile(const char* filename) {
   std::cout << "Successfully read " << vertex_counter_ << " vertices and "
             << triangle_counter_ << " triangles from " << filename << ".\n";
 }
-
-size_t GeometryImporter::GetTriangleCount() const noexcept {
-  return triangle_counter_;
-}
-
-size_t GeometryImporter::GetVertexCount() const noexcept {
-  return vertex_counter_;
-}
-
-ObjGeometryImporter::ObjGeometryImporter(Space& space)
-    : GeometryImporter(space) {}
 
 void ObjGeometryImporter::ImportGeometryFromInputStream(
     std::istream& input_stream) {

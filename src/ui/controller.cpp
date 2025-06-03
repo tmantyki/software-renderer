@@ -16,16 +16,7 @@ void UpdateDirectionByKeyPair(SDL_Scancode negative_scancode,
 }
 }  // namespace
 
-Controller::Controller()
-    : x_(AxisDirection::kNeutral),
-      y_(AxisDirection::kNeutral),
-      z_(AxisDirection::kNeutral),
-      pitch_(AxisDirection::kNeutral),
-      yaw_(AxisDirection::kNeutral),
-      roll_(AxisDirection::kNeutral),
-      quit_request_(false) {}
-
-void Controller::UpdateState() {
+void Controller::UpdateState() noexcept {
   SDL_PumpEvents();
   const uint8_t* keyboard_state = SDL_GetKeyboardState(nullptr);
   UpdateDirectionByKeyPair(SDL_SCANCODE_A, SDL_SCANCODE_D, x_, keyboard_state);
@@ -40,40 +31,4 @@ void Controller::UpdateState() {
                            keyboard_state);
   quit_request_ = static_cast<bool>(keyboard_state[SDL_SCANCODE_ESCAPE]);
   swap_rasterizer_ = static_cast<bool>(keyboard_state[SDL_SCANCODE_TAB]);
-}
-
-bool Controller::CheckQuitRequest() const {
-  return quit_request_;
-}
-
-bool Controller::ConsumeToggleRasterizerRequest() noexcept {
-  if (swap_rasterizer_) {
-    swap_rasterizer_ = false;
-    return true;
-  }
-  return false;
-}
-
-AxisDirection Controller::GetX() const noexcept {
-  return x_;
-}
-
-AxisDirection Controller::GetY() const noexcept {
-  return y_;
-}
-
-AxisDirection Controller::GetZ() const noexcept {
-  return z_;
-}
-
-AxisDirection Controller::GetPitch() const noexcept {
-  return pitch_;
-}
-
-AxisDirection Controller::GetYaw() const noexcept {
-  return yaw_;
-}
-
-AxisDirection Controller::GetRoll() const noexcept {
-  return roll_;
 }
