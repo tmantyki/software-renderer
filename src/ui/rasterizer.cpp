@@ -77,6 +77,7 @@ void SetScanlineIncrementY(ScanlineParameters& sp,
   sp.scan_y_increment = triangle_half == TriangleHalf::kLower ? -1 : 1;
 }
 
+// #TODO: citation?
 float TrueZ(float reciprocal_z) noexcept {
   constexpr float A = 2 * kNearPlaneDistance * kFarPlaneDistance /
                       (kFarPlaneDistance - kNearPlaneDistance);
@@ -147,6 +148,7 @@ void ScanlineRasterizer::ClearRenderer() noexcept {
     }
 }
 
+// #TODO: refactor with simpler sorting logic
 void ScanlineRasterizer::SetSortedVertexIndices(
     OrderedVertexIndices& vertex_indices,
     const size_t triangle_index,
@@ -154,10 +156,11 @@ void ScanlineRasterizer::SetSortedVertexIndices(
   size_t a_index = triangle_index * kVerticesPerTriangle;
   size_t b_index = triangle_index * kVerticesPerTriangle + 1;
   size_t c_index = triangle_index * kVerticesPerTriangle + 2;
+  const VertexMatrix& vertices = space.GetVertices();
   vertex_indices.top = ::GetBoundaryVertexIndexByDimension(
-      a_index, b_index, c_index, kY, BoundaryType::kMin, space.GetVertices());
+      a_index, b_index, c_index, kY, BoundaryType::kMin, vertices);
   vertex_indices.low = ::GetBoundaryVertexIndexByDimension(
-      a_index, b_index, c_index, kY, BoundaryType::kMax, space.GetVertices());
+      a_index, b_index, c_index, kY, BoundaryType::kMax, vertices);
   if ((a_index != vertex_indices.top) && (a_index != vertex_indices.low))
     vertex_indices.mid = a_index;
   else if ((b_index != vertex_indices.top) && (b_index != vertex_indices.low))
@@ -166,6 +169,7 @@ void ScanlineRasterizer::SetSortedVertexIndices(
     vertex_indices.mid = c_index;
 }
 
+// #TODO refcator with arrays rather than top, mid, low etc.
 void ScanlineRasterizer::SetPixelCoordinates(
     PixelCoordinates& pc,
     const OrderedVertexIndices& vertex_indices,
@@ -231,7 +235,7 @@ void ScanlineRasterizer::WritePixel(uint8_t color_value,
   pixels[index + 3] = 0xff;
 }
 
-inline void TexturedRasterizer::RasterizeTriangleHalf(
+void TexturedRasterizer::RasterizeTriangleHalf(
     PixelCoordinates& pc,
     OrderedVertexIndices& vi,
     const TriangleSharedPointer& triangle,
@@ -242,6 +246,11 @@ inline void TexturedRasterizer::RasterizeTriangleHalf(
   int pitch = pitch_;
   InterpolationParameters ip;
   ScanlineParameters sp;
+
+  const uint16_t texture_width = texture_.GetWidth();
+  const uint16_t texture_height = texture_.GetHeight();
+  const SDL_Surface* texture_surface = texture_.GetSurface();
+  const int texture_pitch = texture_surface->pitch;
 
   if (triangle_half == TriangleHalf::kLower)
     ::SwapTopAndLow(pc, vi);
@@ -279,9 +288,11 @@ inline void TexturedRasterizer::RasterizeTriangleHalf(
           (top_mid_uv / ::TrueZ(ip.top_mid_z)) * (ip.horizontal_t);
       final_uv *= ::TrueZ(ip.final_z);
 
+      // #TODO: replace argument with incrementing
       if (ZBufferCheckAndReplace(ip.final_z,
                                  sp.scan_y * kWindowWidth + sp.scan_x)) {
-        WritePixel(sp, pixels, pitch, final_uv);
+        WritePixel(sp, pixels, pitch, texture_width, texture_height,
+                   texture_surface, texture_pitch, final_uv);
       }
       if (sp.scan_x == sp.scan_x_right)
         break;
@@ -290,21 +301,23 @@ inline void TexturedRasterizer::RasterizeTriangleHalf(
       break;
   }
 }
-inline void TexturedRasterizer::WritePixel(const ScanlineParameters& sp,
-                                           uint8_t* pixels,
-                                           int pitch,
-                                           const Vector2& uv) noexcept {
-  uint16_t u = static_cast<uint16_t>(uv[kU] * (texture_.GetWidth() - 1)) %
-               texture_.GetWidth();
-  uint16_t v =
-      static_cast<uint16_t>((1 - uv[kV]) * (texture_.GetHeight() - 1)) %
-      texture_.GetHeight();
-  assert(u < texture_.GetWidth());
-  assert(v < texture_.GetHeight());
-  int texture_pitch = texture_.GetSurface()->pitch;
+void TexturedRasterizer::WritePixel(const ScanlineParameters& sp,
+                                    uint8_t* pixels,
+                                    int pitch,
+                                    const uint16_t texture_width,
+                                    const uint16_t texture_height,
+                                    const SDL_Surface* texture_surface,
+                                    const int texture_pitch,
+                                    const Vector2& uv) noexcept {
+  uint16_t u =
+      static_cast<uint16_t>(uv[kU] * (texture_width - 1)) % texture_width;
+  uint16_t v = static_cast<uint16_t>((1 - uv[kV]) * (texture_height - 1)) %
+               texture_height;
+  assert(u < texture_width);
+  assert(v < texture_height);
   uint32_t texture_offset = v * texture_pitch + u * kBytesPerPixel;
   uint32_t* texture_pixel = reinterpret_cast<uint32_t*>(
-      static_cast<uint8_t*>(texture_.GetSurface()->pixels) + texture_offset);
+      static_cast<uint8_t*>(texture_surface->pixels) + texture_offset);
   uint32_t target_offset = sp.scan_y * pitch + sp.scan_x * kBytesPerPixel;
   uint32_t* target_pixel = reinterpret_cast<uint32_t*>(pixels + target_offset);
   *target_pixel = *texture_pixel;

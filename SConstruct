@@ -50,21 +50,19 @@ env_debug.AppendUnique(
 )
 env_debug.AppendUnique(
     LINKFLAGS=[
-        # "-fsanitize=address,undefined",
         "-flto=auto",
     ]
 )
 env_release = env.Clone()
 env_release.AppendUnique(
     CXXFLAGS=[
-        "-O3",
         "-g",
+        "-O3",
+        "-fno-rtti",
         "-flto=auto",
+        "-march=haswell",
     ]
 )
-env_release["CPPDEFINES"] = [
-    "NDEBUG",
-]
 env_release.AppendUnique(
     LINKFLAGS=[
         "-flto=auto",

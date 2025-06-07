@@ -3,6 +3,7 @@
 #include <cassert>
 #include <chrono>
 #include <string>
+#include <iostream>
 
 using namespace std::chrono;
 

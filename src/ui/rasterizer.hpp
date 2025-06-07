@@ -2,6 +2,7 @@
 
 #include <SDL2/SDL.h>
 
+#include "geometry/common.hpp"
 #include "geometry/direction.hpp"
 #include "geometry/texture.hpp"
 #include "server/game_state.hpp"
@@ -122,6 +123,10 @@ class TexturedRasterizer : public ScanlineRasterizer {
   void WritePixel(const ScanlineParameters& sp,
                   uint8_t* pixels,
                   int pitch,
+                  const uint16_t texture_width,
+                  const uint16_t texture_height,
+                  const SDL_Surface* texture_surface,
+                  const int texture_pitch,
                   const Vector2& uv) noexcept;
 
   Texture texture_;
