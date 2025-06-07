@@ -1,6 +1,7 @@
 #include <SDL2/SDL.h>
 
 #include <algorithm>
+#include <cstdint>
 #include "geometry/common.hpp"
 #include "ui/rasterizer.hpp"
 
@@ -313,10 +314,10 @@ void TexturedRasterizer::WritePixel(const ScanlineParameters& sp,
   uint16_t v = static_cast<uint16_t>((1 - uv[kV]) * (texture_height - 1));
   assert(u < texture_width);
   assert(v < texture_height);
-  uint32_t texture_offset = v * texture_pitch + u * kBytesPerPixel;
-  uint32_t* texture_pixel = reinterpret_cast<uint32_t*>(
-      static_cast<uint8_t*>(texture_surface->pixels) + texture_offset);
-  uint32_t target_offset = sp.scan_y * pitch + sp.scan_x * kBytesPerPixel;
-  uint32_t* target_pixel = reinterpret_cast<uint32_t*>(pixels + target_offset);
-  *target_pixel = *texture_pixel;
+  uint32_t* target_pixels = reinterpret_cast<uint32_t*>(pixels);
+  uint32_t* texture_pixels =
+      reinterpret_cast<uint32_t*>(texture_surface->pixels);
+  uint32_t target_offset = sp.scan_y * (pitch / kBytesPerPixel) + sp.scan_x;
+  uint32_t texture_offset = v * (texture_pitch / kBytesPerPixel) + u;
+  target_pixels[target_offset] = texture_pixels[texture_offset];
 }
