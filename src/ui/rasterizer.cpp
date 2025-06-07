@@ -309,10 +309,8 @@ void TexturedRasterizer::WritePixel(const ScanlineParameters& sp,
                                     const SDL_Surface* texture_surface,
                                     const int texture_pitch,
                                     const Vector2& uv) noexcept {
-  uint16_t u =
-      static_cast<uint16_t>(uv[kU] * (texture_width - 1)) % texture_width;
-  uint16_t v = static_cast<uint16_t>((1 - uv[kV]) * (texture_height - 1)) %
-               texture_height;
+  uint16_t u = static_cast<uint16_t>(uv[kU] * (texture_width - 1));
+  uint16_t v = static_cast<uint16_t>((1 - uv[kV]) * (texture_height - 1));
   assert(u < texture_width);
   assert(v < texture_height);
   uint32_t texture_offset = v * texture_pitch + u * kBytesPerPixel;
