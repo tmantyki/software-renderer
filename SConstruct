@@ -64,6 +64,11 @@ env_release.AppendUnique(
     ]
 )
 env_release.AppendUnique(
+    CPPDEFINES=[
+        "NDEBUG",
+    ]
+)
+env_release.AppendUnique(
     LINKFLAGS=[
         "-flto=auto",
     ]
