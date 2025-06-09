@@ -121,11 +121,10 @@ void ScanlineRasterizer::RasterizeGameState(
   for (size_t t = 0; t < space.GetTriangleCount(); t++) {
     TriangleSharedPointer triangle = space.GetTriangles()[t];
     // Triangle color
-    Direction light_direction = {1, 2, 3};
+    Direction light_direction = {1, 2, -3};
     float brightness = light_direction.GetVector().normalized().dot(
         triangle->GetNormal().normalized());
     brightness = (brightness + 1.0f) / 2.0f;
-    uint8_t color_value = brightness * 0xff;
 
     PixelCoordinates pc;
     OrderedVertexIndices vi;
@@ -134,9 +133,9 @@ void ScanlineRasterizer::RasterizeGameState(
     SetPixelCoordinates(pc, vi, space);
 
     // Scanlines for top section
-    RasterizeTriangleHalf(pc, vi, triangle, TriangleHalf::kUpper, color_value);
+    RasterizeTriangleHalf(pc, vi, triangle, TriangleHalf::kUpper, brightness);
     // Scanlines for bottom section
-    RasterizeTriangleHalf(pc, vi, triangle, TriangleHalf::kLower, color_value);
+    RasterizeTriangleHalf(pc, vi, triangle, TriangleHalf::kLower, brightness);
   }
   user_interface.EndFrameRasterization();
 }
@@ -195,12 +194,12 @@ void ScanlineRasterizer::RasterizeTriangleHalf(
     OrderedVertexIndices& vi,
     const TriangleSharedPointer& triangle,
     TriangleHalf triangle_half,
-    uint8_t color_value) noexcept {
+    float brightness) noexcept {
   (void)pc;
   (void)vi;
   (void)triangle;
   (void)triangle_half;
-  (void)color_value;
+  (void)brightness;
   // uint8_t* pixels = pixels_;
   // int pitch = pitch_;
   // InterpolationParameters ip;
@@ -248,8 +247,7 @@ void TexturedRasterizer::RasterizeTriangleHalf(
     OrderedVertexIndices& vi,
     const TriangleSharedPointer& triangle,
     TriangleHalf triangle_half,
-    uint8_t color_value) noexcept {
-  (void)color_value;
+    float brightness) noexcept {
   uint8_t* pixels = pixels_;
   int pitch = pitch_;
   InterpolationParameters ip;
@@ -311,7 +309,11 @@ void TexturedRasterizer::RasterizeTriangleHalf(
             reinterpret_cast<uint32_t*>(texture_surface->pixels);
         uint32_t target_offset = scan_y * (pitch / kBytesPerPixel) + scan_x;
         uint32_t texture_offset = v * (texture_pitch / kBytesPerPixel) + u;
-        target_pixels[target_offset] = texture_pixels[texture_offset];
+        uint32_t color = texture_pixels[texture_offset];
+        for (uint8_t i = 0; i < kBytesPerPixel; i++) {
+          reinterpret_cast<uint8_t*>(&color)[i] *= brightness;
+        }
+        target_pixels[target_offset] = color;
       }
     }
     if (scan_y == pc.mid_y)

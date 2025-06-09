@@ -89,7 +89,7 @@ class ScanlineRasterizer : public Rasterizer {
                                      OrderedVertexIndices& vi,
                                      const TriangleSharedPointer& triangle,
                                      TriangleHalf triangle_half,
-                                     uint8_t color_value) noexcept;
+                                     float brightness) noexcept;
   // void WritePixel(uint8_t color_value,
   //                 const ScanlineParameters& sp,
   //                 uint8_t* pixels,
@@ -116,7 +116,7 @@ class TexturedRasterizer : public ScanlineRasterizer {
                                      OrderedVertexIndices& vi,
                                      const TriangleSharedPointer& triangle,
                                      TriangleHalf triangle_half,
-                                     uint8_t color_value) noexcept override;
+                                     float brightness) noexcept override;
   // void WritePixel(const ScanlineParameters& sp,
   //                 uint8_t* pixels,
   //                 int pitch,
