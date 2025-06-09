@@ -36,11 +36,8 @@ typedef struct InterpolationParameters {
 } InterpolationParameters;
 
 typedef struct ScanlineParameters {
-  uint16_t scan_x;
-  uint16_t scan_y;
   uint16_t scan_x_left;
   uint16_t scan_x_right;
-  int8_t scan_x_increment;
   int8_t scan_y_increment;
 } ScanlineParameters;
 
@@ -71,7 +68,7 @@ class ScanlineRasterizer : public Rasterizer {
   void ClearRenderer() noexcept;
   bool ZBufferCheckAndReplace(float new_value,
                               uint32_t z_buffer_index) noexcept {
-    if (new_value - 0.001 < z_buffer_[z_buffer_index]) {
+    if (new_value - 0.001f < z_buffer_[z_buffer_index]) {
       z_buffer_[z_buffer_index] = new_value;
       return true;
     } else
@@ -93,10 +90,10 @@ class ScanlineRasterizer : public Rasterizer {
                                      const TriangleSharedPointer& triangle,
                                      TriangleHalf triangle_half,
                                      uint8_t color_value) noexcept;
-  void WritePixel(uint8_t color_value,
-                  const ScanlineParameters& sp,
-                  uint8_t* pixels,
-                  int pitch) noexcept;
+  // void WritePixel(uint8_t color_value,
+  //                 const ScanlineParameters& sp,
+  //                 uint8_t* pixels,
+  //                 int pitch) noexcept;
 };
 
 class FlatRasterizer : public ScanlineRasterizer {
@@ -120,14 +117,14 @@ class TexturedRasterizer : public ScanlineRasterizer {
                                      const TriangleSharedPointer& triangle,
                                      TriangleHalf triangle_half,
                                      uint8_t color_value) noexcept override;
-  void WritePixel(const ScanlineParameters& sp,
-                  uint8_t* pixels,
-                  int pitch,
-                  const uint16_t texture_width,
-                  const uint16_t texture_height,
-                  const SDL_Surface* texture_surface,
-                  const int texture_pitch,
-                  const Vector2& uv) noexcept;
+  // void WritePixel(const ScanlineParameters& sp,
+  //                 uint8_t* pixels,
+  //                 int pitch,
+  //                 const uint16_t texture_width,
+  //                 const uint16_t texture_height,
+  //                 const SDL_Surface* texture_surface,
+  //                 const int texture_pitch,
+  //                 const Vector2& uv) noexcept;
 
   Texture texture_;
 };
