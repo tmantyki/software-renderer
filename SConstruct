@@ -71,6 +71,7 @@ env_release.AppendUnique(
 env_release.AppendUnique(
     LINKFLAGS=[
         "-flto=auto",
+        "-fopt-info-vec=vectorization.log"
     ]
 )
 
