@@ -316,15 +316,6 @@ void TexturedRasterizer::RasterizeTriangleHalf(
         uint32_t target_offset = scan_y * (pitch / kBytesPerPixel) + scan_x;
         uint32_t texture_offset = v * (texture_pitch / kBytesPerPixel) + u;
 
-        // (void)pixel_buffer;
-        // (void)target_pixel_offsets;
-        // (void)counter;
-        // uint32_t color = texture_pixels[texture_offset];
-        // for (uint8_t i = 0; i < kBytesPerPixel; i++) {
-        //   reinterpret_cast<uint8_t*>(&color)[i] *= brightness;
-        // }
-        // target_pixels[target_offset] = color;
-
         pixel_buffer[counter] = texture_pixels[texture_offset];
         target_pixel_offsets[counter++] = target_offset;
         if (counter == 2) {
@@ -335,9 +326,10 @@ void TexturedRasterizer::RasterizeTriangleHalf(
           __m256 brightness_vector = _mm256_set1_ps(brightness);
           f32_values = _mm256_mul_ps(f32_values, brightness_vector);
           packed_32 = _mm256_cvtps_epi32(f32_values);
-          __m256i packed_16 = _mm256_packus_epi32(packed_32, packed_32);
-          u8_values =
-              _mm256_castsi256_si128(_mm256_packus_epi16(packed_16, packed_16));
+          __m256i mask = _mm256_setr_epi8(0, 4, 8, 16, 20, 24, 28, 32, 0, 0, 0,
+                                          0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                                          0, 0, 0, 0, 0, 0, 0, 0);
+          packed_32 = _mm256_shuffle_epi8(packed_32, mask);
           _mm_storel_epi64(reinterpret_cast<__m128i*>(pixel_buffer.data()),
                            u8_values);
 
@@ -346,7 +338,6 @@ void TexturedRasterizer::RasterizeTriangleHalf(
           }
           counter = 0;
         }
-        
       }
     }
     if (scan_y == pc.mid_y)
