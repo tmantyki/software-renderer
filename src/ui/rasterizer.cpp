@@ -15,10 +15,10 @@ size_t GetBoundaryVertexIndexByDimension(size_t a_index,
                                          enum Axis axis,
                                          BoundaryType boundary_type,
                                          const VertexMatrix& vertices) {
-  float a = vertices(axis, a_index);
-  float b = vertices(axis, b_index);
-  float c = vertices(axis, c_index);
-  float boundary_value;
+  f32 a = vertices(axis, a_index);
+  f32 b = vertices(axis, b_index);
+  f32 c = vertices(axis, c_index);
+  f32 boundary_value;
   if (boundary_type == BoundaryType::kMin)
     boundary_value = std::min({a, b, c});
   else
@@ -39,7 +39,7 @@ void SwapTopAndLow(PixelCoordinates& pc, OrderedVertexIndices& vi) noexcept {
 }
 
 void CalculateXScanlineBoundaries(ScanlineParameters& sp,
-                                  uint16_t scan_y,
+                                  u16 scan_y,
                                   const PixelCoordinates pc,
                                   bool& left_right_swapped) noexcept {
   sp.scan_x_left = (scan_y * pc.low_x - pc.top_x * scan_y -
@@ -57,9 +57,9 @@ void CalculateXScanlineBoundaries(ScanlineParameters& sp,
 }
 
 void CalculateInterpolationParametersForY(InterpolationParameters& ip,
-                                          const uint16_t scan_y,
+                                          const u16 scan_y,
                                           const PixelCoordinates& pc) noexcept {
-  float numerator = static_cast<float>(scan_y - pc.top_y);
+  f32 numerator = static_cast<f32>(scan_y - pc.top_y);
   ip.top_low_t = numerator / (pc.low_y - pc.top_y);
   ip.top_mid_t = numerator / (pc.mid_y - pc.top_y);
   ip.top_low_z = pc.top_z * (1.0f - ip.top_low_t) + pc.low_z * ip.top_low_t;
@@ -69,9 +69,9 @@ void CalculateInterpolationParametersForY(InterpolationParameters& ip,
 void CalculateInterpolationParametersForX(
     InterpolationParameters& ip,
     const ScanlineParameters& sp,
-    const uint16_t scan_x,
+    const u16 scan_x,
     const bool left_right_swapped) noexcept {
-  ip.horizontal_t = static_cast<float>(scan_x - sp.scan_x_left) /
+  ip.horizontal_t = static_cast<f32>(scan_x - sp.scan_x_left) /
                     (sp.scan_x_right - sp.scan_x_left);
   if (left_right_swapped)
     ip.horizontal_t = 1.0f - ip.horizontal_t;
@@ -85,11 +85,11 @@ void SetScanlineIncrementY(ScanlineParameters& sp,
 }
 
 // #TODO: citation?
-float TrueZ(float reciprocal_z) noexcept {
-  constexpr float A = 2.0f * kNearPlaneDistance * kFarPlaneDistance /
-                      (kFarPlaneDistance - kNearPlaneDistance);
-  constexpr float B = (kFarPlaneDistance + kNearPlaneDistance) /
-                      (kFarPlaneDistance - kNearPlaneDistance);
+f32 TrueZ(f32 reciprocal_z) noexcept {
+  constexpr f32 A = 2.0f * kNearPlaneDistance * kFarPlaneDistance /
+                    (kFarPlaneDistance - kNearPlaneDistance);
+  constexpr f32 B = (kFarPlaneDistance + kNearPlaneDistance) /
+                    (kFarPlaneDistance - kNearPlaneDistance);
   return A / (reciprocal_z - B);
 }
 }  // namespace
@@ -103,10 +103,10 @@ void WireframeRasterizer::RasterizeGameState(
   for (size_t t = 0; t < space.GetTriangleCount(); t++) {
     for (size_t a : {0, 1, 2}) {
       size_t b = (a + 1) % 3;
-      uint16_t a_x = vertices(kX, t * kVerticesPerTriangle + a);
-      uint16_t a_y = vertices(kY, t * kVerticesPerTriangle + a);
-      uint16_t b_x = vertices(kX, t * kVerticesPerTriangle + b);
-      uint16_t b_y = vertices(kY, t * kVerticesPerTriangle + b);
+      u16 a_x = vertices(kX, t * kVerticesPerTriangle + a);
+      u16 a_y = vertices(kY, t * kVerticesPerTriangle + a);
+      u16 b_x = vertices(kX, t * kVerticesPerTriangle + b);
+      u16 b_y = vertices(kY, t * kVerticesPerTriangle + b);
       user_interface.DrawLine(a_x, a_y, b_x, b_y);
     }
   }
@@ -125,7 +125,7 @@ void ScanlineRasterizer::RasterizeGameState(
     TriangleSharedPointer triangle = space.GetTriangles()[t];
     // Triangle color
     Direction light_direction = {1, 2, -3};
-    float brightness = light_direction.GetVector().normalized().dot(
+    f32 brightness = light_direction.GetVector().normalized().dot(
         triangle->GetNormal().normalized());
     brightness = (brightness + 1.0f) / 2.0f;
 
@@ -144,13 +144,12 @@ void ScanlineRasterizer::RasterizeGameState(
 }
 
 void ScanlineRasterizer::ClearRenderer() noexcept {
-  uint8_t* pixels = pixels_;
+  u8* pixels = pixels_;
   int pitch = pitch_;
-  uint32_t pixel_value = 0xff008080;
-  for (uint16_t y = 0; y < kWindowHeight; y++)
-    for (uint16_t x = 0; x < kWindowWidth * kBytesPerPixel;
-         x += kBytesPerPixel) {
-      *reinterpret_cast<uint32_t*>(pixels + y * pitch + x) = pixel_value;
+  u32 pixel_value = 0xff008080;
+  for (u16 y = 0; y < kWindowHeight; y++)
+    for (u16 x = 0; x < kWindowWidth * kBytesPerPixel; x += kBytesPerPixel) {
+      *reinterpret_cast<u32*>(pixels + y * pitch + x) = pixel_value;
     }
 }
 
@@ -197,68 +196,63 @@ void ScanlineRasterizer::RasterizeTriangleHalf(
     OrderedVertexIndices& vi,
     const TriangleSharedPointer& triangle,
     TriangleHalf triangle_half,
-    float brightness) noexcept {
+    f32 brightness) noexcept {
   (void)pc;
   (void)vi;
   (void)triangle;
   (void)triangle_half;
   (void)brightness;
-  // uint8_t* pixels = pixels_;
-  // int pitch = pitch_;
-  // InterpolationParameters ip;
-  // ScanlineParameters sp;
+  u8* pixels = pixels_;
+  int pitch = pitch_;
+  InterpolationParameters ip;
+  ScanlineParameters sp;
+  bool left_right_swapped;
+  u8 base_color = 0xff * brightness;
 
-  // if (triangle_half == TriangleHalf::kLower)
-  //   ::SwapTopAndLow(pc, vi);
+  if (triangle_half == TriangleHalf::kLower)
+    ::SwapTopAndLow(pc, vi);
 
-  // if (pc.low_y == pc.top_y || pc.top_y == pc.mid_y)  // #TODO: Best timing?
-  //   return;
+  if (pc.low_y == pc.top_y || pc.top_y == pc.mid_y)  // #TODO: Best timing?
+    return;
 
-  // ::SetScanlineIncrementY(sp, triangle_half);
-  // for (sp.scan_y = pc.top_y;; sp.scan_y += sp.scan_y_increment) {
-  //   assert(sp.scan_y < kWindowHeight);
-  //   ::CalculateXScanlineBoundaries(sp, pc);
-  //   ::CalculateInterpolationParametersForY(ip, sp, pc);
-  //   for (sp.scan_x = sp.scan_x_left;; sp.scan_x += sp.scan_x_increment) {
-  //     assert(sp.scan_x < kWindowWidth);
-  //     ::CalculateInterpolationParametersForX(ip, sp);
-  //     if (ZBufferCheckAndReplace(ip.final_z,
-  //                                sp.scan_y * kWindowWidth + sp.scan_x)) {
-  //       WritePixel(color_value, sp, pixels, pitch);
-  //     }
-  //     if (sp.scan_x == sp.scan_x_right)
-  //       break;
-  //   }
-  //   if (sp.scan_y == pc.mid_y)
-  //     break;
-  // }
+  ::SetScanlineIncrementY(sp, triangle_half);
+  for (u16 scan_y = pc.top_y;; scan_y += sp.scan_y_increment) {
+    assert(scan_y < kWindowHeight);
+    ::CalculateXScanlineBoundaries(sp, scan_y, pc, left_right_swapped);
+    ::CalculateInterpolationParametersForY(ip, scan_y, pc);
+    for (u16 scan_x = sp.scan_x_left; scan_x <= sp.scan_x_right; scan_x++) {
+      assert(scan_x < kWindowWidth);
+      ::CalculateInterpolationParametersForX(ip, sp, scan_x,
+                                             left_right_swapped);
+      if (ZBufferCheckAndReplace(ip.final_z, scan_y * kWindowWidth + scan_x)) {
+        size_t index = scan_y * pitch + scan_x * kBytesPerPixel;
+        pixels[index] = base_color;
+        pixels[index + 1] = base_color;
+        pixels[index + 2] = base_color;
+        pixels[index + 3] = 0xff;
+      }
+      if (scan_x == sp.scan_x_right)
+        break;
+    }
+    if (scan_y == pc.mid_y)
+      break;
+  }
 }
-
-// void ScanlineRasterizer::WritePixel(uint8_t color_value,
-//                                     const ScanlineParameters& sp,
-//                                     uint8_t* pixels,
-//                                     int pitch) noexcept {
-//   size_t index = sp.scan_y * pitch + sp.scan_x * kBytesPerPixel;
-//   pixels[index] = color_value;
-//   pixels[index + 1] = color_value;
-//   pixels[index + 2] = color_value;
-//   pixels[index + 3] = 0xff;
-// }
 
 void TexturedRasterizer::RasterizeTriangleHalf(
     PixelCoordinates& pc,
     OrderedVertexIndices& vi,
     const TriangleSharedPointer& triangle,
     TriangleHalf triangle_half,
-    float brightness) noexcept {
-  uint8_t* pixels = pixels_;
+    f32 brightness) noexcept {
+  u8* pixels = pixels_;
   int pitch = pitch_;
   InterpolationParameters ip;
   ScanlineParameters sp;
   bool left_right_swapped;
 
-  const uint16_t texture_width = texture_.GetWidth();
-  const uint16_t texture_height = texture_.GetHeight();
+  const u16 texture_width = texture_.GetWidth();
+  const u16 texture_height = texture_.GetHeight();
   const SDL_Surface* texture_surface = texture_.GetSurface();
   const int texture_pitch = texture_surface->pitch;
 
@@ -276,7 +270,7 @@ void TexturedRasterizer::RasterizeTriangleHalf(
       triangle->GetVertex(vi.low % kVerticesPerTriangle).GetUVCoordinate();
 
   ::SetScanlineIncrementY(sp, triangle_half);
-  for (uint16_t scan_y = pc.top_y;; scan_y += sp.scan_y_increment) {
+  for (u16 scan_y = pc.top_y;; scan_y += sp.scan_y_increment) {
     assert(scan_y < kWindowHeight);
     ::CalculateXScanlineBoundaries(sp, scan_y, pc, left_right_swapped);
     ::CalculateInterpolationParametersForY(ip, scan_y, pc);
@@ -289,11 +283,11 @@ void TexturedRasterizer::RasterizeTriangleHalf(
                          (mid_uv / ::TrueZ(pc.mid_z)) * (ip.top_mid_t);
     top_mid_uv *= ::TrueZ(ip.top_mid_z);
 
-    alignas(64) std::array<uint32_t, 2> pixel_buffer, target_pixel_offsets;
-    uint8_t counter = 0;
+    // Used by SIMD-intrinsics
+    alignas(64) std::array<u32, 2> pixel_buffer, target_pixel_offsets;
+    u8 counter = 0;
 
-    for (uint16_t scan_x = sp.scan_x_left; scan_x <= sp.scan_x_right;
-         scan_x++) {
+    for (u16 scan_x = sp.scan_x_left; scan_x <= sp.scan_x_right; scan_x++) {
       assert(scan_x < kWindowWidth);
       ::CalculateInterpolationParametersForX(ip, sp, scan_x,
                                              left_right_swapped);
@@ -305,17 +299,16 @@ void TexturedRasterizer::RasterizeTriangleHalf(
 
       // #TODO: replace argument with incrementing
       if (ZBufferCheckAndReplace(ip.final_z, scan_y * kWindowWidth + scan_x)) {
-        uint16_t u = static_cast<uint16_t>(final_uv[kU] * (texture_width - 1));
-        uint16_t v =
-            static_cast<uint16_t>((1 - final_uv[kV]) * (texture_height - 1));
+        u16 u = static_cast<u16>(final_uv[kU] * (texture_width - 1));
+        u16 v = static_cast<u16>((1 - final_uv[kV]) * (texture_height - 1));
         assert(u < texture_width);
         assert(v < texture_height);
-        uint32_t* target_pixels = reinterpret_cast<uint32_t*>(pixels);
-        uint32_t* texture_pixels =
-            reinterpret_cast<uint32_t*>(texture_surface->pixels);
-        uint32_t target_offset = scan_y * (pitch / kBytesPerPixel) + scan_x;
-        uint32_t texture_offset = v * (texture_pitch / kBytesPerPixel) + u;
+        u32* target_pixels = reinterpret_cast<u32*>(pixels);
+        u32* texture_pixels = reinterpret_cast<u32*>(texture_surface->pixels);
+        u32 target_offset = scan_y * (pitch / kBytesPerPixel) + scan_x;
+        u32 texture_offset = v * (texture_pitch / kBytesPerPixel) + u;
 
+        // SIMD-intrinsics implementation
         pixel_buffer[counter] = texture_pixels[texture_offset];
         target_pixel_offsets[counter++] = target_offset;
         if (counter == 2) {

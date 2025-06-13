@@ -90,10 +90,6 @@ class ScanlineRasterizer : public Rasterizer {
                                      const TriangleSharedPointer& triangle,
                                      TriangleHalf triangle_half,
                                      float brightness) noexcept;
-  // void WritePixel(uint8_t color_value,
-  //                 const ScanlineParameters& sp,
-  //                 uint8_t* pixels,
-  //                 int pitch) noexcept;
 };
 
 class FlatRasterizer : public ScanlineRasterizer {
@@ -117,14 +113,5 @@ class TexturedRasterizer : public ScanlineRasterizer {
                                      const TriangleSharedPointer& triangle,
                                      TriangleHalf triangle_half,
                                      float brightness) noexcept override;
-  // void WritePixel(const ScanlineParameters& sp,
-  //                 uint8_t* pixels,
-  //                 int pitch,
-  //                 const uint16_t texture_width,
-  //                 const uint16_t texture_height,
-  //                 const SDL_Surface* texture_surface,
-  //                 const int texture_pitch,
-  //                 const Vector2& uv) noexcept;
-
   Texture texture_;
 };
