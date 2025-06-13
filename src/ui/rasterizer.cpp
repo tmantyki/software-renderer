@@ -5,6 +5,9 @@
 #include "geometry/common.hpp"
 #include "ui/rasterizer.hpp"
 
+#include <emmintrin.h>
+#include <immintrin.h>
+
 namespace {
 size_t GetBoundaryVertexIndexByDimension(size_t a_index,
                                          size_t b_index,
@@ -286,6 +289,9 @@ void TexturedRasterizer::RasterizeTriangleHalf(
                          (mid_uv / ::TrueZ(pc.mid_z)) * (ip.top_mid_t);
     top_mid_uv *= ::TrueZ(ip.top_mid_z);
 
+    alignas(64) std::array<uint32_t, 2> pixel_buffer, target_pixel_offsets;
+    uint8_t counter = 0;
+
     for (uint16_t scan_x = sp.scan_x_left; scan_x <= sp.scan_x_right;
          scan_x++) {
       assert(scan_x < kWindowWidth);
@@ -309,11 +315,38 @@ void TexturedRasterizer::RasterizeTriangleHalf(
             reinterpret_cast<uint32_t*>(texture_surface->pixels);
         uint32_t target_offset = scan_y * (pitch / kBytesPerPixel) + scan_x;
         uint32_t texture_offset = v * (texture_pitch / kBytesPerPixel) + u;
-        uint32_t color = texture_pixels[texture_offset];
-        for (uint8_t i = 0; i < kBytesPerPixel; i++) {
-          reinterpret_cast<uint8_t*>(&color)[i] *= brightness;
+
+        // (void)pixel_buffer;
+        // (void)target_pixel_offsets;
+        // (void)counter;
+        // uint32_t color = texture_pixels[texture_offset];
+        // for (uint8_t i = 0; i < kBytesPerPixel; i++) {
+        //   reinterpret_cast<uint8_t*>(&color)[i] *= brightness;
+        // }
+        // target_pixels[target_offset] = color;
+
+        pixel_buffer[counter] = texture_pixels[texture_offset];
+        target_pixel_offsets[counter++] = target_offset;
+        if (counter == 2) {
+          __m128i u8_values =
+              _mm_loadl_epi64(reinterpret_cast<__m128i*>(pixel_buffer.data()));
+          __m256i packed_32 = _mm256_cvtepu8_epi32((u8_values));
+          __m256 f32_values = _mm256_cvtepi32_ps(packed_32);
+          __m256 brightness_vector = _mm256_set1_ps(brightness);
+          f32_values = _mm256_mul_ps(f32_values, brightness_vector);
+          packed_32 = _mm256_cvtps_epi32(f32_values);
+          __m256i packed_16 = _mm256_packus_epi32(packed_32, packed_32);
+          u8_values =
+              _mm256_castsi256_si128(_mm256_packus_epi16(packed_16, packed_16));
+          _mm_storel_epi64(reinterpret_cast<__m128i*>(pixel_buffer.data()),
+                           u8_values);
+
+          for (size_t k = 0; k < 2; k++) {
+            target_pixels[target_pixel_offsets[k]] = pixel_buffer[k];
+          }
+          counter = 0;
         }
-        target_pixels[target_offset] = color;
+        
       }
     }
     if (scan_y == pc.mid_y)

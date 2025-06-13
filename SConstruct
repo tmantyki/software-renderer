@@ -46,6 +46,7 @@ env_debug.AppendUnique(
     CXXFLAGS=[
         "-g",
         "-Og",
+        "-march=haswell",
     ]
 )
 env_debug.AppendUnique(
