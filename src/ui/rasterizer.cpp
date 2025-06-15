@@ -319,13 +319,18 @@ void TexturedRasterizer::RasterizeTriangleHalf(
           __m256 brightness_vector = _mm256_set1_ps(brightness);
           f32_values = _mm256_mul_ps(f32_values, brightness_vector);
           packed_32 = _mm256_cvtps_epi32(f32_values);
-          __m256i mask = _mm256_setr_epi8(0, 4, 8, 16, 20, 24, 28, 32, 0, 0, 0,
-                                          0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-                                          0, 0, 0, 0, 0, 0, 0, 0);
+          __m256i mask = _mm256_setr_epi8(
+              0, 4, 8, 12, 16, 20, 24, 28, -1, -1, -1, -1, -1, -1, -1, -1, -1,
+              -1, -1, -1, -1, -1, -1, -1, 0, 4, 8, 12, 16, 20, 24, 28);
           packed_32 = _mm256_shuffle_epi8(packed_32, mask);
-          _mm_storel_epi64(reinterpret_cast<__m128i*>(pixel_buffer.data()),
-                           u8_values);
 
+          mask = _mm256_setr_epi32(0, 6, -1, -1, -1, -1, -1, -1);
+          packed_32 = _mm256_permutevar8x32_epi32(packed_32, mask);
+
+          _mm_storel_epi64(reinterpret_cast<__m128i*>(pixel_buffer.data()),
+                           _mm256_castsi256_si128(packed_32));
+
+          assert(pixel_buffer[0] == pixel_buffer[1]);
           for (size_t k = 0; k < 2; k++) {
             target_pixels[target_pixel_offsets[k]] = pixel_buffer[k];
           }
