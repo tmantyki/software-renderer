@@ -108,7 +108,7 @@ class PureRasterizer {
   void RasterizeGameState(RasterizationContext& context) noexcept;
 
  private:
-  inline void RasterizeTriangleHalf(PixelCoordinates& pc,
+  void RasterizeTriangleHalf(PixelCoordinates& pc,
                                     OrderedVertexIndices& vi,
                                     const TriangleSharedPointer& triangle,
                                     TriangleHalf triangle_half,
@@ -117,7 +117,7 @@ class PureRasterizer {
                                     Sample* const __restrict__ pixels,
                                     int pitch,
                                     f32* const __restrict__ z_buffer) noexcept;
-  inline void RasterizeTriangles(
+  void RasterizeTriangles(
       RasterizationContext* __restrict__ context) noexcept;
 };
 

@@ -11,7 +11,7 @@
 
 namespace {
 
-inline size_t GetBoundaryVertexIndexByDimension(size_t a_index,
+size_t GetBoundaryVertexIndexByDimension(size_t a_index,
                                                 size_t b_index,
                                                 size_t c_index,
                                                 enum Axis axis,
@@ -34,7 +34,7 @@ inline size_t GetBoundaryVertexIndexByDimension(size_t a_index,
 }
 
 // #TODO: refactor with simpler sorting logic
-inline void SetSortedVertexIndices(OrderedVertexIndices& vertex_indices,
+void SetSortedVertexIndices(OrderedVertexIndices& vertex_indices,
                                    const size_t triangle_index,
                                    const Space& space) noexcept {
   size_t a_index = triangle_index * kVerticesPerTriangle;
@@ -54,7 +54,7 @@ inline void SetSortedVertexIndices(OrderedVertexIndices& vertex_indices,
 }
 
 // #TODO refcator with arrays rather than top, mid, low etc.
-inline void SetPixelCoordinates(PixelCoordinates& pc,
+void SetPixelCoordinates(PixelCoordinates& pc,
                                 const OrderedVertexIndices& vertex_indices,
                                 const Space& space) noexcept {
   const VertexMatrix& vertices = space.GetVertices();
@@ -69,7 +69,7 @@ inline void SetPixelCoordinates(PixelCoordinates& pc,
   pc.low_z = vertices(kZ, vertex_indices.low);
 }
 
-inline void SwapTopAndLow(PixelCoordinates& pc,
+void SwapTopAndLow(PixelCoordinates& pc,
                           OrderedVertexIndices& vi) noexcept {
   std::swap(pc.low_x, pc.top_x);
   std::swap(pc.low_y, pc.top_y);
@@ -77,7 +77,7 @@ inline void SwapTopAndLow(PixelCoordinates& pc,
   std::swap(vi.low, vi.top);
 }
 
-inline void CalculateXScanlineBoundaries(ScanlineParameters& sp,
+void CalculateXScanlineBoundaries(ScanlineParameters& sp,
                                          u16 scan_y,
                                          const PixelCoordinates pc,
                                          bool& left_right_swapped) noexcept {
@@ -95,7 +95,7 @@ inline void CalculateXScanlineBoundaries(ScanlineParameters& sp,
   // sp.scan_x_increment = sp.scan_x_right < sp.scan_x_left ? -1 : 1;
 }
 
-inline void CalculateInterpolationParametersForY(
+void CalculateInterpolationParametersForY(
     InterpolationParameters& ip,
     const u16 scan_y,
     const PixelCoordinates& pc) noexcept {
@@ -106,7 +106,7 @@ inline void CalculateInterpolationParametersForY(
   ip.top_mid_z = pc.top_z * (1.0f - ip.top_mid_t) + pc.mid_z * ip.top_mid_t;
 }
 
-inline void CalculateInterpolationParametersForX(
+void CalculateInterpolationParametersForX(
     InterpolationParameters& ip,
     const ScanlineParameters& sp,
     const u16 scan_x,
@@ -119,13 +119,13 @@ inline void CalculateInterpolationParametersForX(
       ip.top_low_z * (1.0f - ip.horizontal_t) + ip.top_mid_z * ip.horizontal_t;
 }
 
-inline void SetScanlineIncrementY(ScanlineParameters& sp,
+void SetScanlineIncrementY(ScanlineParameters& sp,
                                   const TriangleHalf triangle_half) noexcept {
   sp.scan_y_increment = triangle_half == TriangleHalf::kLower ? -1 : 1;
 }
 
 // #TODO: citation?
-inline f32 TrueZ(f32 reciprocal_z) noexcept {
+f32 TrueZ(f32 reciprocal_z) noexcept {
   constexpr f32 A = 2.0f * kNearPlaneDistance * kFarPlaneDistance /
                     (kFarPlaneDistance - kNearPlaneDistance);
   constexpr f32 B = (kFarPlaneDistance + kNearPlaneDistance) /
@@ -133,7 +133,7 @@ inline f32 TrueZ(f32 reciprocal_z) noexcept {
   return A / (reciprocal_z - B);
 }
 
-inline bool ZBufferCheckAndReplace(float new_value,
+bool ZBufferCheckAndReplace(float new_value,
                                    uint32_t z_buffer_index,
                                    f32* const __restrict__ z_buffer) noexcept {
   if (new_value - 0.001f < z_buffer[z_buffer_index]) {
@@ -429,7 +429,7 @@ void PureRasterizer::RasterizeGameState(
   RasterizeTriangles(&context);
 }
 
-inline void PureRasterizer::RasterizeTriangles(
+void PureRasterizer::RasterizeTriangles(
     RasterizationContext* __restrict__ context) noexcept {
   const Space& space = context->game_state.GetOutputSpace();
   for (size_t t = 0; t < space.GetTriangleCount(); t++) {
@@ -460,7 +460,7 @@ inline void PureRasterizer::RasterizeTriangles(
   }
 }
 
-inline void PureRasterizer::RasterizeTriangleHalf(
+void PureRasterizer::RasterizeTriangleHalf(
     PixelCoordinates& pc,
     OrderedVertexIndices& vi,
     const TriangleSharedPointer& triangle,
