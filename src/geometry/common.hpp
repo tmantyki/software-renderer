@@ -14,6 +14,7 @@ constexpr float kAntiZFighting = 1.0E-5;
 constexpr float kFarPlaneDistance = 10.0;
 constexpr float kNearPlaneDistance = 1.0;
 constexpr size_t kBytesPerPixel = 4;
+constexpr size_t kCacheLineSize = 64;
 constexpr size_t kDimensions = 4;
 constexpr size_t kSpatialDimensions = 3;
 constexpr size_t kUVDimensions = 2;

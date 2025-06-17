@@ -20,9 +20,9 @@ env["LIBS"] = [
 ]
 application_sources = [
     "main.cpp",
+    "rasterizer/rasterizer.cpp",
     "server/game_state.cpp",
     "ui/controller.cpp",
-    "ui/rasterizer.cpp",
     "ui/ui.cpp",
 ]
 geometry_sources = [
@@ -72,7 +72,7 @@ env_release.AppendUnique(
 env_release.AppendUnique(
     LINKFLAGS=[
         "-flto=auto",
-        "-fopt-info-vec=vectorization.log"
+        "-fopt-info-vec=vectorization.log",
     ]
 )
 

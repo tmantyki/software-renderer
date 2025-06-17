@@ -7,9 +7,9 @@
 #include "ui.hpp"
 
 namespace {
-void SetColor(SDL_Renderer* renderer, const SDL_Color color) noexcept {
-  SDL_SetRenderDrawColor(renderer, color.r, color.b, color.g, 0xff);
-}
+// void SetColor(SDL_Renderer* renderer, const SDL_Color color) noexcept {
+//   SDL_SetRenderDrawColor(renderer, color.r, color.b, color.g, 0xff);
+// }
 }  // namespace
 
 // #TODO: use exception instead of bool return value
@@ -51,6 +51,11 @@ bool UserInterface::InitializeSdlObjects() {
     return false;
   }
 
+  // Set pitch_
+  void* pixels;
+  SDL_LockTexture(sdl_texture_, nullptr, &pixels, &pitch_);
+  SDL_UnlockTexture(sdl_texture_);
+
   sdl_objects_initialized_ = true;
   return true;
 }
@@ -67,10 +72,10 @@ void UserInterface::DestroySdlObjects() {
   sdl_objects_initialized_ = false;
 }
 
-void UserInterface::ClearWithBackgroundColor() const noexcept {
-  constexpr SDL_Color kBackgroundColor = {0x40, 0x40, 0x40, 0xff};
-  constexpr SDL_Color kForegroundColor = {0xff, 0xff, 0xff, 0xff};
-  ::SetColor(sdl_renderer_, kBackgroundColor);
-  SDL_RenderClear(sdl_renderer_);
-  ::SetColor(sdl_renderer_, kForegroundColor);
-}
+// void UserInterface::ClearWithBackgroundColor() const noexcept {
+//   constexpr SDL_Color kBackgroundColor = {0x40, 0x40, 0x40, 0xff};
+//   constexpr SDL_Color kForegroundColor = {0xff, 0xff, 0xff, 0xff};
+//   ::SetColor(sdl_renderer_, kBackgroundColor);
+//   SDL_RenderClear(sdl_renderer_);
+//   ::SetColor(sdl_renderer_, kForegroundColor);
+// }

@@ -1,14 +1,16 @@
 #include <SDL2/SDL.h>
 
 #include <algorithm>
-#include <cstdint>
+#include <cmath>
 #include "geometry/common.hpp"
-#include "ui/rasterizer.hpp"
+#include "rasterizer/rasterizer.hpp"
+#include "rasterizer/render_buffer.hpp"
 
 #include <emmintrin.h>
 #include <immintrin.h>
 
 namespace {
+
 size_t GetBoundaryVertexIndexByDimension(size_t a_index,
                                          size_t b_index,
                                          size_t c_index,
@@ -29,6 +31,42 @@ size_t GetBoundaryVertexIndexByDimension(size_t a_index,
     return b_index;
   else
     return c_index;
+}
+
+// #TODO: refactor with simpler sorting logic
+void SetSortedVertexIndices(OrderedVertexIndices& vertex_indices,
+                            const size_t triangle_index,
+                            const Space& space) noexcept {
+  size_t a_index = triangle_index * kVerticesPerTriangle;
+  size_t b_index = triangle_index * kVerticesPerTriangle + 1;
+  size_t c_index = triangle_index * kVerticesPerTriangle + 2;
+  const VertexMatrix& vertices = space.GetVertices();
+  vertex_indices.top = ::GetBoundaryVertexIndexByDimension(
+      a_index, b_index, c_index, kY, BoundaryType::kMin, vertices);
+  vertex_indices.low = ::GetBoundaryVertexIndexByDimension(
+      a_index, b_index, c_index, kY, BoundaryType::kMax, vertices);
+  if ((a_index != vertex_indices.top) && (a_index != vertex_indices.low))
+    vertex_indices.mid = a_index;
+  else if ((b_index != vertex_indices.top) && (b_index != vertex_indices.low))
+    vertex_indices.mid = b_index;
+  else
+    vertex_indices.mid = c_index;
+}
+
+// #TODO refcator with arrays rather than top, mid, low etc.
+void SetPixelCoordinates(PixelCoordinates& pc,
+                         const OrderedVertexIndices& vertex_indices,
+                         const Space& space) noexcept {
+  const VertexMatrix& vertices = space.GetVertices();
+  pc.top_x = vertices(kX, vertex_indices.top);
+  pc.top_y = vertices(kY, vertex_indices.top);
+  pc.top_z = vertices(kZ, vertex_indices.top);
+  pc.mid_x = vertices(kX, vertex_indices.mid);
+  pc.mid_y = vertices(kY, vertex_indices.mid);
+  pc.mid_z = vertices(kZ, vertex_indices.mid);
+  pc.low_x = vertices(kX, vertex_indices.low);
+  pc.low_y = vertices(kY, vertex_indices.low);
+  pc.low_z = vertices(kZ, vertex_indices.low);
 }
 
 void SwapTopAndLow(PixelCoordinates& pc, OrderedVertexIndices& vi) noexcept {
@@ -92,122 +130,125 @@ f32 TrueZ(f32 reciprocal_z) noexcept {
                     (kFarPlaneDistance - kNearPlaneDistance);
   return A / (reciprocal_z - B);
 }
+
+bool ZBufferCheckAndReplace(float new_value,
+                            uint32_t z_buffer_index,
+                            RenderBuffer& render_buffer) noexcept {
+  f32* const z_buffer = render_buffer.z_buffer;
+  if (new_value - 0.001f < z_buffer[z_buffer_index]) {
+    z_buffer[z_buffer_index] = new_value;
+    return true;
+  } else
+    return false;
+}
 }  // namespace
 
-void WireframeRasterizer::RasterizeGameState(
-    const GameState& game_state,
-    UserInterface& user_interface) noexcept {
-  const Space& space = game_state.GetOutputSpace();
-  user_interface.ClearWithBackgroundColor();
+// Rasterizer template
+
+template <typename RasterPolicy,
+          typename PixelSetupPolicy,
+          typename ZBufferSetupPolicy>
+void Rasterizer<RasterPolicy, PixelSetupPolicy, ZBufferSetupPolicy>::
+    RasterizeGameState(RasterizationContext& context) {
+  PixelSetupPolicy::SetupPixels(context.render_buffer);
+  ZBufferSetupPolicy::SetupZBuffer(context.render_buffer);
+  RasterPolicy::RasterizeTriangles(context);
+}
+
+// Generic policies
+
+void BackgroundFill::SetupPixels(RenderBuffer& render_buffer) noexcept {
+  constexpr Sample bg_color = {{0x80, 0x80, 0x00, 0xff}};
+  Sample* const pixels = render_buffer.pixels;
+  const int pitch = render_buffer.pitch;
+  std::fill(pixels, pixels + kWindowHeight * (pitch / kBytesPerPixel),
+            bg_color);
+}
+
+/************************
+ * Wireframe rasterizer *
+ ***********************/
+
+void WireframeRaster::RasterizeTriangles(
+    RasterizationContext& context) noexcept {
+  const Space& space = context.game_state.GetOutputSpace();
   const VertexMatrix& vertices = space.GetVertices();
   for (size_t t = 0; t < space.GetTriangleCount(); t++) {
-    for (size_t a : {0, 1, 2}) {
+    for (size_t a = 0; a < kVerticesPerTriangle; a++) {
       size_t b = (a + 1) % 3;
-      u16 a_x = vertices(kX, t * kVerticesPerTriangle + a);
-      u16 a_y = vertices(kY, t * kVerticesPerTriangle + a);
-      u16 b_x = vertices(kX, t * kVerticesPerTriangle + b);
-      u16 b_y = vertices(kY, t * kVerticesPerTriangle + b);
-      user_interface.DrawLine(a_x, a_y, b_x, b_y);
+      f32 a_x = vertices(kX, t * kVerticesPerTriangle + a);
+      f32 a_y = vertices(kY, t * kVerticesPerTriangle + a);
+      f32 b_x = vertices(kX, t * kVerticesPerTriangle + b);
+      f32 b_y = vertices(kY, t * kVerticesPerTriangle + b);
+      DrawLine(a_x, a_y, b_x, b_y, context.render_buffer);
     }
   }
 }
 
-void ScanlineRasterizer::RasterizeGameState(
-    const GameState& game_state,
-    UserInterface& user_interface) noexcept {
-  const Space& space = game_state.GetOutputSpace();
+// #TODO: rewrite and fix artifacts
+void WireframeRaster::DrawLine(f32 a_x,
+                               f32 a_y,
+                               f32 b_x,
+                               f32 b_y,
+                               RenderBuffer& render_buffer) noexcept {
+  const Sample fg_color = {{0xff, 0xff, 0xff, 0xff}};
+  const bool swap_xy = std::abs(b_x - a_x) < std::abs(b_y - a_y);
+  if (!swap_xy) {
+    f32 increment = (b_y - a_y) / (b_x - a_x);
+    f32 y = a_y + 0.5;
+    for (u16 x = a_x; x <= b_x; x++, y += increment)
+      render_buffer.pixels[x + static_cast<u16>(y) * render_buffer.pitch /
+                                   kBytesPerPixel] = fg_color;
+  } else {
+    f32 increment = (b_x - a_x) / (b_y - a_y);
+    f32 x = a_x + 0.5;
+    for (u16 y = a_y; y <= b_y; y++, x += increment)
+      render_buffer.pixels[static_cast<u16>(x) +
+                           y * render_buffer.pitch / kBytesPerPixel] = fg_color;
+  }
+}
 
-  ResetZBuffer();
-  user_interface.StartFrameRasterization(&pixels_, &pitch_);
-  ClearRenderer();
+/*******************
+ * Flat rasterizer *
+ ******************/
 
+void FlatRaster::RasterizeTriangles(RasterizationContext& context) noexcept {
+  const Space& space = context.game_state.GetOutputSpace();
   for (size_t t = 0; t < space.GetTriangleCount(); t++) {
-    TriangleSharedPointer triangle = space.GetTriangles()[t];
+    const Triangle& triangle = *space.GetTriangles()[t];
     // Triangle color
     Direction light_direction = {1, 2, -3};
     f32 brightness = light_direction.GetVector().normalized().dot(
-        triangle->GetNormal().normalized());
+        triangle.GetNormal().normalized());
     brightness = (brightness + 1.0f) / 2.0f;
 
     PixelCoordinates pc;
     OrderedVertexIndices vi;
 
-    SetSortedVertexIndices(vi, t, space);
-    SetPixelCoordinates(pc, vi, space);
+    ::SetSortedVertexIndices(vi, t, space);
+    ::SetPixelCoordinates(pc, vi, space);
 
     // Scanlines for top section
-    RasterizeTriangleHalf(pc, vi, triangle, TriangleHalf::kUpper, brightness);
+    RasterizeTriangleHalf(pc, vi, TriangleHalf::kUpper, brightness,
+                          context.render_buffer);
     // Scanlines for bottom section
-    RasterizeTriangleHalf(pc, vi, triangle, TriangleHalf::kLower, brightness);
+    RasterizeTriangleHalf(pc, vi, TriangleHalf::kLower, brightness,
+                          context.render_buffer);
   }
-  user_interface.EndFrameRasterization();
 }
 
-void ScanlineRasterizer::ClearRenderer() noexcept {
-  u8* pixels = pixels_;
-  int pitch = pitch_;
-  u32 pixel_value = 0xff008080;
-  for (u16 y = 0; y < kWindowHeight; y++)
-    for (u16 x = 0; x < kWindowWidth * kBytesPerPixel; x += kBytesPerPixel) {
-      *reinterpret_cast<u32*>(pixels + y * pitch + x) = pixel_value;
-    }
-}
-
-// #TODO: refactor with simpler sorting logic
-void ScanlineRasterizer::SetSortedVertexIndices(
-    OrderedVertexIndices& vertex_indices,
-    const size_t triangle_index,
-    const Space& space) const noexcept {
-  size_t a_index = triangle_index * kVerticesPerTriangle;
-  size_t b_index = triangle_index * kVerticesPerTriangle + 1;
-  size_t c_index = triangle_index * kVerticesPerTriangle + 2;
-  const VertexMatrix& vertices = space.GetVertices();
-  vertex_indices.top = ::GetBoundaryVertexIndexByDimension(
-      a_index, b_index, c_index, kY, BoundaryType::kMin, vertices);
-  vertex_indices.low = ::GetBoundaryVertexIndexByDimension(
-      a_index, b_index, c_index, kY, BoundaryType::kMax, vertices);
-  if ((a_index != vertex_indices.top) && (a_index != vertex_indices.low))
-    vertex_indices.mid = a_index;
-  else if ((b_index != vertex_indices.top) && (b_index != vertex_indices.low))
-    vertex_indices.mid = b_index;
-  else
-    vertex_indices.mid = c_index;
-}
-
-// #TODO refcator with arrays rather than top, mid, low etc.
-void ScanlineRasterizer::SetPixelCoordinates(
-    PixelCoordinates& pc,
-    const OrderedVertexIndices& vertex_indices,
-    const Space& space) const noexcept {
-  const VertexMatrix& vertices = space.GetVertices();
-  pc.top_x = vertices(kX, vertex_indices.top);
-  pc.top_y = vertices(kY, vertex_indices.top);
-  pc.top_z = vertices(kZ, vertex_indices.top);
-  pc.mid_x = vertices(kX, vertex_indices.mid);
-  pc.mid_y = vertices(kY, vertex_indices.mid);
-  pc.mid_z = vertices(kZ, vertex_indices.mid);
-  pc.low_x = vertices(kX, vertex_indices.low);
-  pc.low_y = vertices(kY, vertex_indices.low);
-  pc.low_z = vertices(kZ, vertex_indices.low);
-}
-
-void ScanlineRasterizer::RasterizeTriangleHalf(
-    PixelCoordinates& pc,
-    OrderedVertexIndices& vi,
-    const TriangleSharedPointer& triangle,
-    TriangleHalf triangle_half,
-    f32 brightness) noexcept {
-  (void)pc;
-  (void)vi;
-  (void)triangle;
-  (void)triangle_half;
-  (void)brightness;
-  u8* pixels = pixels_;
-  int pitch = pitch_;
+void FlatRaster::RasterizeTriangleHalf(PixelCoordinates& pc,
+                                       OrderedVertexIndices& vi,
+                                       TriangleHalf triangle_half,
+                                       f32 brightness,
+                                       RenderBuffer& render_buffer) noexcept {
+  Sample* const pixels = render_buffer.pixels;
+  const int pitch = render_buffer.pitch;
   InterpolationParameters ip;
   ScanlineParameters sp;
   bool left_right_swapped;
-  u8 base_color = 0xff * brightness;
+  u8 channel_value = 0xff * brightness;
+  Sample argb_value = {{channel_value, channel_value, channel_value, 0xff}};
 
   if (triangle_half == TriangleHalf::kLower)
     ::SwapTopAndLow(pc, vi);
@@ -224,12 +265,10 @@ void ScanlineRasterizer::RasterizeTriangleHalf(
       assert(scan_x < kWindowWidth);
       ::CalculateInterpolationParametersForX(ip, sp, scan_x,
                                              left_right_swapped);
-      if (ZBufferCheckAndReplace(ip.final_z, scan_y * kWindowWidth + scan_x)) {
-        size_t index = scan_y * pitch + scan_x * kBytesPerPixel;
-        pixels[index] = base_color;
-        pixels[index + 1] = base_color;
-        pixels[index + 2] = base_color;
-        pixels[index + 3] = 0xff;
+      if (ZBufferCheckAndReplace(ip.final_z, scan_y * kWindowWidth + scan_x,
+                                 render_buffer)) {
+        size_t index = scan_y * (pitch / kBytesPerPixel) + scan_x;
+        pixels[index] = argb_value;
       }
       if (scan_x == sp.scan_x_right)
         break;
@@ -239,21 +278,54 @@ void ScanlineRasterizer::RasterizeTriangleHalf(
   }
 }
 
-void TexturedRasterizer::RasterizeTriangleHalf(
+/***********************
+ * Textured rasterizer *
+ **********************/
+
+void TexturedRaster::RasterizeTriangles(
+    RasterizationContext& context) noexcept {
+  const Space& space = context.game_state.GetOutputSpace();
+  for (size_t t = 0; t < space.GetTriangleCount(); t++) {
+    const Triangle& triangle = *space.GetTriangles()[t];
+    // Triangle color
+    Direction light_direction = {1, 2, -3};
+    f32 brightness = light_direction.GetVector().normalized().dot(
+        triangle.GetNormal().normalized());
+    brightness = (brightness + 1.0f) / 2.0f;
+
+    PixelCoordinates pc;
+    OrderedVertexIndices vi;
+
+    ::SetSortedVertexIndices(vi, t, space);
+    ::SetPixelCoordinates(pc, vi, space);
+
+    // Scanlines for top section
+    RasterizeTriangleHalf(pc, vi, triangle, TriangleHalf::kUpper, brightness,
+                          context);
+    // Scanlines for bottom section
+    RasterizeTriangleHalf(pc, vi, triangle, TriangleHalf::kLower, brightness,
+                          context);
+  }
+}
+
+void TexturedRaster::RasterizeTriangleHalf(
     PixelCoordinates& pc,
     OrderedVertexIndices& vi,
-    const TriangleSharedPointer& triangle,
+    const Triangle& triangle,
     TriangleHalf triangle_half,
-    f32 brightness) noexcept {
-  u8* pixels = pixels_;
-  int pitch = pitch_;
+    f32 brightness,
+    RasterizationContext& context) noexcept {
+  RenderBuffer& render_buffer = context.render_buffer;
+  const Texture& default_texture = context.default_texture;
+  Sample* const pixels = render_buffer.pixels;
+  const int pitch = render_buffer.pitch;
   InterpolationParameters ip;
   ScanlineParameters sp;
   bool left_right_swapped;
 
-  const u16 texture_width = texture_.GetWidth();
-  const u16 texture_height = texture_.GetHeight();
-  const SDL_Surface* texture_surface = texture_.GetSurface();
+  const u16 texture_width = default_texture.GetWidth();
+  const u16 texture_height = default_texture.GetHeight();
+  const SDL_Surface* texture_surface = default_texture.GetSurface();
   const int texture_pitch = texture_surface->pitch;
 
   if (triangle_half == TriangleHalf::kLower)
@@ -263,11 +335,11 @@ void TexturedRasterizer::RasterizeTriangleHalf(
     return;
 
   const UVCoordinate& top_uv =
-      triangle->GetVertex(vi.top % kVerticesPerTriangle).GetUVCoordinate();
+      triangle.GetVertex(vi.top % kVerticesPerTriangle).GetUVCoordinate();
   const UVCoordinate& mid_uv =
-      triangle->GetVertex(vi.mid % kVerticesPerTriangle).GetUVCoordinate();
+      triangle.GetVertex(vi.mid % kVerticesPerTriangle).GetUVCoordinate();
   const UVCoordinate& low_uv =
-      triangle->GetVertex(vi.low % kVerticesPerTriangle).GetUVCoordinate();
+      triangle.GetVertex(vi.low % kVerticesPerTriangle).GetUVCoordinate();
 
   ::SetScanlineIncrementY(sp, triangle_half);
   for (u16 scan_y = pc.top_y;; scan_y += sp.scan_y_increment) {
@@ -298,7 +370,8 @@ void TexturedRasterizer::RasterizeTriangleHalf(
       final_uv *= ::TrueZ(ip.final_z);
 
       // #TODO: replace argument with incrementing
-      if (ZBufferCheckAndReplace(ip.final_z, scan_y * kWindowWidth + scan_x)) {
+      if (::ZBufferCheckAndReplace(ip.final_z, scan_y * kWindowWidth + scan_x,
+                                   render_buffer)) {
         u16 u = static_cast<u16>(final_uv[kU] * (texture_width - 1));
         u16 v = static_cast<u16>((1 - final_uv[kV]) * (texture_height - 1));
         assert(u < texture_width);

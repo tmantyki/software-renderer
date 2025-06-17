@@ -1,8 +1,9 @@
 #include <iostream>
 
+#include "rasterizer/rasterizer.hpp"
+#include "rasterizer/render_buffer.hpp"
 #include "server/game_state.hpp"
 #include "ui/controller.hpp"
-#include "ui/rasterizer.hpp"
 #include "ui/ui.hpp"
 #include "utility/timer.hpp"
 
@@ -18,10 +19,13 @@ int main(int argc, char** argv) {
   // BenchmarkInterface user_interface;
   Controller controller;
   GameState game_state;
-  WireframeRasterizer wirefreame_rasterizer;
-  // FlatRasterizer rasterizer;
+  Texture default_texture("assets/blender/porcelain.png");
+  RenderBuffer render_buffer(user_interface.GetPitch());
+  // WireframeRasterizer wireframe_rasterizer;
+  // FlatRasterizer flat_rasterizer;
   TexturedRasterizer rasterizer;
-  Rasterizer* active_rasterizer = &rasterizer;
+  // Rasterizer* active_rasterizer = &rasterizer;
+  RasterizationContext context = {game_state, render_buffer, default_texture};
   Timer timer("main()");
   timer.Start();
 
@@ -32,16 +36,20 @@ int main(int argc, char** argv) {
       break;
     }
     if (controller.ConsumeRasterizerToggleRequest()) {
-      SDL_Delay(100);
-      if (active_rasterizer == &rasterizer)
-        active_rasterizer = &wirefreame_rasterizer;
-      else
-        active_rasterizer = &rasterizer;
+      // SDL_Delay(100);
+      // if (active_rasterizer == &rasterizer)
+      //   active_rasterizer = &wireframe_rasterizer;
+      // else
+      //   active_rasterizer = &rasterizer;
     }
     game_state.UpdatePlayerState(controller);
     game_state.ProcessTick();
-    active_rasterizer->RasterizeGameState(game_state, user_interface);
-    user_interface.RenderPresent();
+
+    // wireframe_rasterizer.RasterizeGameState(game_state, render_buffer);
+    rasterizer.RasterizeGameState(context);
+
+    // active_rasterizer->RasterizeGameState(game_state, user_interface);
+    user_interface.RenderPresent(render_buffer);
     if (max_ticks > 0 &&
         game_state.GetTick() > static_cast<uint64_t>(max_ticks))
       break;
