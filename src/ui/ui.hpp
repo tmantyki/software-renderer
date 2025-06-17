@@ -19,16 +19,6 @@ class UserInterface {
   uint16_t GetWidth() const noexcept { return width_; }
   uint16_t GetHeight() const noexcept { return height_; }
   int GetPitch() const noexcept { return pitch_; }
-  // virtual void StartFrameRasterization(uint8_t** pixels, int* pitch) noexcept
-  // {
-  //   SDL_LockTexture(sdl_texture_, NULL, reinterpret_cast<void**>(pixels),
-  //                   pitch);
-  // }
-  // virtual void EndFrameRasterization() const noexcept {
-  //   SDL_RenderCopy(sdl_renderer_, sdl_texture_, NULL, NULL);
-  //   SDL_UnlockTexture(sdl_texture_);
-  // }
-  // virtual void ClearWithBackgroundColor() const noexcept;
   void RenderPresent(const RenderBuffer& render_buffer) const noexcept {
     SDL_UpdateTexture(sdl_texture_, NULL,
                       static_cast<void*>(render_buffer.pixels),
@@ -36,9 +26,6 @@ class UserInterface {
     SDL_RenderCopy(sdl_renderer_, sdl_texture_, NULL, NULL);
     SDL_RenderPresent(sdl_renderer_);
   }
-  // virtual void DrawLine(int x1, int y1, int x2, int y2) const noexcept {
-  //   SDL_RenderDrawLine(sdl_renderer_, x1, y1, x2, y2);
-  // }
 
  protected:
   const uint16_t width_ = kWindowWidth;

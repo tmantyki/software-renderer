@@ -26,6 +26,7 @@ struct RenderBuffer {
                                sizeof(f32) * pitch * kWindowHeight))),
         pitch(pitch) {
     assert((pitch % kBytesPerPixel) == 0);
+    assert(pitch == (kWindowHeight * kBytesPerPixel));
   }
   ~RenderBuffer() {
     std::free(pixels);

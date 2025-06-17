@@ -61,6 +61,8 @@ env_release.AppendUnique(
         "-O3",
         "-fno-rtti",
         "-flto=auto",
+        "-fno-ipa-cp-clone",
+        "--param=max-inline-insns-auto=600",
         "-march=haswell",
     ]
 )
@@ -72,6 +74,8 @@ env_release.AppendUnique(
 env_release.AppendUnique(
     LINKFLAGS=[
         "-flto=auto",
+        "-fno-ipa-cp-clone",
+        "--param=max-inline-insns-auto=600",
         "-fopt-info-vec=vectorization.log",
     ]
 )

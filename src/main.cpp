@@ -23,7 +23,8 @@ int main(int argc, char** argv) {
   RenderBuffer render_buffer(user_interface.GetPitch());
   // WireframeRasterizer wireframe_rasterizer;
   // FlatRasterizer flat_rasterizer;
-  TexturedRasterizer rasterizer;
+  // TexturedRasterizer rasterizer;
+  PureRasterizer rasterizer;
   // Rasterizer* active_rasterizer = &rasterizer;
   RasterizationContext context = {game_state, render_buffer, default_texture};
   Timer timer("main()");
