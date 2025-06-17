@@ -49,7 +49,7 @@ struct RasterizationContext {
 template <typename RasterPolicy, typename FillPolicy, typename ZBufferPolicy>
 class Rasterizer {
  public:
-  void RasterizeGameState(RasterizationContext& context);
+  void RasterizeGameState(RasterizationContext& context) noexcept;
 };
 
 struct None {

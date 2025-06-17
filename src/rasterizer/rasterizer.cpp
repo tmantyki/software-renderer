@@ -149,7 +149,7 @@ template <typename RasterPolicy,
           typename PixelSetupPolicy,
           typename ZBufferSetupPolicy>
 void Rasterizer<RasterPolicy, PixelSetupPolicy, ZBufferSetupPolicy>::
-    RasterizeGameState(RasterizationContext& context) {
+    RasterizeGameState(RasterizationContext& context) noexcept {
   PixelSetupPolicy::SetupPixels(context.render_buffer);
   ZBufferSetupPolicy::SetupZBuffer(context.render_buffer);
   RasterPolicy::RasterizeTriangles(context);
