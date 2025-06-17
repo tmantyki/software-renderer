@@ -1,5 +1,6 @@
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_image.h>
+#include <SDL2/SDL_render.h>
 #include <cassert>
 
 #include "geometry/common.hpp"
@@ -23,7 +24,7 @@ bool UserInterface::InitializeSdlObjects() {
     SDL_Quit();
     return false;
   }
-  sdl_renderer_ = SDL_CreateRenderer(sdl_window_, -1, SDL_RENDERER_SOFTWARE);
+  sdl_renderer_ = SDL_CreateRenderer(sdl_window_, -1, SDL_RENDERER_ACCELERATED);
   if (!sdl_renderer_) {
     SDL_DestroyWindow(sdl_window_);
     SDL_QuitSubSystem(SDL_INIT_VIDEO);
