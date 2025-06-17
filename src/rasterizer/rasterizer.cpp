@@ -1,7 +1,6 @@
 #include <SDL2/SDL.h>
 
 #include <algorithm>
-#include <cmath>
 #include "geometry/common.hpp"
 #include "rasterizer/rasterizer.hpp"
 #include "rasterizer/render_buffer.hpp"
