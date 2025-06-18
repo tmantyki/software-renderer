@@ -8,11 +8,12 @@
 #include <Eigen/Core>
 #include <Eigen/Geometry>
 
-constexpr float kPi = 3.14159265358979323846264338;
-constexpr float kFloatTolerance = 1.0E-3;
-constexpr float kAntiZFighting = 1.0E-5;
-constexpr float kFarPlaneDistance = 10.0;
-constexpr float kNearPlaneDistance = 1.0;
+constexpr float kPi = 3.14159265358979323846264338f;
+constexpr float kFloatTolerance = 1.0E-3f;
+constexpr float kAntiZFighting = 1.0E-5f;
+constexpr float kFarPlaneDistance = 10.0f;
+constexpr float kNearPlaneDistance = 1.0f;
+constexpr float kZBufferMax = 1.0f;
 constexpr size_t kBytesPerPixel = 4;
 constexpr size_t kCacheLineSize = 64;
 constexpr size_t kDimensions = 4;
@@ -28,9 +29,9 @@ constexpr uint16_t kWindowWidth = 800;
 constexpr uint16_t kWindowHeight = 800;
 constexpr bool kClockwiseWinding = true;
 constexpr bool kCounterClockwiseWinding = !kClockwiseWinding;
-constexpr float kTranslationIncrement = 0.01;
-constexpr float kAngularIncrement = 0.01;
-constexpr float kViewportRoundingBias = 0.1;
+constexpr float kTranslationIncrement = 0.01f;
+constexpr float kAngularIncrement = 0.01f;
+constexpr float kViewportRoundingBias = 0.1f;
 constexpr SDL_PixelFormatEnum kDefaultPixelFormat = SDL_PIXELFORMAT_ARGB8888;
 
 class Point;

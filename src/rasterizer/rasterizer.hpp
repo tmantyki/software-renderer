@@ -58,11 +58,7 @@ struct None {
 };
 
 struct ResetZBuffer {
-  static void SetupZBuffer(RenderBuffer& render_buffer) noexcept {
-    f32* const z_buffer = render_buffer.z_buffer;
-    const int pitch = render_buffer.pitch;
-    std::fill(z_buffer, z_buffer + kWindowHeight * (pitch / kBytesPerPixel), 1);
-  }
+  static void SetupZBuffer(RenderBuffer& render_buffer) noexcept;
 };
 
 struct BackgroundFill {
@@ -109,16 +105,15 @@ class PureRasterizer {
 
  private:
   void RasterizeTriangleHalf(PixelCoordinates& pc,
-                                    OrderedVertexIndices& vi,
-                                    const TriangleSharedPointer& triangle,
-                                    TriangleHalf triangle_half,
-                                    f32 brightness,
-                                    const Texture* __restrict__ default_texture,
-                                    Sample* const __restrict__ pixels,
-                                    int pitch,
-                                    f32* const __restrict__ z_buffer) noexcept;
-  void RasterizeTriangles(
-      RasterizationContext* __restrict__ context) noexcept;
+                             OrderedVertexIndices& vi,
+                             const TriangleSharedPointer& triangle,
+                             TriangleHalf triangle_half,
+                             f32 brightness,
+                             const Texture* __restrict__ default_texture,
+                             Sample* const __restrict__ pixels,
+                             int pitch,
+                             f32* const __restrict__ z_buffer) noexcept;
+  void RasterizeTriangles(RasterizationContext* __restrict__ context) noexcept;
 };
 
 // using WireframeRasterizer = Rasterizer<WireframeRaster, BackgroundFill,

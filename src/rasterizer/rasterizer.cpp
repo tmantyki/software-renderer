@@ -11,11 +11,11 @@
 namespace {
 
 size_t GetBoundaryVertexIndexByDimension(size_t a_index,
-                                                size_t b_index,
-                                                size_t c_index,
-                                                enum Axis axis,
-                                                BoundaryType boundary_type,
-                                                const VertexMatrix& vertices) {
+                                         size_t b_index,
+                                         size_t c_index,
+                                         enum Axis axis,
+                                         BoundaryType boundary_type,
+                                         const VertexMatrix& vertices) {
   f32 a = vertices(axis, a_index);
   f32 b = vertices(axis, b_index);
   f32 c = vertices(axis, c_index);
@@ -34,8 +34,8 @@ size_t GetBoundaryVertexIndexByDimension(size_t a_index,
 
 // #TODO: refactor with simpler sorting logic
 void SetSortedVertexIndices(OrderedVertexIndices& vertex_indices,
-                                   const size_t triangle_index,
-                                   const Space& space) noexcept {
+                            const size_t triangle_index,
+                            const Space& space) noexcept {
   size_t a_index = triangle_index * kVerticesPerTriangle;
   size_t b_index = triangle_index * kVerticesPerTriangle + 1;
   size_t c_index = triangle_index * kVerticesPerTriangle + 2;
@@ -54,8 +54,8 @@ void SetSortedVertexIndices(OrderedVertexIndices& vertex_indices,
 
 // #TODO refcator with arrays rather than top, mid, low etc.
 void SetPixelCoordinates(PixelCoordinates& pc,
-                                const OrderedVertexIndices& vertex_indices,
-                                const Space& space) noexcept {
+                         const OrderedVertexIndices& vertex_indices,
+                         const Space& space) noexcept {
   const VertexMatrix& vertices = space.GetVertices();
   pc.top_x = vertices(kX, vertex_indices.top);
   pc.top_y = vertices(kY, vertex_indices.top);
@@ -68,8 +68,7 @@ void SetPixelCoordinates(PixelCoordinates& pc,
   pc.low_z = vertices(kZ, vertex_indices.low);
 }
 
-void SwapTopAndLow(PixelCoordinates& pc,
-                          OrderedVertexIndices& vi) noexcept {
+void SwapTopAndLow(PixelCoordinates& pc, OrderedVertexIndices& vi) noexcept {
   std::swap(pc.low_x, pc.top_x);
   std::swap(pc.low_y, pc.top_y);
   std::swap(pc.low_z, pc.top_z);
@@ -77,9 +76,9 @@ void SwapTopAndLow(PixelCoordinates& pc,
 }
 
 void CalculateXScanlineBoundaries(ScanlineParameters& sp,
-                                         u16 scan_y,
-                                         const PixelCoordinates pc,
-                                         bool& left_right_swapped) noexcept {
+                                  u16 scan_y,
+                                  const PixelCoordinates pc,
+                                  bool& left_right_swapped) noexcept {
   sp.scan_x_left = (scan_y * pc.low_x - pc.top_x * scan_y -
                     pc.top_y * pc.low_x + pc.top_x * pc.low_y) /
                    (pc.low_y - pc.top_y);
@@ -94,10 +93,9 @@ void CalculateXScanlineBoundaries(ScanlineParameters& sp,
   // sp.scan_x_increment = sp.scan_x_right < sp.scan_x_left ? -1 : 1;
 }
 
-void CalculateInterpolationParametersForY(
-    InterpolationParameters& ip,
-    const u16 scan_y,
-    const PixelCoordinates& pc) noexcept {
+void CalculateInterpolationParametersForY(InterpolationParameters& ip,
+                                          const u16 scan_y,
+                                          const PixelCoordinates& pc) noexcept {
   f32 numerator = static_cast<f32>(scan_y - pc.top_y);
   ip.top_low_t = numerator / (pc.low_y - pc.top_y);
   ip.top_mid_t = numerator / (pc.mid_y - pc.top_y);
@@ -119,7 +117,7 @@ void CalculateInterpolationParametersForX(
 }
 
 void SetScanlineIncrementY(ScanlineParameters& sp,
-                                  const TriangleHalf triangle_half) noexcept {
+                           const TriangleHalf triangle_half) noexcept {
   sp.scan_y_increment = triangle_half == TriangleHalf::kLower ? -1 : 1;
 }
 
@@ -133,8 +131,8 @@ f32 TrueZ(f32 reciprocal_z) noexcept {
 }
 
 bool ZBufferCheckAndReplace(float new_value,
-                                   uint32_t z_buffer_index,
-                                   f32* const __restrict__ z_buffer) noexcept {
+                            uint32_t z_buffer_index,
+                            f32* const __restrict__ z_buffer) noexcept {
   if (new_value - 0.001f < z_buffer[z_buffer_index]) {
     z_buffer[z_buffer_index] = new_value;
     return true;
@@ -158,11 +156,22 @@ void Rasterizer<RasterPolicy, PixelSetupPolicy, ZBufferSetupPolicy>::
 // Generic policies
 
 void BackgroundFill::SetupPixels(RenderBuffer& render_buffer) noexcept {
-  constexpr Sample bg_color = {{0x80, 0x80, 0x00, 0xff}};
-  Sample* const pixels = render_buffer.pixels;
   const int pitch = render_buffer.pitch;
-  std::fill(pixels, pixels + kWindowHeight * (pitch / kBytesPerPixel),
-            bg_color);
+  u8* const pixels = reinterpret_cast<u8*>(render_buffer.pixels);
+  __m256i write_vec = _mm256_set1_epi32(0xff008080U);
+  for (i32 i = 0; i < kWindowHeight * pitch; i += 32) {
+    _mm256_store_si256(reinterpret_cast<__m256i*>(pixels + i), write_vec);
+  }
+  // #TODO : remainder handling
+}
+
+void ResetZBuffer::SetupZBuffer(RenderBuffer& render_buffer) noexcept {
+  f32* const z_buffer = render_buffer.z_buffer;
+  __m256 write_vec = _mm256_set1_ps(kZBufferMax);
+  for (i32 i = 0; i < kWindowHeight * kWindowWidth / 8; i += 8) {
+    _mm256_store_ps(reinterpret_cast<float*>(z_buffer + i), write_vec);
+  }
+  // #TODO : remainder handling
 }
 
 // /************************
