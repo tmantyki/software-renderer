@@ -31,7 +31,6 @@ constexpr bool kClockwiseWinding = true;
 constexpr bool kCounterClockwiseWinding = !kClockwiseWinding;
 constexpr float kTranslationIncrement = 0.01f;
 constexpr float kAngularIncrement = 0.01f;
-constexpr float kViewportRoundingBias = 0.1f;
 constexpr SDL_PixelFormatEnum kDefaultPixelFormat = SDL_PIXELFORMAT_ARGB8888;
 
 class Point;

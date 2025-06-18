@@ -67,12 +67,14 @@ bool PerspectiveProjection::operator==(const PerspectiveProjection& rhs) const {
 }
 
 bool ViewportTransform::UpdateTransform() noexcept {
+  constexpr f32 half_pixel = 0.5f;
+  const f32 half_width = static_cast<f32>(width_) / 2.0f;
+  const f32 half_height = static_cast<f32>(height_) / 2.0f;
   matrix_ = Matrix4::Identity();
-  // bit shift instead of division by 2
-  matrix_(0, 0) = (width_ >> 1) - kViewportRoundingBias;
-  matrix_(0, 3) = (width_ >> 1) + x_offset_;
-  matrix_(1, 1) = -(height_ >> 1) + kViewportRoundingBias;
-  matrix_(1, 3) = (height_ >> 1) + y_offset_;
+  matrix_(0, 0) = half_width - half_pixel;
+  matrix_(0, 3) = half_width + x_offset_;
+  matrix_(1, 1) = -half_height + half_pixel;
+  matrix_(1, 3) = half_height + y_offset_;
   return true;
 }
 
