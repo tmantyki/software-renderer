@@ -638,14 +638,14 @@ TEST_F(ViewportTransformTest, CoordinateWIsUnaffected) {
 TEST_F(ViewportTransformTest, TransformAxisX) {
   uint16_t width = 512;
   SetViewportParameters(width, 0, 0, 0);
-  ExpectFloorRoundedEquality((v_x + 1) * (width - kViewportRoundingBias) / 2.0,
+  ExpectFloorRoundedEquality((v_x + 1) * (width - kHalfPixel) / 2.0,
                              GetTransformedVector()[kX]);
 }
 
 TEST_F(ViewportTransformTest, TransformAxisY) {
   uint16_t height = 240;
   SetViewportParameters(0, height, 0, 0);
-  ExpectFloorRoundedEquality((1 - v_y) * (height - kViewportRoundingBias) / 2.0,
+  ExpectFloorRoundedEquality((1 - v_y) * (height - kHalfPixel) / 2.0,
                              GetTransformedVector()[kY]);
 }
 
@@ -654,7 +654,7 @@ TEST_F(ViewportTransformTest, AddPositiveOffsetX) {
   int16_t x_offset = 100;
   SetViewportParameters(width, 0, x_offset, 0);
   ExpectFloorRoundedEquality(
-      ((v_x + 1) * (width - kViewportRoundingBias) / 2.0) + x_offset,
+      ((v_x + 1) * (width - kHalfPixel) / 2.0) + x_offset,
       GetTransformedVector()[kX]);
 }
 
@@ -663,7 +663,7 @@ TEST_F(ViewportTransformTest, AddNegativeOffsetX) {
   int16_t x_offset = -110;
   SetViewportParameters(width, 0, x_offset, 0);
   ExpectFloorRoundedEquality(
-      ((v_x + 1) * (width - kViewportRoundingBias) / 2.0) + x_offset,
+      ((v_x + 1) * (width - kHalfPixel) / 2.0) + x_offset,
       GetTransformedVector()[kX]);
 }
 
@@ -672,7 +672,7 @@ TEST_F(ViewportTransformTest, AddPositiveOffsetY) {
   int16_t y_offset = 300;
   SetViewportParameters(0, height, 0, y_offset);
   ExpectFloorRoundedEquality(
-      ((1 - v_y) * (height - kViewportRoundingBias) / 2.0) + y_offset,
+      ((1 - v_y) * (height - kHalfPixel) / 2.0) + y_offset,
       GetTransformedVector()[kY]);
 }
 
@@ -681,7 +681,7 @@ TEST_F(ViewportTransformTest, AddNegativeOffsetY) {
   int16_t y_offset = -150;
   SetViewportParameters(0, height, 0, y_offset);
   ExpectFloorRoundedEquality(
-      ((1 - v_y) * (height - kViewportRoundingBias) / 2.0) + y_offset,
+      ((1 - v_y) * (height - kHalfPixel) / 2.0) + y_offset,
       GetTransformedVector()[kY]);
 }
 
@@ -690,10 +690,10 @@ TEST_F(ViewportTransformTest, FullTransform) {
   int16_t x_offset = 10, y_offset = -20;
   SetViewportParameters(width, height, x_offset, y_offset);
   ExpectFloorRoundedEquality(
-      ((v_x + 1) * (width - kViewportRoundingBias) / 2.0) + x_offset,
+      ((v_x + 1) * (width - kHalfPixel) / 2.0) + x_offset,
       GetTransformedVector()[kX]);
   ExpectFloorRoundedEquality(
-      ((1 - v_y) * (height - kViewportRoundingBias) / 2.0) + y_offset,
+      ((1 - v_y) * (height - kHalfPixel) / 2.0) + y_offset,
       GetTransformedVector()[kY]);
   EXPECT_EQ(v_z, GetTransformedVector()[kZ]);
   EXPECT_EQ(v_w, GetTransformedVector()[kW]);

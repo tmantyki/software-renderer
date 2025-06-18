@@ -1,5 +1,6 @@
 #include "transform.hpp"
 #include <Eigen/Geometry>
+#include "geometry/common.hpp"
 
 // #TODO: use word mapping instead of transform or matrix
 // #TODO: refactor!
@@ -67,13 +68,12 @@ bool PerspectiveProjection::operator==(const PerspectiveProjection& rhs) const {
 }
 
 bool ViewportTransform::UpdateTransform() noexcept {
-  constexpr f32 half_pixel = 0.5f;
   const f32 half_width = static_cast<f32>(width_) / 2.0f;
   const f32 half_height = static_cast<f32>(height_) / 2.0f;
   matrix_ = Matrix4::Identity();
-  matrix_(0, 0) = half_width - half_pixel;
+  matrix_(0, 0) = half_width - kHalfPixel;
   matrix_(0, 3) = half_width + x_offset_;
-  matrix_(1, 1) = -half_height + half_pixel;
+  matrix_(1, 1) = -half_height + kHalfPixel;
   matrix_(1, 3) = half_height + y_offset_;
   return true;
 }

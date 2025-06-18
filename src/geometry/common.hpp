@@ -12,6 +12,7 @@ constexpr float kPi = 3.14159265358979323846264338f;
 constexpr float kFloatTolerance = 1.0E-3f;
 constexpr float kAntiZFighting = 1.0E-5f;
 constexpr float kFarPlaneDistance = 10.0f;
+constexpr float kHalfPixel = 0.5f;
 constexpr float kNearPlaneDistance = 1.0f;
 constexpr float kZBufferMax = 1.0f;
 constexpr size_t kBytesPerPixel = 4;
