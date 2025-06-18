@@ -65,61 +65,44 @@ struct BackgroundFill {
   static void SetupPixels(RenderBuffer& render_buffer) noexcept;
 };
 
-// struct WireframeRaster {
-//   static void RasterizeTriangles(RasterizationContext& context) noexcept;
-
-//  private:
-//   static void DrawLine(f32 a_x,
-//                        f32 a_y,
-//                        f32 b_x,
-//                        f32 b_y,
-//                        RenderBuffer& render_buffer) noexcept;
-// };
-
-// struct FlatRaster {
-//   static void RasterizeTriangles(RasterizationContext& context) noexcept;
-
-//  private:
-//   static void RasterizeTriangleHalf(PixelCoordinates& pc,
-//                                     OrderedVertexIndices& vi,
-//                                     TriangleHalf triangle_half,
-//                                     f32 brightness,
-//                                     RenderBuffer& render_buffer) noexcept;
-// };
-
-// struct TexturedRaster {
-//   static void RasterizeTriangles(RasterizationContext& context) noexcept;
-
-//  private:
-//   static void RasterizeTriangleHalf(PixelCoordinates& pc,
-//                                     OrderedVertexIndices& vi,
-//                                     const Triangle& triangle,
-//                                     TriangleHalf triangle_half,
-//                                     f32 brightness,
-//                                     RasterizationContext& context) noexcept;
-// };
-
-class PureRasterizer {
- public:
-  void RasterizeGameState(RasterizationContext& context) noexcept;
+struct WireframeRaster {
+  static void RasterizeTriangles(RasterizationContext& context) noexcept;
 
  private:
-  void RasterizeTriangleHalf(PixelCoordinates& pc,
-                             OrderedVertexIndices& vi,
-                             const TriangleSharedPointer& triangle,
-                             TriangleHalf triangle_half,
-                             f32 brightness,
-                             const Texture* __restrict__ default_texture,
-                             Sample* const __restrict__ pixels,
-                             int pitch,
-                             f32* const __restrict__ z_buffer) noexcept;
-  void RasterizeTriangles(RasterizationContext* __restrict__ context) noexcept;
+  static void DrawLine(f32 a_x,
+                       f32 a_y,
+                       f32 b_x,
+                       f32 b_y,
+                       RenderBuffer& render_buffer) noexcept;
 };
 
-// using WireframeRasterizer = Rasterizer<WireframeRaster, BackgroundFill,
-// None>; template class Rasterizer<WireframeRaster, BackgroundFill, None>;
-// using FlatRasterizer = Rasterizer<FlatRaster, BackgroundFill, ResetZBuffer>;
-// template class Rasterizer<FlatRaster, BackgroundFill, ResetZBuffer>;
-// using TexturedRasterizer =
-//     Rasterizer<TexturedRaster, BackgroundFill, ResetZBuffer>;
-// template class Rasterizer<TexturedRaster, BackgroundFill, ResetZBuffer>;
+struct FlatRaster {
+  static void RasterizeTriangles(RasterizationContext& context) noexcept;
+
+ private:
+  static void RasterizeTriangleHalf(PixelCoordinates& pc,
+                                    OrderedVertexIndices& vi,
+                                    TriangleHalf triangle_half,
+                                    f32 brightness,
+                                    RenderBuffer& render_buffer) noexcept;
+};
+
+struct TexturedRaster {
+  static void RasterizeTriangles(RasterizationContext& context) noexcept;
+
+ private:
+  static void RasterizeTriangleHalf(PixelCoordinates& pc,
+                                    OrderedVertexIndices& vi,
+                                    const Triangle& triangle,
+                                    TriangleHalf triangle_half,
+                                    f32 brightness,
+                                    RasterizationContext& context) noexcept;
+};
+
+using WireframeRasterizer = Rasterizer<WireframeRaster, BackgroundFill,
+None>; template class Rasterizer<WireframeRaster, BackgroundFill, None>;
+using FlatRasterizer = Rasterizer<FlatRaster, BackgroundFill, ResetZBuffer>;
+template class Rasterizer<FlatRaster, BackgroundFill, ResetZBuffer>;
+using TexturedRasterizer =
+    Rasterizer<TexturedRaster, BackgroundFill, ResetZBuffer>;
+template class Rasterizer<TexturedRaster, BackgroundFill, ResetZBuffer>;
