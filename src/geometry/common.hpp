@@ -62,8 +62,8 @@ using f32 = float;
 
 enum class BoundaryType { kMin, kMax };
 enum class TriangleClipMode { kIncludeReference, kExcludeReference };
-enum class TriangleHalf { kUpper, kLower };
 enum TriangleEdge { kAB = 0, kAC = 1, kBC = 2 };
+enum TriangleHalf { kLower = -1, kUpper = 1 };
 enum Axis { kX = 0, kY = 1, kZ = 2, kW = 3 };
 enum UVDimension { kU = 0, kV = 1 };
 enum AxisDirection { kNegative = -1, kNeutral = 0, kPositive = 1 };

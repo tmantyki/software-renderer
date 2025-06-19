@@ -68,17 +68,19 @@ void CalculateXScanlineBoundaries(ScanlineParameters& sp,
                                   u16 scan_y,
                                   const PixelCoordinates pc,
                                   bool& left_right_swapped) noexcept {
-  sp.scan_x_left = (scan_y * pc.low_x - pc.top_x * scan_y -
-                    pc.top_y * pc.low_x + pc.top_x * pc.low_y) /
-                   (pc.low_y - pc.top_y);
-  sp.scan_x_right = (scan_y * pc.mid_x - pc.top_x * scan_y -
-                     pc.top_y * pc.mid_x + pc.top_x * pc.mid_y) /
-                    (pc.mid_y - pc.top_y);
-  if (sp.scan_x_right < sp.scan_x_left) {
-    std::swap(sp.scan_x_left, sp.scan_x_right);
+  sp.scan_x_left_f32 = (scan_y * pc.low_x - pc.top_x * scan_y -
+                        pc.top_y * pc.low_x + pc.top_x * pc.low_y) /
+                       (pc.low_y - pc.top_y);
+  sp.scan_x_right_f32 = (scan_y * pc.mid_x - pc.top_x * scan_y -
+                         pc.top_y * pc.mid_x + pc.top_x * pc.mid_y) /
+                        (pc.mid_y - pc.top_y);
+  if (sp.scan_x_right_f32 < sp.scan_x_left_f32) {
+    std::swap(sp.scan_x_left_f32, sp.scan_x_right_f32);
     left_right_swapped = true;
   } else
     left_right_swapped = false;
+  sp.scan_x_left_u16 = std::floor(sp.scan_x_left_f32);
+  sp.scan_x_right_u16 = std::floor(sp.scan_x_right_f32);  // Necessary floor?
   // sp.scan_x_increment = sp.scan_x_right < sp.scan_x_left ? -1 : 1;
 }
 
@@ -97,17 +99,12 @@ void CalculateInterpolationParametersForX(
     const ScanlineParameters& sp,
     const u16 scan_x,
     const bool left_right_swapped) noexcept {
-  ip.horizontal_t = static_cast<f32>(scan_x - sp.scan_x_left) /
-                    (sp.scan_x_right - sp.scan_x_left);
+  ip.horizontal_t = static_cast<f32>(scan_x - sp.scan_x_left_f32) /
+                    (sp.scan_x_right_f32 - sp.scan_x_left_f32);
   if (left_right_swapped)
     ip.horizontal_t = 1.0f - ip.horizontal_t;
   ip.final_z =
       ip.top_low_z * (1.0f - ip.horizontal_t) + ip.top_mid_z * ip.horizontal_t;
-}
-
-void SetScanlineIncrementY(ScanlineParameters& sp,
-                           const TriangleHalf triangle_half) noexcept {
-  sp.scan_y_increment = triangle_half == TriangleHalf::kLower ? -1 : 1;
 }
 
 // #TODO: citation?
@@ -246,7 +243,13 @@ void FlatRaster::RasterizeTriangleHalf(PixelCoordinates& pc,
                                        TriangleHalf triangle_half,
                                        f32 brightness,
                                        RenderBuffer& render_buffer) noexcept {
-  Sample* const pixels = render_buffer.pixels;
+  (void)pc;
+  (void)vi;
+  (void)triangle_half;
+  (void)brightness;
+  (void)render_buffer;
+
+  /* Sample* const pixels = render_buffer.pixels;
   const int pitch = render_buffer.pitch;
   InterpolationParameters ip;
   ScanlineParameters sp;
@@ -279,7 +282,7 @@ void FlatRaster::RasterizeTriangleHalf(PixelCoordinates& pc,
     }
     if (scan_y == pc.mid_y)
       break;
-  }
+  } */
 }
 
 /***********************
@@ -336,7 +339,7 @@ void TexturedRaster::RasterizeTriangleHalf(
   if (triangle_half == TriangleHalf::kLower)
     ::SwapTopAndLow(pc, vi);
 
-  if (pc.low_y == pc.top_y || pc.top_y == pc.mid_y)  // #TODO: Best timing?
+  if (std::abs(pc.mid_y - pc.top_y) < 1.0f)
     return;
 
   const UVCoordinate& top_uv =
@@ -346,8 +349,12 @@ void TexturedRaster::RasterizeTriangleHalf(
   const UVCoordinate& low_uv =
       triangle.GetVertex(vi.low % kVerticesPerTriangle).GetUVCoordinate();
 
-  ::SetScanlineIncrementY(sp, triangle_half);
-  for (u16 scan_y = pc.top_y;; scan_y += sp.scan_y_increment) {
+  i16 y1 = std::ceil(std::min(pc.top_y, pc.mid_y));
+  i16 y2 = std::floor(std::max(pc.top_y, pc.mid_y));
+  if (triangle_half == kLower)
+    std::swap(y1, y2);
+
+  for (i16 scan_y = y1; scan_y != y2 + triangle_half; scan_y += triangle_half) {
     assert(scan_y < kWindowHeight);
     ::CalculateXScanlineBoundaries(sp, scan_y, pc, left_right_swapped);
     ::CalculateInterpolationParametersForY(ip, scan_y, pc);
@@ -360,7 +367,8 @@ void TexturedRaster::RasterizeTriangleHalf(
                          (mid_uv / ::TrueZ(pc.mid_z)) * (ip.top_mid_t);
     top_mid_uv *= ::TrueZ(ip.top_mid_z);
 
-    for (u16 scan_x = sp.scan_x_left; scan_x <= sp.scan_x_right; scan_x++) {
+    for (u16 scan_x = sp.scan_x_left_u16; scan_x < sp.scan_x_right_u16;
+         scan_x++) {
       assert(scan_x < kWindowWidth);
       ::CalculateInterpolationParametersForX(ip, sp, scan_x,
                                              left_right_swapped);
@@ -373,8 +381,13 @@ void TexturedRaster::RasterizeTriangleHalf(
       // #TODO: replace argument with incrementing
       if (::ZBufferCheckAndReplace(ip.final_z, scan_y * kWindowWidth + scan_x,
                                    render_buffer.z_buffer)) {
-        u16 u = static_cast<u16>(final_uv[kU] * (texture_width - 1));
-        u16 v = static_cast<u16>((1 - final_uv[kV]) * (texture_height - 1));
+        u16 u = static_cast<u16>(final_uv[kU] * (texture_width));
+        u16 v = static_cast<u16>((1 - final_uv[kV]) * (texture_height));
+
+        // CLAMP
+        u = std::min(texture_width - 1, static_cast<i32>(u));
+        v = std::min(texture_height - 1, static_cast<i32>(v));
+
         assert(u < texture_width);
         assert(v < texture_height);
         u32* target_pixels = reinterpret_cast<u32*>(pixels);
@@ -411,7 +424,5 @@ void TexturedRaster::RasterizeTriangleHalf(
         }
       }
     }
-    if (scan_y == pc.mid_y)
-      break;
   }
 }

@@ -14,30 +14,31 @@ struct OrderedVertexIndices {
 };
 
 struct PixelCoordinates {
-  uint16_t top_x;
-  uint16_t top_y;
-  float top_z;
-  uint16_t mid_x;
-  uint16_t mid_y;
-  float mid_z;
-  uint16_t low_x;
-  uint16_t low_y;
-  float low_z;
+  f32 top_x;
+  f32 top_y;
+  f32 top_z;
+  f32 mid_x;
+  f32 mid_y;
+  f32 mid_z;
+  f32 low_x;
+  f32 low_y;
+  f32 low_z;
 };
 
 struct InterpolationParameters {
-  float final_z;
-  float horizontal_t;
-  float top_mid_t;
-  float top_mid_z;
-  float top_low_t;
-  float top_low_z;
+  f32 final_z;
+  f32 horizontal_t;
+  f32 top_mid_t;
+  f32 top_mid_z;
+  f32 top_low_t;
+  f32 top_low_z;
 };
 
 struct ScanlineParameters {
-  uint16_t scan_x_left;
-  uint16_t scan_x_right;
-  int8_t scan_y_increment;
+  f32 scan_x_left_f32;
+  f32 scan_x_right_f32;
+  uint16_t scan_x_left_u16;
+  uint16_t scan_x_right_u16;
 };
 
 struct RasterizationContext {
@@ -99,8 +100,8 @@ struct TexturedRaster {
                                     RasterizationContext& context) noexcept;
 };
 
-using WireframeRasterizer = Rasterizer<WireframeRaster, BackgroundFill,
-None>; template class Rasterizer<WireframeRaster, BackgroundFill, None>;
+using WireframeRasterizer = Rasterizer<WireframeRaster, BackgroundFill, None>;
+template class Rasterizer<WireframeRaster, BackgroundFill, None>;
 using FlatRasterizer = Rasterizer<FlatRaster, BackgroundFill, ResetZBuffer>;
 template class Rasterizer<FlatRaster, BackgroundFill, ResetZBuffer>;
 using TexturedRasterizer =
