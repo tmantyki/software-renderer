@@ -2,6 +2,7 @@
 
 #include <algorithm>
 #include "geometry/common.hpp"
+#include "geometry/space.hpp"
 #include "rasterizer/rasterizer.hpp"
 #include "rasterizer/render_buffer.hpp"
 
@@ -10,46 +11,31 @@
 
 namespace {
 
-size_t GetBoundaryVertexIndexByDimension(size_t a_index,
-                                         size_t b_index,
-                                         size_t c_index,
-                                         enum Axis axis,
-                                         BoundaryType boundary_type,
-                                         const VertexMatrix& vertices) {
-  f32 a = vertices(axis, a_index);
-  f32 b = vertices(axis, b_index);
-  f32 c = vertices(axis, c_index);
-  f32 boundary_value;
-  if (boundary_type == BoundaryType::kMin)
-    boundary_value = std::min({a, b, c});
-  else
-    boundary_value = std::max({a, b, c});
-  if (a == boundary_value)
-    return a_index;
-  else if (b == boundary_value)
-    return b_index;
-  else
-    return c_index;
-}
-
-// #TODO: refactor with simpler sorting logic
-void SetSortedVertexIndices(OrderedVertexIndices& vertex_indices,
-                            const size_t triangle_index,
-                            const Space& space) noexcept {
-  size_t a_index = triangle_index * kVerticesPerTriangle;
-  size_t b_index = triangle_index * kVerticesPerTriangle + 1;
-  size_t c_index = triangle_index * kVerticesPerTriangle + 2;
+[[nodiscard]] OrderedVertexIndices GetYSortedVertexIndices(
+    size_t triangle_index,
+    const Space& space) noexcept {
   const VertexMatrix& vertices = space.GetVertices();
-  vertex_indices.top = ::GetBoundaryVertexIndexByDimension(
-      a_index, b_index, c_index, kY, BoundaryType::kMin, vertices);
-  vertex_indices.low = ::GetBoundaryVertexIndexByDimension(
-      a_index, b_index, c_index, kY, BoundaryType::kMax, vertices);
-  if ((a_index != vertex_indices.top) && (a_index != vertex_indices.low))
-    vertex_indices.mid = a_index;
-  else if ((b_index != vertex_indices.top) && (b_index != vertex_indices.low))
-    vertex_indices.mid = b_index;
-  else
-    vertex_indices.mid = c_index;
+  size_t a = triangle_index * kVerticesPerTriangle;
+  size_t b = triangle_index * kVerticesPerTriangle + 1;
+  size_t c = triangle_index * kVerticesPerTriangle + 2;
+  const f32 ay = vertices(kY, a);
+  const f32 by = vertices(kY, b);
+  const f32 cy = vertices(kY, c);
+  if (ay <= by) {
+    if (cy <= ay)
+      return {c, a, b};
+    else if (by <= cy)
+      return {a, b, c};
+    else
+      return {a, c, b};
+  } else {
+    if (cy <= by)
+      return {c, b, a};
+    else if (ay <= cy)
+      return {b, a, c};
+    else
+      return {b, c, a};
+  }
 }
 
 // #TODO refcator with arrays rather than top, mid, low etc.
@@ -241,9 +227,8 @@ void FlatRaster::RasterizeTriangles(RasterizationContext& context) noexcept {
     brightness = (brightness + 1.0f) / 2.0f;
 
     PixelCoordinates pc;
-    OrderedVertexIndices vi;
 
-    ::SetSortedVertexIndices(vi, t, space);
+    OrderedVertexIndices vi = ::GetYSortedVertexIndices(t, space);
     ::SetPixelCoordinates(pc, vi, space);
 
     // Scanlines for top section
@@ -312,9 +297,8 @@ void TexturedRaster::RasterizeTriangles(
     brightness = (brightness + 1.0f) / 2.0f;
 
     PixelCoordinates pc;
-    OrderedVertexIndices vi;
 
-    ::SetSortedVertexIndices(vi, t, space);
+    OrderedVertexIndices vi = ::GetYSortedVertexIndices(t, space);
     ::SetPixelCoordinates(pc, vi, space);
 
     // Scanlines for top section
