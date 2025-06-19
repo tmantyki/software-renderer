@@ -39,19 +39,21 @@ namespace {
 }
 
 // #TODO refcator with arrays rather than top, mid, low etc.
-void SetPixelCoordinates(PixelCoordinates& pc,
-                         const OrderedVertexIndices& vertex_indices,
-                         const Space& space) noexcept {
+[[nodiscard]] PixelCoordinates GetPixelCoordinates(
+    const OrderedVertexIndices& vertex_indices,
+    const Space& space) noexcept {
   const VertexMatrix& vertices = space.GetVertices();
-  pc.top_x = vertices(kX, vertex_indices.top);
-  pc.top_y = vertices(kY, vertex_indices.top);
-  pc.top_z = vertices(kZ, vertex_indices.top);
-  pc.mid_x = vertices(kX, vertex_indices.mid);
-  pc.mid_y = vertices(kY, vertex_indices.mid);
-  pc.mid_z = vertices(kZ, vertex_indices.mid);
-  pc.low_x = vertices(kX, vertex_indices.low);
-  pc.low_y = vertices(kY, vertex_indices.low);
-  pc.low_z = vertices(kZ, vertex_indices.low);
+  PixelCoordinates ret_pc;
+  ret_pc.top_x = vertices(kX, vertex_indices.top);
+  ret_pc.top_y = vertices(kY, vertex_indices.top);
+  ret_pc.top_z = vertices(kZ, vertex_indices.top);
+  ret_pc.mid_x = vertices(kX, vertex_indices.mid);
+  ret_pc.mid_y = vertices(kY, vertex_indices.mid);
+  ret_pc.mid_z = vertices(kZ, vertex_indices.mid);
+  ret_pc.low_x = vertices(kX, vertex_indices.low);
+  ret_pc.low_y = vertices(kY, vertex_indices.low);
+  ret_pc.low_z = vertices(kZ, vertex_indices.low);
+  return ret_pc;
 }
 
 void SwapTopAndLow(PixelCoordinates& pc, OrderedVertexIndices& vi) noexcept {
@@ -226,10 +228,8 @@ void FlatRaster::RasterizeTriangles(RasterizationContext& context) noexcept {
         triangle.GetNormal().normalized());
     brightness = (brightness + 1.0f) / 2.0f;
 
-    PixelCoordinates pc;
-
     OrderedVertexIndices vi = ::GetYSortedVertexIndices(t, space);
-    ::SetPixelCoordinates(pc, vi, space);
+    PixelCoordinates pc = ::GetPixelCoordinates(vi, space);
 
     // Scanlines for top section
     RasterizeTriangleHalf(pc, vi, TriangleHalf::kUpper, brightness,
@@ -296,10 +296,8 @@ void TexturedRaster::RasterizeTriangles(
         triangle.GetNormal().normalized());
     brightness = (brightness + 1.0f) / 2.0f;
 
-    PixelCoordinates pc;
-
     OrderedVertexIndices vi = ::GetYSortedVertexIndices(t, space);
-    ::SetPixelCoordinates(pc, vi, space);
+    PixelCoordinates pc = ::GetPixelCoordinates(vi, space);
 
     // Scanlines for top section
     RasterizeTriangleHalf(pc, vi, triangle, TriangleHalf::kUpper, brightness,
