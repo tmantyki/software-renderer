@@ -1,6 +1,7 @@
 #include <SDL2/SDL.h>
 
 #include <algorithm>
+#include <utility>
 #include "geometry/common.hpp"
 #include "geometry/space.hpp"
 #include "rasterizer/rasterizer.hpp"
@@ -18,24 +19,24 @@ namespace {
   size_t a = triangle_index * kVerticesPerTriangle;
   size_t b = triangle_index * kVerticesPerTriangle + 1;
   size_t c = triangle_index * kVerticesPerTriangle + 2;
-  const f32 ay = vertices(kY, a);
-  const f32 by = vertices(kY, b);
-  const f32 cy = vertices(kY, c);
-  if (ay <= by) {
-    if (cy <= ay)
-      return {c, a, b};
-    else if (by <= cy)
-      return {a, b, c};
-    else
-      return {a, c, b};
-  } else {
-    if (cy <= by)
-      return {c, b, a};
-    else if (ay <= cy)
-      return {b, a, c};
-    else
-      return {b, c, a};
+  f32 ay = vertices(kY, a);
+  f32 by = vertices(kY, b);
+  f32 cy = vertices(kY, c);
+
+  // Sort three elements
+  if (ay > cy) {
+    std::swap(ay, cy);
+    std::swap(a, c);
   }
+  if (ay > by) {
+    std::swap(ay, by);
+    std::swap(a, b);
+  }
+  if (by > cy) {
+    std::swap(by, cy);
+    std::swap(b, c);
+  }
+  return {a, b, c};
 }
 
 // #TODO refcator with arrays rather than top, mid, low etc.
