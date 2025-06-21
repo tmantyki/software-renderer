@@ -339,9 +339,6 @@ void TexturedRaster::RasterizeTriangleHalf(
   if (triangle_half == TriangleHalf::kLower)
     ::SwapTopAndLow(pc, vi);
 
-  if (std::abs(pc.mid_y - pc.top_y) < 1.0f)
-    return;
-
   const UVCoordinate& top_uv =
       triangle.GetVertex(vi.top % kVerticesPerTriangle).GetUVCoordinate();
   const UVCoordinate& mid_uv =
@@ -384,7 +381,7 @@ void TexturedRaster::RasterizeTriangleHalf(
         u16 u = static_cast<u16>(final_uv[kU] * (texture_width));
         u16 v = static_cast<u16>((1 - final_uv[kV]) * (texture_height));
 
-        // CLAMP
+        // CLAMP #TODO: best clamping strategy? (-1 case)
         u = std::min(texture_width - 1, static_cast<i32>(u));
         v = std::min(texture_height - 1, static_cast<i32>(v));
 
