@@ -100,6 +100,82 @@ struct TexturedRaster {
                                     RasterizationContext& context) noexcept;
 };
 
+template <size_t buffer_length>
+struct SIMD_context {
+  alignas(64) std::array<u32, buffer_length> texels;
+  alignas(64) std::array<u32, buffer_length> pixel_offsets;
+};
+
+template <size_t buffer_length>
+class VectorizedBrightnessAdjustment {
+ public:
+  VectorizedBrightnessAdjustment(u32* pixels) noexcept
+      : counter_(0), pixels_(pixels) {}
+  size_t Enqueue(u32 sample,
+                 u32 pixel_offset,
+                 f32 brightness,
+                 SIMD_context<buffer_length>& simd_context) noexcept {
+    auto& pixel_offsets = simd_context.pixel_offsets;
+    auto& texels = simd_context.texels;
+    texels[counter_] = sample;
+    pixel_offsets[counter_++] = pixel_offset;
+    if (counter_ == buffer_length)
+      FlushVectorized(brightness, simd_context);
+    return counter_;
+  }
+  // void FlushSequential(f32 brightness) noexcept {
+  //   for (size_t i = 0; i < counter_; i++) {
+  //     u32 texel = texels_[i];
+  //     texel.argb.alpha *= brightness;
+  //     texel.argb.red *= brightness;
+  //     texel.argb.green *= brightness;
+  //     texel.argb.blue *= brightness;
+  //     texels_[i] = texel;
+  //   }
+  //   counter_ = 0;
+  // }
+  void FlushVectorized(f32 brightness,
+                       SIMD_context<buffer_length>& simd_context) noexcept {
+    constexpr size_t kBytesIn256Bits = 256 / 8;
+    size_t constexpr kSamplesPerAVX256 =
+        kBytesIn256Bits / (sizeof(f32) * kBytesPerPixel);
+    static_assert(buffer_length % kSamplesPerAVX256 == 0);
+
+    const auto& pixel_offsets = simd_context.pixel_offsets;
+    auto& texels = simd_context.texels;
+
+    for (size_t i = 0; i < buffer_length; i += kSamplesPerAVX256) {
+      void* texels_data = texels.data() + i;
+      __m128i u8_values =
+          _mm_loadl_epi64(reinterpret_cast<__m128i*>(texels_data));
+      __m256i packed_32 = _mm256_cvtepu8_epi32((u8_values));
+      __m256 f32_values = _mm256_cvtepi32_ps(packed_32);
+      __m256 brightness_vector = _mm256_set1_ps(brightness);
+      f32_values = _mm256_mul_ps(f32_values, brightness_vector);
+      packed_32 = _mm256_cvtps_epi32(f32_values);
+      __m256i mask = _mm256_setr_epi8(0, 4, 8, 12, 16, 20, 24, 28, -1, -1, -1,
+                                      -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
+                                      -1, -1, -1, 0, 4, 8, 12, 16, 20, 24, 28);
+      packed_32 = _mm256_shuffle_epi8(packed_32, mask);
+
+      mask = _mm256_setr_epi32(0, 6, -1, -1, -1, -1, -1, -1);
+      packed_32 = _mm256_permutevar8x32_epi32(packed_32, mask);
+
+      _mm_storel_epi64(reinterpret_cast<__m128i*>(texels_data),
+                       _mm256_castsi256_si128(packed_32));
+      pixels_[pixel_offsets[i]] = texels[i];
+      pixels_[pixel_offsets[i + 1]] = texels[i + 1];
+    }
+    counter_ = 0;
+  }
+
+ private:
+  // alignas(64) std::array<u32, buffer_length> texels_;
+  // alignas(64) std::array<u32, buffer_length> pixel_offsets_;
+  size_t counter_;
+  u32* const pixels_;
+};
+
 using WireframeRasterizer = Rasterizer<WireframeRaster, BackgroundFill, None>;
 template class Rasterizer<WireframeRaster, BackgroundFill, None>;
 using FlatRasterizer = Rasterizer<FlatRaster, BackgroundFill, ResetZBuffer>;

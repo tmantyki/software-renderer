@@ -333,8 +333,9 @@ void TexturedRaster::RasterizeTriangleHalf(
   const int texture_pitch = texture_surface->pitch;
 
   // Used by SIMD-intrinsics
-  alignas(64) std::array<u32, 2> pixel_buffer, target_pixel_offsets;
-  u8 counter = 0;
+  VectorizedBrightnessAdjustment<2> simd_brightness(
+      reinterpret_cast<u32*>(pixels));
+  SIMD_context<2> simd_context;
 
   if (triangle_half == TriangleHalf::kLower)
     ::SwapTopAndLow(pc, vi);
@@ -387,38 +388,13 @@ void TexturedRaster::RasterizeTriangleHalf(
 
         assert(u < texture_width);
         assert(v < texture_height);
-        u32* target_pixels = reinterpret_cast<u32*>(pixels);
+        // u32* target_pixels = reinterpret_cast<u32*>(pixels);
         u32* texture_pixels = reinterpret_cast<u32*>(texture_surface->pixels);
         u32 target_offset = scan_y * (pitch / kBytesPerPixel) + scan_x;
         u32 texture_offset = v * (texture_pitch / kBytesPerPixel) + u;
 
-        // SIMD-intrinsics implementation
-        pixel_buffer[counter] = texture_pixels[texture_offset];
-        target_pixel_offsets[counter++] = target_offset;
-        if (counter == 2) {
-          __m128i u8_values =
-              _mm_loadl_epi64(reinterpret_cast<__m128i*>(pixel_buffer.data()));
-          __m256i packed_32 = _mm256_cvtepu8_epi32((u8_values));
-          __m256 f32_values = _mm256_cvtepi32_ps(packed_32);
-          __m256 brightness_vector = _mm256_set1_ps(brightness);
-          f32_values = _mm256_mul_ps(f32_values, brightness_vector);
-          packed_32 = _mm256_cvtps_epi32(f32_values);
-          __m256i mask = _mm256_setr_epi8(
-              0, 4, 8, 12, 16, 20, 24, 28, -1, -1, -1, -1, -1, -1, -1, -1, -1,
-              -1, -1, -1, -1, -1, -1, -1, 0, 4, 8, 12, 16, 20, 24, 28);
-          packed_32 = _mm256_shuffle_epi8(packed_32, mask);
-
-          mask = _mm256_setr_epi32(0, 6, -1, -1, -1, -1, -1, -1);
-          packed_32 = _mm256_permutevar8x32_epi32(packed_32, mask);
-
-          _mm_storel_epi64(reinterpret_cast<__m128i*>(pixel_buffer.data()),
-                           _mm256_castsi256_si128(packed_32));
-
-          for (size_t k = 0; k < 2; k++) {
-            target_pixels[target_pixel_offsets[k]] = pixel_buffer[k];
-          }
-          counter = 0;
-        }
+        simd_brightness.Enqueue(texture_pixels[texture_offset], target_offset,
+                                brightness, simd_context);
       }
     }
   }
