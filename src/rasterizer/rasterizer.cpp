@@ -342,8 +342,6 @@ void TexturedRaster::RasterizeTriangleHalf(
       texels, pixel_offsets, brightness, counter,
       reinterpret_cast<u32*>(pixels)};
 
-  // SIMD_context<2> simd_context;
-
   if (triangle_half == TriangleHalf::kLower)
     ::SwapTopAndLow(pc, vi);
 

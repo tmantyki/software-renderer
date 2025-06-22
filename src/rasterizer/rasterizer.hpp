@@ -164,15 +164,6 @@ struct SampleMultiply {
     }
     context.counter = 0;
   }
-
-  //  SIMD_context<buffer_length> simd_context;
-  //  size_t counter_;
-
-  //  private:
-  // alignas(64) std::array<u32, buffer_length> texels_;
-  // alignas(64) std::array<u32, buffer_length> pixel_offsets_;
-
-  // u32* const pixels_;
 };
 
 using WireframeRasterizer = Rasterizer<WireframeRaster, BackgroundFill, None>;
