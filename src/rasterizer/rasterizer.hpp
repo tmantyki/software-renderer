@@ -101,56 +101,52 @@ struct TexturedRaster {
 };
 
 template <size_t buffer_length>
-struct SIMD_context {
-  alignas(64) std::array<u32, buffer_length> texels;
-  alignas(64) std::array<u32, buffer_length> pixel_offsets;
-};
+struct SampleMultiply {
+  SampleMultiply() = delete;
 
-template <size_t buffer_length>
-class VectorizedBrightnessAdjustment {
- public:
-  VectorizedBrightnessAdjustment(u32* pixels) noexcept
-      : counter_(0), pixels_(pixels) {}
-  size_t Enqueue(u32 sample,
-                 u32 pixel_offset,
-                 f32 brightness,
-                 SIMD_context<buffer_length>& simd_context) noexcept {
-    auto& pixel_offsets = simd_context.pixel_offsets;
-    auto& texels = simd_context.texels;
-    texels[counter_] = sample;
-    pixel_offsets[counter_++] = pixel_offset;
-    if (counter_ == buffer_length)
-      FlushVectorized(brightness, simd_context);
-    return counter_;
+  struct alignas(kCacheLineSize) Context {
+    std::array<u32, buffer_length>& texels;
+    std::array<u32, buffer_length>& pixel_offsets;
+    const f32 brightness;
+    size_t& counter;
+    u32* const pixels;
+  };
+
+  static size_t Enqueue(u32 sample,
+                        u32 pixel_offset,
+                        Context& context) noexcept {
+    context.texels[context.counter] = sample;
+    context.pixel_offsets[context.counter++] = pixel_offset;
+    if (context.counter == buffer_length)
+      FlushVectorized(context);
+    return context.counter;
   }
-  // void FlushSequential(f32 brightness) noexcept {
-  //   for (size_t i = 0; i < counter_; i++) {
-  //     u32 texel = texels_[i];
-  //     texel.argb.alpha *= brightness;
-  //     texel.argb.red *= brightness;
-  //     texel.argb.green *= brightness;
-  //     texel.argb.blue *= brightness;
-  //     texels_[i] = texel;
-  //   }
-  //   counter_ = 0;
-  // }
-  void FlushVectorized(f32 brightness,
-                       SIMD_context<buffer_length>& simd_context) noexcept {
+
+  /*   void FlushSequential(f32 brightness) noexcept {
+      for (size_t i = 0; i < counter_; i++) {
+        u32 texel = texels_[i];
+        texel.argb.alpha *= brightness;
+        texel.argb.red *= brightness;
+        texel.argb.green *= brightness;
+        texel.argb.blue *= brightness;
+        texels_[i] = texel;
+      }
+      counter_ = 0;
+    } */
+
+  static void FlushVectorized(Context& context) noexcept {
     constexpr size_t kBytesIn256Bits = 256 / 8;
     size_t constexpr kSamplesPerAVX256 =
         kBytesIn256Bits / (sizeof(f32) * kBytesPerPixel);
     static_assert(buffer_length % kSamplesPerAVX256 == 0);
 
-    const auto& pixel_offsets = simd_context.pixel_offsets;
-    auto& texels = simd_context.texels;
-
     for (size_t i = 0; i < buffer_length; i += kSamplesPerAVX256) {
-      void* texels_data = texels.data() + i;
+      void* texels_data = context.texels.data() + i;
       __m128i u8_values =
           _mm_loadl_epi64(reinterpret_cast<__m128i*>(texels_data));
       __m256i packed_32 = _mm256_cvtepu8_epi32((u8_values));
       __m256 f32_values = _mm256_cvtepi32_ps(packed_32);
-      __m256 brightness_vector = _mm256_set1_ps(brightness);
+      __m256 brightness_vector = _mm256_set1_ps(context.brightness);
       f32_values = _mm256_mul_ps(f32_values, brightness_vector);
       packed_32 = _mm256_cvtps_epi32(f32_values);
       __m256i mask = _mm256_setr_epi8(0, 4, 8, 12, 16, 20, 24, 28, -1, -1, -1,
@@ -163,17 +159,20 @@ class VectorizedBrightnessAdjustment {
 
       _mm_storel_epi64(reinterpret_cast<__m128i*>(texels_data),
                        _mm256_castsi256_si128(packed_32));
-      pixels_[pixel_offsets[i]] = texels[i];
-      pixels_[pixel_offsets[i + 1]] = texels[i + 1];
+      context.pixels[context.pixel_offsets[i]] = context.texels[i];
+      context.pixels[context.pixel_offsets[i + 1]] = context.texels[i + 1];
     }
-    counter_ = 0;
+    context.counter = 0;
   }
 
- private:
+  //  SIMD_context<buffer_length> simd_context;
+  //  size_t counter_;
+
+  //  private:
   // alignas(64) std::array<u32, buffer_length> texels_;
   // alignas(64) std::array<u32, buffer_length> pixel_offsets_;
-  size_t counter_;
-  u32* const pixels_;
+
+  // u32* const pixels_;
 };
 
 using WireframeRasterizer = Rasterizer<WireframeRaster, BackgroundFill, None>;

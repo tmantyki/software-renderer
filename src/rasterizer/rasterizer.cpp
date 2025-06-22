@@ -333,9 +333,16 @@ void TexturedRaster::RasterizeTriangleHalf(
   const int texture_pitch = texture_surface->pitch;
 
   // Used by SIMD-intrinsics
-  VectorizedBrightnessAdjustment<2> simd_brightness(
-      reinterpret_cast<u32*>(pixels));
-  SIMD_context<2> simd_context;
+
+  constexpr size_t buffer_length = 2;
+  alignas(64) std::array<u32, buffer_length> texels;
+  alignas(64) std::array<u32, buffer_length> pixel_offsets;
+  size_t counter = 0;
+  SampleMultiply<buffer_length>::Context sample_multiply_context = {
+      texels, pixel_offsets, brightness, counter,
+      reinterpret_cast<u32*>(pixels)};
+
+  // SIMD_context<2> simd_context;
 
   if (triangle_half == TriangleHalf::kLower)
     ::SwapTopAndLow(pc, vi);
@@ -393,8 +400,9 @@ void TexturedRaster::RasterizeTriangleHalf(
         u32 target_offset = scan_y * (pitch / kBytesPerPixel) + scan_x;
         u32 texture_offset = v * (texture_pitch / kBytesPerPixel) + u;
 
-        simd_brightness.Enqueue(texture_pixels[texture_offset], target_offset,
-                                brightness, simd_context);
+        SampleMultiply<buffer_length>::Enqueue(texture_pixels[texture_offset],
+                                               target_offset,
+                                               sample_multiply_context);
       }
     }
   }
