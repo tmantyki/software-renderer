@@ -195,7 +195,7 @@ void WireframeRaster::DrawLine(f32 a_x,
                                f32 b_x,
                                f32 b_y,
                                RenderBuffer& render_buffer) noexcept {
-  const Sample fg_color = {{0xff, 0xff, 0xff, 0xff}};
+  const Pixel fg_color = {0xff, 0xff, 0xff, 0xff};
   const bool swap_xy = std::abs(b_x - a_x) < std::abs(b_y - a_y);
   if (!swap_xy) {
     f32 increment = (b_y - a_y) / (b_x - a_x);
@@ -249,13 +249,13 @@ void FlatRaster::RasterizeTriangleHalf(PixelCoordinates& pc,
   (void)brightness;
   (void)render_buffer;
 
-  /* Sample* const pixels = render_buffer.pixels;
+  /* Pixel* const pixels = render_buffer.pixels;
   const int pitch = render_buffer.pitch;
   InterpolationParameters ip;
   ScanlineParameters sp;
   bool left_right_swapped;
   u8 channel_value = 0xff * brightness;
-  Sample argb_value = {{channel_value, channel_value, channel_value, 0xff}};
+  Pixel argb_value = {{channel_value, channel_value, channel_value, 0xff}};
 
   if (triangle_half == TriangleHalf::kLower)
     ::SwapTopAndLow(pc, vi);
@@ -321,7 +321,7 @@ void TexturedRaster::RasterizeTriangleHalf(
     RasterizationContext& context) noexcept {
   RenderBuffer& render_buffer = context.render_buffer;
   const Texture& default_texture = context.default_texture;
-  Sample* const pixels = render_buffer.pixels;
+  Pixel* const pixels = render_buffer.pixels;
   const int pitch = render_buffer.pitch;
   InterpolationParameters ip;
   ScanlineParameters sp;
@@ -335,12 +335,11 @@ void TexturedRaster::RasterizeTriangleHalf(
   // Used by SIMD-intrinsics
 
   constexpr size_t buffer_length = 2;
-  alignas(64) std::array<u32, buffer_length> texels;
+  alignas(64) std::array<Pixel, buffer_length> texels;
   alignas(64) std::array<u32, buffer_length> pixel_offsets;
   size_t counter = 0;
-  SampleMultiply<buffer_length>::Context sample_multiply_context = {
-      texels, pixel_offsets, brightness, counter,
-      reinterpret_cast<u32*>(pixels)};
+  PixelMultiply<buffer_length>::Context pixel_multiply_context = {
+      texels, pixel_offsets, brightness, counter, pixels};
 
   if (triangle_half == TriangleHalf::kLower)
     ::SwapTopAndLow(pc, vi);
@@ -398,9 +397,9 @@ void TexturedRaster::RasterizeTriangleHalf(
         u32 target_offset = scan_y * (pitch / kBytesPerPixel) + scan_x;
         u32 texture_offset = v * (texture_pitch / kBytesPerPixel) + u;
 
-        SampleMultiply<buffer_length>::Enqueue(texture_pixels[texture_offset],
-                                               target_offset,
-                                               sample_multiply_context);
+        PixelMultiply<buffer_length>::Enqueue(texture_pixels[texture_offset],
+                                              target_offset,
+                                              pixel_multiply_context);
       }
     }
   }

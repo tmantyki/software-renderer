@@ -4,23 +4,42 @@
 #include <cstdlib>
 #include "geometry/common.hpp"
 
-union Sample {
-  struct ARGB {
+union Pixel {
+  struct {
     u8 alpha;
     u8 red;
     u8 green;
     u8 blue;
   } argb;
-  u8 data[4];
+  u32 value;
+
+  Pixel() = default;
+
+  Pixel(const u32 rhs) : value(rhs) {}
+
+  Pixel(const u8 alpha, const u8 red, const u8 green, const u8 blue)
+      : argb{alpha, red, green, blue} {}
+
+  Pixel& operator=(const Pixel& rhs) {
+    value = rhs.value;
+    return *this;
+  }
+
+  Pixel& operator=(const u32 rhs) {
+    value = rhs;
+    return *this;
+  }
+
+  operator u32() { return value; }
 };
 
-static_assert(sizeof(Sample) == kNumberOfPixelChannels * sizeof(u8));
+static_assert(sizeof(Pixel) == kNumberOfPixelChannels * sizeof(u8));
 
 struct RenderBuffer {
   RenderBuffer(int pitch)
-      : pixels(static_cast<Sample*>(
+      : pixels(static_cast<Pixel*>(
             std::aligned_alloc(kCacheLineSize,
-                               sizeof(Sample) * pitch * kWindowHeight))),
+                               sizeof(Pixel) * pitch * kWindowHeight))),
         z_buffer(static_cast<f32*>(
             std::aligned_alloc(kCacheLineSize,
                                sizeof(f32) * pitch * kWindowHeight))),
@@ -32,7 +51,7 @@ struct RenderBuffer {
     std::free(pixels);
     std::free(z_buffer);
   }
-  Sample* const pixels;
+  Pixel* const pixels;
   f32* const z_buffer;
   const int pitch;
 };

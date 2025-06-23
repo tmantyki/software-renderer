@@ -101,21 +101,21 @@ struct TexturedRaster {
 };
 
 template <size_t buffer_length>
-struct SampleMultiply {
-  SampleMultiply() = delete;
+struct PixelMultiply {
+  PixelMultiply() = delete;
 
   struct alignas(kCacheLineSize) Context {
-    std::array<u32, buffer_length>& texels;
+    std::array<Pixel, buffer_length>& texels;
     std::array<u32, buffer_length>& pixel_offsets;
     const f32 brightness;
     size_t& counter;
-    u32* const pixels;
+    Pixel* const pixels;
   };
 
-  static size_t Enqueue(u32 sample,
+  static size_t Enqueue(Pixel pixel,
                         u32 pixel_offset,
                         Context& context) noexcept {
-    context.texels[context.counter] = sample;
+    context.texels[context.counter] = pixel;
     context.pixel_offsets[context.counter++] = pixel_offset;
     if (context.counter == buffer_length)
       FlushVectorized(context);
@@ -136,11 +136,11 @@ struct SampleMultiply {
 
   static void FlushVectorized(Context& context) noexcept {
     constexpr size_t kBytesIn256Bits = 256 / 8;
-    size_t constexpr kSamplesPerAVX256 =
+    size_t constexpr kPixelsPerAVX256 =
         kBytesIn256Bits / (sizeof(f32) * kBytesPerPixel);
-    static_assert(buffer_length % kSamplesPerAVX256 == 0);
+    static_assert(buffer_length % kPixelsPerAVX256 == 0);
 
-    for (size_t i = 0; i < buffer_length; i += kSamplesPerAVX256) {
+    for (size_t i = 0; i < buffer_length; i += kPixelsPerAVX256) {
       void* texels_data = context.texels.data() + i;
       __m128i u8_values =
           _mm_loadl_epi64(reinterpret_cast<__m128i*>(texels_data));
