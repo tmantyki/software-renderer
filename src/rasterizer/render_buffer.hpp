@@ -20,6 +20,8 @@ union Pixel {
   Pixel(const u8 alpha, const u8 red, const u8 green, const u8 blue)
       : argb{alpha, red, green, blue} {}
 
+  Pixel(const Pixel& rhs) : value(rhs.value) {}
+
   Pixel& operator=(const Pixel& rhs) {
     value = rhs.value;
     return *this;

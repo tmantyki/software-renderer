@@ -122,17 +122,19 @@ struct PixelMultiply {
     return context.counter;
   }
 
-  /*   void FlushSequential(f32 brightness) noexcept {
-      for (size_t i = 0; i < counter_; i++) {
-        u32 texel = texels_[i];
-        texel.argb.alpha *= brightness;
-        texel.argb.red *= brightness;
-        texel.argb.green *= brightness;
-        texel.argb.blue *= brightness;
-        texels_[i] = texel;
-      }
-      counter_ = 0;
-    } */
+  static void FlushSequential(Context& context) noexcept {
+    for (size_t i = 0; i < context.counter; i++) {
+      const f32 brightness = context.brightness;
+      const u32 pixel_offset = context.pixel_offsets[i];
+      Pixel texel = context.texels[i];
+      texel.argb.alpha *= brightness;
+      texel.argb.red *= brightness;
+      texel.argb.green *= brightness;
+      texel.argb.blue *= brightness;
+      context.pixels[pixel_offset] = texel;
+    }
+    context.counter = 0;
+  }
 
   static void FlushVectorized(Context& context) noexcept {
     constexpr size_t kBytesIn256Bits = 256 / 8;

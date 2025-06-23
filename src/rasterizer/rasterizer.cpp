@@ -403,4 +403,5 @@ void TexturedRaster::RasterizeTriangleHalf(
       }
     }
   }
+  PixelMultiply<buffer_length>::FlushSequential(pixel_multiply_context);
 }
