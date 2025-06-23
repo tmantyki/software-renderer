@@ -1,6 +1,7 @@
 #pragma once
 
 #include <SDL2/SDL.h>
+#include <immintrin.h>
 
 #include "geometry/common.hpp"
 #include "geometry/texture.hpp"
@@ -47,6 +48,84 @@ struct RasterizationContext {
   const Texture& default_texture;
 };
 
+template <size_t buffer_length>
+struct PixelMultiply {
+  PixelMultiply() = delete;
+
+  struct alignas(kCacheLineSize) Context {
+    std::array<Pixel, buffer_length>& texels;
+    std::array<u32, buffer_length>& pixel_offsets;
+    std::array<f32, buffer_length * 4>& brightness_values;
+    size_t& counter;
+    Pixel* const pixels;
+  };
+
+  static size_t Enqueue(Pixel pixel,
+                        u32 pixel_offset,
+                        f32 brightness,
+                        Context& context) noexcept {
+    context.texels[context.counter] = pixel;
+    context.pixel_offsets[context.counter] = pixel_offset;
+    context.brightness_values[context.counter * 4] = brightness;
+    context.brightness_values[context.counter * 4 + 1] = brightness;
+    context.brightness_values[context.counter * 4 + 2] = brightness;
+    context.brightness_values[context.counter++ * 4 + 3] = brightness;
+    if (context.counter == buffer_length)
+      FlushVectorized(context);
+    return context.counter;
+  }
+
+  static void FlushSequential(Context& context) noexcept {
+    for (size_t i = 0; i < context.counter; i++) {
+      // const f32 brightness = context.brightness_values[i];
+      const u32 pixel_offset = context.pixel_offsets[i];
+      Pixel texel = context.texels[i];
+      texel.argb.alpha *= context.brightness_values[i];
+      texel.argb.red *= context.brightness_values[i + 1];
+      texel.argb.green *= context.brightness_values[i + 2];
+      texel.argb.blue *= context.brightness_values[i + 3];
+      context.pixels[pixel_offset] = texel;
+    }
+    context.counter = 0;
+  }
+
+  static void FlushVectorized(Context& context) noexcept {
+    constexpr size_t kBytesIn256Bits = 256 / 8;
+    size_t constexpr kPixelsPerAVX256 =
+        kBytesIn256Bits / (sizeof(f32) * kBytesPerPixel);
+    static_assert(buffer_length % kPixelsPerAVX256 == 0);
+
+    for (size_t i = 0; i < buffer_length; i += kPixelsPerAVX256) {
+      void* texels_data = context.texels.data() + i;
+      // __m256i brightness_indices = _mm256_setr_epi32(0, 0, 0, 0, 0, 0, 0, 0);
+      // __m256 brightness_vector =
+      //     _mm256_i32gather_ps(context.brightness_values.data() + i,
+      //                         brightness_indices, sizeof(f32));
+      __m256 brightness_vector =
+          _mm256_load_ps(context.brightness_values.data() + (i * 4));
+      __m128i u8_values =
+          _mm_loadl_epi64(reinterpret_cast<__m128i*>(texels_data));
+      __m256i packed_32 = _mm256_cvtepu8_epi32((u8_values));
+      __m256 f32_values = _mm256_cvtepi32_ps(packed_32);
+      f32_values = _mm256_mul_ps(f32_values, brightness_vector);
+      packed_32 = _mm256_cvtps_epi32(f32_values);
+      __m256i mask = _mm256_setr_epi8(0, 4, 8, 12, 16, 20, 24, 28, -1, -1, -1,
+                                      -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
+                                      -1, -1, -1, 0, 4, 8, 12, 16, 20, 24, 28);
+      packed_32 = _mm256_shuffle_epi8(packed_32, mask);
+
+      mask = _mm256_setr_epi32(0, 6, -1, -1, -1, -1, -1, -1);
+      packed_32 = _mm256_permutevar8x32_epi32(packed_32, mask);
+
+      _mm_storel_epi64(reinterpret_cast<__m128i*>(texels_data),
+                       _mm256_castsi256_si128(packed_32));
+      context.pixels[context.pixel_offsets[i]] = context.texels[i];
+      context.pixels[context.pixel_offsets[i + 1]] = context.texels[i + 1];
+    }
+    context.counter = 0;
+  }
+};
+
 template <typename RasterPolicy, typename FillPolicy, typename ZBufferPolicy>
 class Rasterizer {
  public:
@@ -89,83 +168,18 @@ struct FlatRaster {
 };
 
 struct TexturedRaster {
+  static constexpr size_t buffer_length = 32;
   static void RasterizeTriangles(RasterizationContext& context) noexcept;
 
  private:
-  static void RasterizeTriangleHalf(PixelCoordinates& pc,
-                                    OrderedVertexIndices& vi,
-                                    const Triangle& triangle,
-                                    TriangleHalf triangle_half,
-                                    f32 brightness,
-                                    RasterizationContext& context) noexcept;
-};
-
-template <size_t buffer_length>
-struct PixelMultiply {
-  PixelMultiply() = delete;
-
-  struct alignas(kCacheLineSize) Context {
-    std::array<Pixel, buffer_length>& texels;
-    std::array<u32, buffer_length>& pixel_offsets;
-    const f32 brightness;
-    size_t& counter;
-    Pixel* const pixels;
-  };
-
-  static size_t Enqueue(Pixel pixel,
-                        u32 pixel_offset,
-                        Context& context) noexcept {
-    context.texels[context.counter] = pixel;
-    context.pixel_offsets[context.counter++] = pixel_offset;
-    if (context.counter == buffer_length)
-      FlushVectorized(context);
-    return context.counter;
-  }
-
-  static void FlushSequential(Context& context) noexcept {
-    for (size_t i = 0; i < context.counter; i++) {
-      const f32 brightness = context.brightness;
-      const u32 pixel_offset = context.pixel_offsets[i];
-      Pixel texel = context.texels[i];
-      texel.argb.alpha *= brightness;
-      texel.argb.red *= brightness;
-      texel.argb.green *= brightness;
-      texel.argb.blue *= brightness;
-      context.pixels[pixel_offset] = texel;
-    }
-    context.counter = 0;
-  }
-
-  static void FlushVectorized(Context& context) noexcept {
-    constexpr size_t kBytesIn256Bits = 256 / 8;
-    size_t constexpr kPixelsPerAVX256 =
-        kBytesIn256Bits / (sizeof(f32) * kBytesPerPixel);
-    static_assert(buffer_length % kPixelsPerAVX256 == 0);
-
-    for (size_t i = 0; i < buffer_length; i += kPixelsPerAVX256) {
-      void* texels_data = context.texels.data() + i;
-      __m128i u8_values =
-          _mm_loadl_epi64(reinterpret_cast<__m128i*>(texels_data));
-      __m256i packed_32 = _mm256_cvtepu8_epi32((u8_values));
-      __m256 f32_values = _mm256_cvtepi32_ps(packed_32);
-      __m256 brightness_vector = _mm256_set1_ps(context.brightness);
-      f32_values = _mm256_mul_ps(f32_values, brightness_vector);
-      packed_32 = _mm256_cvtps_epi32(f32_values);
-      __m256i mask = _mm256_setr_epi8(0, 4, 8, 12, 16, 20, 24, 28, -1, -1, -1,
-                                      -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
-                                      -1, -1, -1, 0, 4, 8, 12, 16, 20, 24, 28);
-      packed_32 = _mm256_shuffle_epi8(packed_32, mask);
-
-      mask = _mm256_setr_epi32(0, 6, -1, -1, -1, -1, -1, -1);
-      packed_32 = _mm256_permutevar8x32_epi32(packed_32, mask);
-
-      _mm_storel_epi64(reinterpret_cast<__m128i*>(texels_data),
-                       _mm256_castsi256_si128(packed_32));
-      context.pixels[context.pixel_offsets[i]] = context.texels[i];
-      context.pixels[context.pixel_offsets[i + 1]] = context.texels[i + 1];
-    }
-    context.counter = 0;
-  }
+  static void RasterizeTriangleHalf(
+      PixelCoordinates& pc,
+      OrderedVertexIndices& vi,
+      const Triangle& triangle,
+      TriangleHalf triangle_half,
+      RasterizationContext& context,
+      f32 brightness,
+      PixelMultiply<buffer_length>::Context& pixel_multiply_context) noexcept;
 };
 
 using WireframeRasterizer = Rasterizer<WireframeRaster, BackgroundFill, None>;

@@ -292,6 +292,17 @@ void FlatRaster::RasterizeTriangleHalf(PixelCoordinates& pc,
 void TexturedRaster::RasterizeTriangles(
     RasterizationContext& context) noexcept {
   const Space& space = context.game_state.GetOutputSpace();
+
+  // Used by SIMD-intrinsics
+
+  alignas(64) std::array<Pixel, buffer_length> texels;
+  alignas(64) std::array<u32, buffer_length> pixel_offsets;
+  alignas(64) std::array<f32, buffer_length * 4> brightness_values;
+  size_t counter = 0;
+  PixelMultiply<buffer_length>::Context pixel_multiply_context = {
+      texels, pixel_offsets, brightness_values, counter,
+      context.render_buffer.pixels};
+
   for (size_t t = 0; t < space.GetTriangleCount(); t++) {
     const Triangle& triangle = *space.GetTriangles()[t];
     // Triangle color
@@ -304,12 +315,13 @@ void TexturedRaster::RasterizeTriangles(
     PixelCoordinates pc = ::GetPixelCoordinates(vi, space);
 
     // Scanlines for top section
-    RasterizeTriangleHalf(pc, vi, triangle, TriangleHalf::kUpper, brightness,
-                          context);
+    RasterizeTriangleHalf(pc, vi, triangle, TriangleHalf::kUpper, context,
+                          brightness, pixel_multiply_context);
     // Scanlines for bottom section
-    RasterizeTriangleHalf(pc, vi, triangle, TriangleHalf::kLower, brightness,
-                          context);
+    RasterizeTriangleHalf(pc, vi, triangle, TriangleHalf::kLower, context,
+                          brightness, pixel_multiply_context);
   }
+  PixelMultiply<buffer_length>::FlushSequential(pixel_multiply_context);
 }
 
 void TexturedRaster::RasterizeTriangleHalf(
@@ -317,11 +329,11 @@ void TexturedRaster::RasterizeTriangleHalf(
     OrderedVertexIndices& vi,
     const Triangle& triangle,
     TriangleHalf triangle_half,
+    RasterizationContext& context,
     f32 brightness,
-    RasterizationContext& context) noexcept {
+    PixelMultiply<buffer_length>::Context& pixel_multiply_context) noexcept {
   RenderBuffer& render_buffer = context.render_buffer;
   const Texture& default_texture = context.default_texture;
-  Pixel* const pixels = render_buffer.pixels;
   const int pitch = render_buffer.pitch;
   InterpolationParameters ip;
   ScanlineParameters sp;
@@ -332,14 +344,12 @@ void TexturedRaster::RasterizeTriangleHalf(
   const SDL_Surface* texture_surface = default_texture.GetSurface();
   const int texture_pitch = texture_surface->pitch;
 
-  // Used by SIMD-intrinsics
-
-  constexpr size_t buffer_length = 32;
-  alignas(64) std::array<Pixel, buffer_length> texels;
-  alignas(64) std::array<u32, buffer_length> pixel_offsets;
-  size_t counter = 0;
-  PixelMultiply<buffer_length>::Context pixel_multiply_context = {
-      texels, pixel_offsets, brightness, counter, pixels};
+  /*   constexpr size_t buffer_length = 32;
+    alignas(64) std::array<Pixel, buffer_length> texels;
+    alignas(64) std::array<u32, buffer_length> pixel_offsets;
+    size_t counter = 0;
+    PixelMultiply<buffer_length>::Context pixel_multiply_context = {
+        texels, pixel_offsets, brightness, counter, pixels}; */
 
   if (triangle_half == TriangleHalf::kLower)
     ::SwapTopAndLow(pc, vi);
@@ -398,10 +408,9 @@ void TexturedRaster::RasterizeTriangleHalf(
         u32 texel_offset = v * (texture_pitch / kBytesPerPixel) + u;
 
         PixelMultiply<buffer_length>::Enqueue(texels[texel_offset],
-                                              pixel_offset,
+                                              pixel_offset, brightness,
                                               pixel_multiply_context);
       }
     }
   }
-  PixelMultiply<buffer_length>::FlushSequential(pixel_multiply_context);
 }
