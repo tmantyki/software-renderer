@@ -334,7 +334,7 @@ void TexturedRaster::RasterizeTriangleHalf(
 
   // Used by SIMD-intrinsics
 
-  constexpr size_t buffer_length = 2;
+  constexpr size_t buffer_length = 32;
   alignas(64) std::array<Pixel, buffer_length> texels;
   alignas(64) std::array<u32, buffer_length> pixel_offsets;
   size_t counter = 0;
@@ -392,13 +392,13 @@ void TexturedRaster::RasterizeTriangleHalf(
 
         assert(u < texture_width);
         assert(v < texture_height);
-        // u32* target_pixels = reinterpret_cast<u32*>(pixels);
-        u32* texture_pixels = reinterpret_cast<u32*>(texture_surface->pixels);
-        u32 target_offset = scan_y * (pitch / kBytesPerPixel) + scan_x;
-        u32 texture_offset = v * (texture_pitch / kBytesPerPixel) + u;
 
-        PixelMultiply<buffer_length>::Enqueue(texture_pixels[texture_offset],
-                                              target_offset,
+        Pixel* texels = reinterpret_cast<Pixel*>(texture_surface->pixels);
+        u32 pixel_offset = scan_y * (pitch / kBytesPerPixel) + scan_x;
+        u32 texel_offset = v * (texture_pitch / kBytesPerPixel) + u;
+
+        PixelMultiply<buffer_length>::Enqueue(texels[texel_offset],
+                                              pixel_offset,
                                               pixel_multiply_context);
       }
     }
