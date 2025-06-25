@@ -1,6 +1,7 @@
 #include <SDL2/SDL.h>
 
 #include <algorithm>
+#include <cstddef>
 #include <utility>
 #include "geometry/common.hpp"
 #include "geometry/space.hpp"
@@ -341,15 +342,7 @@ void TexturedRaster::RasterizeTriangleHalf(
 
   const u16 texture_width = default_texture.GetWidth();
   const u16 texture_height = default_texture.GetHeight();
-  const SDL_Surface* texture_surface = default_texture.GetSurface();
-  const int texture_pitch = texture_surface->pitch;
-
-  /*   constexpr size_t buffer_length = 32;
-    alignas(64) std::array<Pixel, buffer_length> texels;
-    alignas(64) std::array<u32, buffer_length> pixel_offsets;
-    size_t counter = 0;
-    PixelMultiply<buffer_length>::Context pixel_multiply_context = {
-        texels, pixel_offsets, brightness, counter, pixels}; */
+  const Pixel* texels = default_texture.GetTexels();
 
   if (triangle_half == TriangleHalf::kLower)
     ::SwapTopAndLow(pc, vi);
@@ -393,8 +386,8 @@ void TexturedRaster::RasterizeTriangleHalf(
       // #TODO: replace argument with incrementing
       if (::ZBufferCheckAndReplace(ip.final_z, scan_y * kWindowWidth + scan_x,
                                    render_buffer.z_buffer)) {
-        u16 u = static_cast<u16>(final_uv[kU] * (texture_width));
-        u16 v = static_cast<u16>((1 - final_uv[kV]) * (texture_height));
+        u32 u = static_cast<u32>(final_uv[kU] * (texture_width));
+        u32 v = static_cast<u32>((1 - final_uv[kV]) * (texture_height));
 
         // CLAMP #TODO: best clamping strategy? (-1 case)
         u = std::min(texture_width - 1, static_cast<i32>(u));
@@ -403,9 +396,8 @@ void TexturedRaster::RasterizeTriangleHalf(
         assert(u < texture_width);
         assert(v < texture_height);
 
-        Pixel* texels = reinterpret_cast<Pixel*>(texture_surface->pixels);
         u32 pixel_offset = scan_y * (pitch / kBytesPerPixel) + scan_x;
-        u32 texel_offset = v * (texture_pitch / kBytesPerPixel) + u;
+        u32 texel_offset = v * texture_width + u;
 
         PixelMultiply<buffer_length>::Enqueue(texels[texel_offset],
                                               pixel_offset, brightness,

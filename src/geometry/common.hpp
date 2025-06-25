@@ -8,6 +8,16 @@
 #include <Eigen/Core>
 #include <Eigen/Geometry>
 
+using u8 = uint8_t;
+using i8 = int8_t;
+using u16 = uint16_t;
+using i16 = int16_t;
+using u32 = uint32_t;
+using i32 = int32_t;
+using u64 = uint64_t;
+using i64 = int64_t;
+using f32 = float;
+
 constexpr float kPi = 3.14159265358979323846264338f;
 constexpr float kFloatTolerance = 1.0E-3f;
 constexpr float kAntiZFighting = 1.0E-5f;
@@ -49,16 +59,6 @@ typedef Eigen::Quaternionf Quaternion;
 typedef Eigen::Array<int, kVerticesPerTriangle, Eigen::Dynamic> ClippingMask;
 typedef Eigen::Matrix<float, kDimensions, Eigen::Dynamic> NormalMatrix;
 typedef Eigen::Matrix<float, kDimensions, Eigen::Dynamic> VertexMatrix;
-
-using u8 = uint8_t;
-using i8 = int8_t;
-using u16 = uint16_t;
-using i16 = int16_t;
-using u32 = uint32_t;
-using i32 = int32_t;
-using u64 = uint64_t;
-using i64 = int64_t;
-using f32 = float;
 
 enum class BoundaryType { kMin, kMax };
 enum class TriangleClipMode { kIncludeReference, kExcludeReference };
