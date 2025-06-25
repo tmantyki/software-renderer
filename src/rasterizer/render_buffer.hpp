@@ -13,26 +13,26 @@ union Pixel {
   } argb;
   u32 value;
 
-  Pixel() = default;
+  Pixel() noexcept = default;
 
-  Pixel(const u32 rhs) : value(rhs) {}
+  Pixel(const u32 rhs) noexcept : value(rhs) {}
 
-  Pixel(const u8 alpha, const u8 red, const u8 green, const u8 blue)
+  Pixel(const u8 alpha, const u8 red, const u8 green, const u8 blue) noexcept
       : argb{alpha, red, green, blue} {}
 
-  Pixel(const Pixel& rhs) : value(rhs.value) {}
+  Pixel(const Pixel& rhs) noexcept : value(rhs.value) {}
 
-  Pixel& operator=(const Pixel& rhs) {
+  Pixel& operator=(const Pixel& rhs) noexcept {
     value = rhs.value;
     return *this;
   }
 
-  Pixel& operator=(const u32 rhs) {
+  Pixel& operator=(const u32 rhs) noexcept {
     value = rhs;
     return *this;
   }
 
-  operator u32() { return value; }
+  operator u32() noexcept { return value; }
 };
 
 static_assert(sizeof(Pixel) == kNumberOfPixelChannels * sizeof(u8));
