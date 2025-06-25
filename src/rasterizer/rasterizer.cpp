@@ -335,7 +335,7 @@ void TexturedRaster::RasterizeTriangleHalf(
     f32 brightness,
     PixelMultiply<buffer_length>::Context& pixel_multiply_context) noexcept {
   RenderBuffer& render_buffer = context.render_buffer;
-  const Texture<LinearTiling>& default_texture = context.default_texture;
+  const Texture<TiledLayout>& default_texture = context.default_texture;
   const int pitch = render_buffer.pitch;
   InterpolationParameters ip;
   ScanlineParameters sp;

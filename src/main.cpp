@@ -20,7 +20,7 @@ int main(int argc, char** argv) {
   // BenchmarkInterface user_interface;
   Controller controller;
   GameState game_state;
-  Texture<LinearTiling> default_texture("assets/blender/porcelain.png");
+  Texture<TiledLayout> default_texture("assets/blender/porcelain.png");
   RenderBuffer render_buffer(user_interface.GetPitch());
   // WireframeRasterizer wireframe_rasterizer;
   // FlatRasterizer flat_rasterizer;

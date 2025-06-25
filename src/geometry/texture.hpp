@@ -2,9 +2,13 @@
 
 #include <SDL2/SDL.h>
 #include <string>
+#include "geometry/common.hpp"
 #include "rasterizer/render_buffer.hpp"
 
-template <typename TilingPolicy>
+constexpr i32 kTileLength = 4;
+constexpr i32 kTileSize = kTileLength * kTileLength;
+
+template <typename LayoutPolicy>
 class Texture {
  public:
   Texture(const std::string& image_file_path);
@@ -13,7 +17,7 @@ class Texture {
   i32 GetHeight() const noexcept { return height_; }
   Pixel* GetTexels() const noexcept { return texels_; }
   Pixel GetTexel(i32 x, i32 y) const noexcept {
-    return TilingPolicy::GetTexel(x, y, texels_, width_);
+    return LayoutPolicy::GetTexel(x, y, texels_, width_);
   }
 
  private:
@@ -23,22 +27,58 @@ class Texture {
   i32 height_;
 };
 
-struct LinearTiling {
+struct LinearLayout {
+  static size_t GetAllocationSize(i32 width, i32 height) noexcept {
+    return width * height * kBytesPerPixel;
+  }
   static Pixel GetTexel(i32 x,
                         i32 y,
                         const Pixel* __restrict__ texels,
-                        i32 stride) noexcept {
-    return texels[y * stride + x];
+                        i32 width) noexcept {
+    return texels[y * width + x];
   }
   static void CopyFromLinearSurface(Pixel* __restrict__ destination,
-                                   const Pixel* __restrict__ source,
-                                   i32 width,
-                                   i32 height,
-                                   i32 stride) {
+                                    const Pixel* __restrict__ source,
+                                    i32 width,
+                                    i32 height,
+                                    i32 stride) {
     for (i32 y = 0; y < height; y++)
       for (i32 x = 0; x < width; x++)
         destination[y * width + x] = source[y * stride + x];
   }
 };
+struct TiledLayout {
+  static size_t GetAllocationSize(i32 width, i32 height) noexcept {
+    const i32 tile_x_count = ((width - 1) / kTileLength) + 1;
+    const i32 tile_y_count = ((height - 1) / kTileLength) + 1;
+    return tile_x_count * tile_y_count * kTileSize * kBytesPerPixel;
+  }
 
-template class Texture<LinearTiling>;
+  static i32 GetTexelIndex(i32 x, i32 y, i32 width) noexcept {
+    const i32 tile_x_count = ((width - 1) / kTileLength) + 1;
+    const i32 tile_x = x / kTileLength;
+    const i32 tile_y = y / kTileLength;
+    const i32 inner_x = x % kTileLength;
+    const i32 inner_y = y % kTileLength;
+    const i32 index = (tile_y * tile_x_count + tile_x) * kTileSize +
+                      inner_y * kTileLength + inner_x;
+    return index;
+  }
+  static Pixel GetTexel(i32 x,
+                        i32 y,
+                        const Pixel* __restrict__ texels,
+                        i32 width) noexcept {
+    return texels[GetTexelIndex(x, y, width)];
+  }
+  static void CopyFromLinearSurface(Pixel* __restrict__ destination,
+                                    const Pixel* __restrict__ source,
+                                    i32 width,
+                                    i32 height,
+                                    i32 stride) {
+    for (i32 y = 0; y < height; y++)
+      for (i32 x = 0; x < width; x++)
+        destination[GetTexelIndex(x, y, width)] = source[y * stride + x];
+  }
+};
+
+template class Texture<TiledLayout>;
