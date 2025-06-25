@@ -7,14 +7,16 @@
 class Texture {
  public:
   Texture(const std::string& image_file_path);
-  ~Texture() noexcept { SDL_FreeSurface(surface_); }
-  u32 GetWidth() const noexcept { return surface_->w; }
-  u32 GetHeight() const noexcept { return surface_->h; }
-  Pixel* GetTexels() const noexcept {
-    return reinterpret_cast<Pixel*>(surface_->pixels);
+  ~Texture() noexcept {
+    std::free(texels_);
   }
+  i32 GetWidth() const noexcept { return width_; }
+  i32 GetHeight() const noexcept { return height_; }
+  Pixel* GetTexels() const noexcept { return texels_; }
 
  private:
   const std::string image_file_path_;
-  SDL_Surface* surface_;
+  Pixel* texels_;
+  i32 width_;
+  i32 height_;
 };
