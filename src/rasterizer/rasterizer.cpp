@@ -5,8 +5,8 @@
 #include <utility>
 #include "geometry/common.hpp"
 #include "geometry/space.hpp"
-#include "rasterizer/rasterizer.hpp"
 #include "geometry/texture.hpp"
+#include "rasterizer/rasterizer.hpp"
 #include "rasterizer/render_buffer.hpp"
 
 #include <emmintrin.h>
@@ -343,7 +343,6 @@ void TexturedRaster::RasterizeTriangleHalf(
 
   const i32 texture_width = default_texture.GetWidth();
   const i32 texture_height = default_texture.GetHeight();
-  const Pixel* texels = default_texture.GetTexels();
 
   if (triangle_half == TriangleHalf::kLower)
     ::SwapTopAndLow(pc, vi);
@@ -400,9 +399,8 @@ void TexturedRaster::RasterizeTriangleHalf(
         assert(v >= 0);
 
         u32 pixel_offset = scan_y * (pitch / kBytesPerPixel) + scan_x;
-        u32 texel_offset = v * texture_width + u;
 
-        PixelMultiply<buffer_length>::Enqueue(texels[texel_offset],
+        PixelMultiply<buffer_length>::Enqueue(default_texture.GetTexel(u, v),
                                               pixel_offset, brightness,
                                               pixel_multiply_context);
       }
