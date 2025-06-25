@@ -45,7 +45,7 @@ struct ScanlineParameters {
 struct RasterizationContext {
   const GameState& game_state;
   RenderBuffer& render_buffer;
-  const Texture& default_texture;
+  const Texture<LinearTiling>& default_texture;
 };
 
 template <size_t buffer_length>

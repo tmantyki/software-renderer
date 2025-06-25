@@ -1,5 +1,6 @@
 #include <iostream>
 
+#include "geometry/texture.hpp"
 #include "rasterizer/rasterizer.hpp"
 #include "rasterizer/render_buffer.hpp"
 #include "server/game_state.hpp"
@@ -19,7 +20,7 @@ int main(int argc, char** argv) {
   // BenchmarkInterface user_interface;
   Controller controller;
   GameState game_state;
-  Texture default_texture("assets/blender/porcelain.png");
+  Texture<LinearTiling> default_texture("assets/blender/porcelain.png");
   RenderBuffer render_buffer(user_interface.GetPitch());
   // WireframeRasterizer wireframe_rasterizer;
   // FlatRasterizer flat_rasterizer;

@@ -6,6 +6,7 @@
 #include "geometry/common.hpp"
 #include "geometry/space.hpp"
 #include "rasterizer/rasterizer.hpp"
+#include "geometry/texture.hpp"
 #include "rasterizer/render_buffer.hpp"
 
 #include <emmintrin.h>
@@ -334,7 +335,7 @@ void TexturedRaster::RasterizeTriangleHalf(
     f32 brightness,
     PixelMultiply<buffer_length>::Context& pixel_multiply_context) noexcept {
   RenderBuffer& render_buffer = context.render_buffer;
-  const Texture& default_texture = context.default_texture;
+  const Texture<LinearTiling>& default_texture = context.default_texture;
   const int pitch = render_buffer.pitch;
   InterpolationParameters ip;
   ScanlineParameters sp;

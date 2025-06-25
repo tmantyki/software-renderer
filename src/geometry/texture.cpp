@@ -7,7 +7,8 @@
 #include "common.hpp"
 #include "texture.hpp"
 
-Texture::Texture(const std::string& image_file_path)
+template <typename TilingPolicy>
+Texture<TilingPolicy>::Texture(const std::string& image_file_path)
     : image_file_path_(image_file_path) {
   SDL_Surface* loaded_surface = IMG_Load(image_file_path_.c_str());
   if (!loaded_surface)  // #TODO: raise exception?
@@ -20,14 +21,11 @@ Texture::Texture(const std::string& image_file_path)
   }
   width_ = converted_surface->w;
   height_ = converted_surface->h;
-  const i32 stride = converted_surface->pitch / kBytesPerPixel;
   const i32 texture_size = width_ * height_;
-  Pixel* source_texels = reinterpret_cast<Pixel*>(converted_surface->pixels);
   texels_ = reinterpret_cast<Pixel*>(
       std::aligned_alloc(kCacheLineSize, texture_size * kBytesPerPixel));
-  for (i32 y = 0; y < height_; y++)
-    for (i32 x = 0; x < width_; x++) {
-      texels_[y * width_ + x] = source_texels[y * stride + x];
-    }
+  TilingPolicy::CopyFromLinearSurface(
+      texels_, reinterpret_cast<Pixel*>(converted_surface->pixels), width_,
+      height_, converted_surface->pitch / kBytesPerPixel);
   SDL_FreeSurface(converted_surface);
 }
