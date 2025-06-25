@@ -340,8 +340,8 @@ void TexturedRaster::RasterizeTriangleHalf(
   ScanlineParameters sp;
   bool left_right_swapped;
 
-  const u16 texture_width = default_texture.GetWidth();
-  const u16 texture_height = default_texture.GetHeight();
+  const i32 texture_width = default_texture.GetWidth();
+  const i32 texture_height = default_texture.GetHeight();
   const Pixel* texels = default_texture.GetTexels();
 
   if (triangle_half == TriangleHalf::kLower)
@@ -386,15 +386,17 @@ void TexturedRaster::RasterizeTriangleHalf(
       // #TODO: replace argument with incrementing
       if (::ZBufferCheckAndReplace(ip.final_z, scan_y * kWindowWidth + scan_x,
                                    render_buffer.z_buffer)) {
-        u32 u = static_cast<u32>(final_uv[kU] * (texture_width));
-        u32 v = static_cast<u32>((1 - final_uv[kV]) * (texture_height));
+        i32 u = static_cast<i32>(final_uv[kU] * (texture_width));
+        i32 v = static_cast<i32>((1 - final_uv[kV]) * (texture_height));
 
-        // CLAMP #TODO: best clamping strategy? (-1 case)
-        u = std::min(texture_width - 1, static_cast<i32>(u));
-        v = std::min(texture_height - 1, static_cast<i32>(v));
+        // CLAMP #TODO: best clamping strategy?
+        u = std::min(static_cast<u32>(texture_width - 1), static_cast<u32>(u));
+        v = std::min(static_cast<u32>(texture_height - 1), static_cast<u32>(v));
 
         assert(u < texture_width);
         assert(v < texture_height);
+        assert(u >= 0);
+        assert(v >= 0);
 
         u32 pixel_offset = scan_y * (pitch / kBytesPerPixel) + scan_x;
         u32 texel_offset = v * texture_width + u;
