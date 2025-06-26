@@ -28,15 +28,21 @@ class Texture {
 };
 
 struct LinearLayout {
+  static bool LegalDimensions(i32, i32 height) noexcept {
+    return __builtin_popcount(height) == 1;  // if a power of two
+  }
+
   static size_t GetAllocationSize(i32 width, i32 height) noexcept {
     return width * height * kBytesPerPixel;
   }
+
   static Pixel GetTexel(i32 x,
                         i32 y,
                         const Pixel* __restrict__ texels,
                         i32 width) noexcept {
     return texels[y * width + x];
   }
+
   static void CopyFromLinearSurface(Pixel* __restrict__ destination,
                                     const Pixel* __restrict__ source,
                                     i32 width,
@@ -48,6 +54,13 @@ struct LinearLayout {
   }
 };
 struct TiledLayout {
+  static bool LegalDimensions(i32 width, i32 height) noexcept {
+    const i32 tile_x_count = ((width - 1) / kTileLength) + 1;
+    if (((width % kTileLength) != 0) || ((height % kTileLength) != 0))
+      return false;
+    return __builtin_popcount(tile_x_count) == 1;  // if a power of two
+  }
+
   static size_t GetAllocationSize(i32 width, i32 height) noexcept {
     const i32 tile_x_count = ((width - 1) / kTileLength) + 1;
     const i32 tile_y_count = ((height - 1) / kTileLength) + 1;

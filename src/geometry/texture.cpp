@@ -24,6 +24,8 @@ Texture<LayoutPolicy>::Texture(const std::string& image_file_path)
   }
   width_ = converted_surface->w;
   height_ = converted_surface->h;
+  if (!LayoutPolicy::LegalDimensions(width_, height_))
+    throw std::runtime_error("Illegal texture dimensions!");
   assert(width_ % kTileLength == 0);
   assert(height_ % kTileLength == 0);
   const size_t alloc_size = LayoutPolicy::GetAllocationSize(width_, height_);
