@@ -61,7 +61,7 @@ struct TiledLayout {
     const i32 inner_x = static_cast<u32>(x) % kTileLength;
     const i32 inner_y = static_cast<u32>(y) % kTileLength;
     const i32 index =
-        static_cast<u32>((static_cast<u32>(tile_y) * tile_x_count) + tile_x) *
+        static_cast<u32>(static_cast<u32>(tile_y) * tile_x_count + tile_x) *
             kTileSize +
         static_cast<u32>(inner_y) * kTileLength + inner_x;
     return index;
@@ -84,4 +84,4 @@ struct TiledLayout {
   }
 };
 
-template class Texture<TiledLayout>;
+template class Texture<LinearLayout>;
