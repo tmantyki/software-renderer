@@ -55,15 +55,18 @@ struct TiledLayout {
   }
 
   static i32 GetTexelIndex(i32 x, i32 y, i32 width) noexcept {
-    const i32 tile_x_count = ((width - 1) / kTileLength) + 1;
-    const i32 tile_x = x / kTileLength;
-    const i32 tile_y = y / kTileLength;
-    const i32 inner_x = x % kTileLength;
-    const i32 inner_y = y % kTileLength;
-    const i32 index = (tile_y * tile_x_count + tile_x) * kTileSize +
-                      inner_y * kTileLength + inner_x;
+    const i32 tile_x_count = (static_cast<u32>(width - 1) / kTileLength) + 1;
+    const i32 tile_x = static_cast<u32>(x) / kTileLength;
+    const i32 tile_y = static_cast<u32>(y) / kTileLength;
+    const i32 inner_x = static_cast<u32>(x) % kTileLength;
+    const i32 inner_y = static_cast<u32>(y) % kTileLength;
+    const i32 index =
+        static_cast<u32>((static_cast<u32>(tile_y) * tile_x_count) + tile_x) *
+            kTileSize +
+        static_cast<u32>(inner_y) * kTileLength + inner_x;
     return index;
   }
+
   static Pixel GetTexel(i32 x,
                         i32 y,
                         const Pixel* __restrict__ texels,
