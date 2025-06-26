@@ -40,7 +40,8 @@ struct LinearLayout {
                         i32 y,
                         const Pixel* __restrict__ texels,
                         i32 width) noexcept {
-    return texels[y * width + x];
+    const i32 width_log2 = __builtin_ctz(width);
+    return texels[(y << width_log2) + x];
   }
 
   static void CopyFromLinearSurface(Pixel* __restrict__ destination,
@@ -53,6 +54,7 @@ struct LinearLayout {
         destination[y * width + x] = source[y * stride + x];
   }
 };
+
 struct TiledLayout {
   static bool LegalDimensions(i32 width, i32 height) noexcept {
     const i32 tile_x_count = ((width - 1) / kTileLength) + 1;
@@ -96,5 +98,4 @@ struct TiledLayout {
         destination[GetTexelIndex(x, y, width)] = source[y * stride + x];
   }
 };
-
 template class Texture<LinearLayout>;
